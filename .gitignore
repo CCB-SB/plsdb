@@ -1,0 +1,8 @@
+*.tmp
+*.log
+.snakemake/*
+src/__pycache__/*
+tmp
+data
+tools
+venv

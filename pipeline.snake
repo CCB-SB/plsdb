@@ -1,0 +1,337 @@
+##################################################
+# Python venv.s
+##################################################
+VENV="venv/bin/activate"
+
+##################################################
+# Config
+##################################################
+CONFIG_JSON = "pipeline.json"
+configfile: CONFIG_JSON
+
+##################################################
+# Python modules
+##################################################
+import os
+import pandas
+import datetime
+from glob import glob
+
+##################################################
+# Python functions
+##################################################
+def name_wo_ext(fname):
+    return os.path.splitext(fname)[0]
+
+def bname_wo_ext(fname):
+    return name_wo_ext(os.path.basename(fname))
+
+##################################################
+# Some settings
+##################################################
+# Date
+today = datetime.datetime.now().strftime("%Y_%m_%d")
+# today = "2018_05_07" # NOTE for testing
+
+# BLAST DB file ext.
+blastdb_ext = ['nin', 'nhr', 'nsq']
+
+##################################################
+# Tools
+##################################################
+# BLAST
+BIN_MAKEBLASTDB = os.path.join('tools', config["tools"]["blast"]["dir"], "bin/makeblastdb")
+
+# Mash
+BIN_MASH = os.path.join('tools', config["tools"]["mash"]["dir"], "mash")
+
+##################################################
+# Data
+##################################################
+# Assembly reports
+REPORTS = [os.path.join(config["data"]["odir"]["reports"], "%s__%s__assembly_report.tsv" % (today, f)) for f in config["data"]["report_urls"].keys()]
+# Filtered assembly reports
+REPORTS_FILT = [os.path.join(config["data"]["odir"]["reports"], "%s__%s__assembly_report__filt.tsv" % (today, f)) for f in config["data"]["report_urls"].keys()]
+
+# Download genomic FASTAs
+DOWNLOAD_GFASTAS = os.path.join(config["data"]["odir"]["genomes"], today, "download.done")
+
+# Download and filter other assembly files
+DOWNLOAD_FEATURES = os.path.join(config["data"]["odir"]["features"], today, "add_download.done")
+
+# Create table of downloaded sequences
+SREPORT = os.path.join(config["data"]["odir"]["reports"], "%s__downloaded_seqs__report.tsv" % today)
+
+# Master files
+##############
+
+# FASTA
+MASTER_GFASTA = os.path.join(config["data"]["odir"]["master"], "%s__master_genomic.fna" % today)
+
+# Features
+MASTER_FEATURES = os.path.join(config["data"]["odir"]["master"], "%s__master_features.tsv" % today)
+
+# Mash
+MASTER_MASH_SIG  = os.path.join(config["data"]["odir"]["master"], "%s__master_genomic.fna.msh" % today)
+MASTER_MASH_DIST = os.path.join(config["data"]["odir"]["master"], "%s__master_genomic.fna.tsv" % today)
+
+# UMAP
+MASTER_MASH_UMAP = os.path.join(config["data"]["odir"]["master"], "%s__master_genomic.fna.umap" % today)
+
+# Master info table
+MASTER_TAB = os.path.join(config["data"]["odir"]["master"], "%s__master_table.tsv" % today)
+
+# BLASTdb from master FASTA
+MASTER_BLASTDB = [os.path.join(config["data"]["odir"]["master"], "%s__master_genomic.fna.%s" % (today, e)) for e in blastdb_ext]
+
+##################################################
+# Rules
+##################################################
+
+# ALL rule
+##################################################
+rule all:
+	input:
+        # tools
+		blast=BIN_MAKEBLASTDB,
+        mash=BIN_MASH,
+        # assembly reports
+        reports=REPORTS_FILT,
+        # genomic FASTAs
+        d_gfastas=DOWNLOAD_GFASTAS,
+        # downloaded plasmids
+        sreport=SREPORT,
+        # gneopmic features
+        d_features=DOWNLOAD_FEATURES,
+		# master files
+        # fasta
+        master_gfna=MASTER_GFASTA,
+        # features
+        master_feas=MASTER_FEATURES,
+		# meta data
+        master_tab=MASTER_TAB,
+		# mash
+        master_sig=MASTER_MASH_SIG,
+        master_dist=MASTER_MASH_DIST,
+		# umap
+        master_umap=MASTER_MASH_UMAP,
+		# blastdb
+		master_blastdb=MASTER_BLASTDB,
+
+# Tools
+##################################################
+rule install_blast:
+    output:
+        BIN_MAKEBLASTDB
+    params:
+        url=config["tools"]["blast"]["url"],
+        name=os.path.basename(config["tools"]["blast"]["url"])
+    message:
+        "installing blast from {params.url}"
+    shell:
+        "mkdir -p tools && cd tools && wget {params.url} && tar -xzvf {params.name} && rm {params.name}"
+
+rule install_mash:
+    output:
+        BIN_MASH
+    params:
+        url=config["tools"]["mash"]["url"],
+        name=os.path.basename(config["tools"]["mash"]["url"])
+    message:
+        "installing mash from {params.url}"
+    shell:
+        "mkdir -p tools && cd tools && wget {params.url} && tar -xvf {params.name} && rm {params.name}"
+
+# Download
+##################################################
+# Download assembly report files
+rule download_report:
+	output:
+		"{report_dir}/{report_date}__{report_name}__assembly_report.tsv"
+	params:
+		url=lambda wildcards: config["data"]["report_urls"][wildcards.report_name]
+	message:
+		"Download assembly report file {output}"
+	shell:
+		"mkdir -p {wildcards.report_dir} && wget -O {output} {params.url}"
+
+# Filter assembly report files
+rule filter_report:
+    input:
+        "{report_dir}/{report_date}__{report_name}__assembly_report.tsv"
+    output:
+        "{report_dir}/{report_date}__{report_name}__assembly_report__filt.tsv"
+    message:
+        "Filter assembly report file {input}"
+    run:
+        df = pandas.read_csv(filepath_or_buffer=input[0], sep='\t', header=0, skiprows=1)
+        df = df[df["version_status"] == "latest"]
+        df = df[df["assembly_level"] != "Contig"]
+        df = df[df["assembly_level"] != "Scaffold"]
+        df.to_csv(path_or_buf=output[0], sep="\t", header=True, index=False, index_label=False)
+
+# Download genome FASTAs
+rule download_genome_fastas:
+    input:
+        REPORTS_FILT
+    output:
+        "{download_pdir}/genomes/{date}/download.done"
+    log:
+        "{download_pdir}/genomes/{date}/download.log"
+    params:
+        script="src/download_plasmid_fastas.py",
+        dtype="genomes",
+        suffix=config["data"]["assembly_files"]["genomes"],
+        cores=30
+    message:
+        "Download genome FASTAs"
+    shell:
+        "mkdir -p $(dirname {output}) && python {params.script} -r {input} -o $(dirname {output}) -s {params.suffix} --cores {params.cores} 2>&1 | tee {log} && touch {output}"
+
+# Create list of downloaded sequences
+rule list_plasmid_seqs:
+    input:
+        DOWNLOAD_GFASTAS
+    output:
+        SREPORT
+    log:
+        os.path.splitext(SREPORT)[0] + ".log"
+    params:
+        script="src/list_downloaded_plasmids.py",
+        fdir=os.path.dirname(DOWNLOAD_GFASTAS)
+    message:
+        "Create list of downloaded sequences"
+    shell:
+        "python {params.script} --fdir {params.fdir} --ofile {output} 2>&1 | tee {log}"
+
+# Download and filter assembly feature tables
+rule download_assembly_files:
+    input:
+        reports=REPORTS_FILT,
+        sreport=SREPORT
+    output:
+        "{download_pdir}/{download_type}/{date}/add_download.done"
+    log:
+        "{download_pdir}/{download_type}/{date}/add_download.log"
+    params:
+        script="src/download_from_ncbi.py",
+        suffix=config["data"]["assembly_files"]["features"],
+        cores=10
+    shell:
+        "mkdir -p $(dirname {output}) && python {params.script} --reports {input.reports} --seqs {input.sreport} --suffix {params.suffix} --odir $(dirname {output}) --cores {params.cores} 2>&1 | tee {log} && touch {output}"
+
+# Master files
+##################################################
+# Master genomic FASTA
+rule create_master_gfasta:
+    input:
+        DOWNLOAD_GFASTAS
+    output:
+        MASTER_GFASTA
+    params:
+        pattern=config["data"]["assembly_files"]["genomes"]
+    message:
+        "Creating master file for genomic FASTAs {output}"
+    shell:
+        "mkdir -p $(dirname {output}) && find $(dirname {input}) -type f -name \"*_{params.pattern}\" | sort | while read f; do zcat $f; done > {output}"
+
+# Mash
+rule mash_sig:
+    input:
+        fasta=MASTER_GFASTA,
+        mash=BIN_MASH
+    output:
+        MASTER_MASH_SIG
+    log:
+        "%s.log" % MASTER_MASH_SIG
+    params:
+        params=config['tools']['mash']['sketch_params'],
+    message:
+        "Create signatures using Mash on {input}"
+    shell:
+        "{input.mash} sketch {params.params} -o $(dirname {output})/$(basename -s .msh {output}) {input.fasta} 2>&1 | tee {log}"
+
+rule mash_dist:
+    input:
+        sig=MASTER_MASH_SIG,
+        mash=BIN_MASH
+    output:
+        MASTER_MASH_DIST
+    log:
+        "%s.log" % MASTER_MASH_DIST
+    params:
+        params=config['tools']['mash']['dist_params'],
+    message:
+        "Compare signatures in {input}"
+    shell:
+        "{input.mash} dist {params.params} {input.sig} {input.sig} > {output} 2> {log}"
+
+# UMAP
+rule umap:
+    input:
+        MASTER_MASH_DIST
+    output:
+        MASTER_MASH_UMAP
+    log:
+        "%s.log" % MASTER_MASH_UMAP
+    params:
+        script="src/umap_embedding.py",
+        params=config['tools']['umap']['params']
+    message:
+        "UMAP on {input}"
+    shell:
+        "mkdir -p $(dirname {output}) && python {params.script} --dist {input} --ofile {output} {params.params} 2>&1 | tee {log}"
+
+# Master table
+rule create_master_table:
+    input:
+        assemblies=REPORTS_FILT,
+        sequences=SREPORT,
+        d_gfastas=DOWNLOAD_GFASTAS,
+        d_features=DOWNLOAD_FEATURES,
+    output:
+        MASTER_TAB
+    log:
+        os.path.splitext(MASTER_TAB)[0] + ".log"
+    params:
+        script="src/create_master_table.py",
+        cores=30,
+        fa_dir=os.path.dirname(DOWNLOAD_GFASTAS),
+        fe_dir=os.path.dirname(DOWNLOAD_FEATURES)
+    message:
+        "Creating master table from {input}"
+    shell:
+        "python {params.script} --assemblies {input.assemblies} --sequences {input.sequences} --fa_dir {params.fa_dir} --fe_dir {params.fe_dir} --ofile {output} --cores {params.cores} 2>&1 | tee {log}"
+
+# Features
+rule create_master_features:
+    input:
+        DOWNLOAD_FEATURES
+    output:
+        MASTER_FEATURES
+    params:
+        header=config["data"]["misc"]["features_header"],
+        pattern=config["data"]["assembly_files"]["features"]
+    message:
+        "Creating master file for features {output}"
+    shell:
+        """
+            mkdir -p $(dirname {output})
+            cp {params.header} {output}
+            find $(dirname {input}) -type f -name \"*_{params.pattern}\" | sort | while read f; do zcat $f | tail -n +2; done >> {output}
+        """
+
+# BLASTn databases
+rule create_plasmidfinder_blastndb:
+    input:
+        fasta=MASTER_GFASTA,
+        bin=BIN_MAKEBLASTDB
+    output:
+        MASTER_BLASTDB
+    params:
+        tool_bin=BIN_MAKEBLASTDB,
+        title="ncbi_plasmids_%s" % today
+    log:
+        os.path.join(config["data"]["odir"]["master"], 'makeblastdb.log')
+    shell:
+        "{input.bin} -in {input.fasta} -input_type fasta -dbtype nucl -title {params.title} -logfile {log}"

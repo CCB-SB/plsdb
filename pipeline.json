@@ -1,0 +1,37 @@
+{
+    "data": {
+        "report_urls": {
+            "genbank": "ftp://ftp.ncbi.nlm.nih.gov/genomes/genbank/bacteria/assembly_summary.txt",
+            "refseq": "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt"
+        },
+        "assembly_files": {
+            "genomes": "genomic.fna.gz",
+            "features": "feature_table.txt.gz"
+        },
+        "odir": {
+            "reports": "data/reports",
+            "genomes": "data/genomes",
+            "features": "data/features",
+            "master": "data/master"
+        },
+        "misc": {
+            "features_header": "features_header.tsv"
+        }
+    },
+    "tools": {
+        "basedir": "tools",
+        "blast": {
+            "url": "ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.7.1+-x64-linux.tar.gz",
+            "dir": "ncbi-blast-2.7.1+",
+        },
+        "mash": {
+            "url": "https://github.com/marbl/Mash/releases/download/v2.0/mash-Linux64-v2.0.tar",
+            "dir": "mash-Linux64-v2.0",
+            "sketch_params": "-i -S 42 -p 10",
+            "dist_params": "-t -p 10"
+        },
+        "umap": {
+            "params": "--n_neighbors 50 --n_components 2"
+        }
+    }
+}
