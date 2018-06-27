@@ -48,6 +48,30 @@ Call the pipeline using `snakemake -s pipeline.snake`.
 
 ## Output checks
 
+### Downloaded genomic sequences
+To check of all required FASTAs were successfully downloaded and processed.
+
+```bash
+tag='2018_06_25'
+f="data/genomes/${tag}/download.log"
+
+# FASTAs from wget CMDs
+grep 'CMD: wget' ${f} | grep -o '\-O .* ftp://' | cut -d' ' -f2 | sort | uniq > check_fastas_all.tmp
+# -> should be the number of FASTAs in filtered RefSeq and Genbank reports
+wc -l check_fastas_all.tmp
+
+# FASTAs without plasmids
+grep -o 'NO PLASMIDS.*$' ${f} | cut -d' ' -f4 | sort | uniq > check_fastas_no.tmp
+# FASTAs with plasmids
+grep 'INFO - PLASMID' ${f} | grep -o 'data/genomes/.*$' | cut -d' ' -f3 | sort | uniq > check_fastas_pls.tmp
+# FASTAs wich should have plasmids
+comm -3 check_fastas_all.tmp check_fastas_no.tmp > check_fastas_should.tmp
+
+# Number of FASTAs with plasmids but not saved
+# -> should be 0
+comm -3 check_fastas_should.tmp check_fastas_pls.tmp | wc -l
+```
+
 ### Downloaded genomic features
 Files: `*_feature_table.txt.gz`
 
@@ -55,17 +79,19 @@ For some assemblies these file may be missing thus trying to download it will fa
 Check the number of successful and failed download attempts.
 
 ```bash
-tag="2018_06_25"
+tag='2018_06_25'
+f="data/features/${tag}/add_download.log"
+
 # all wget CMDs
-grep 'CMD: wget' data/features/$(tag)/add_download.log | wc -l
+grep 'CMD: wget' ${f} | wc -l
 # no plasmids in downloaded file
 # -> should be 0
-grep 'NO PLASMIDS' data/features/$(tag)/add_download.log | wc -l
+grep 'NO PLASMIDS' ${f} | wc -l
 # failed wget CMDs (e.g. no annotated features)
-grep 'FAILED' data/features/$(tag)/add_download.log | wc -l
+grep 'FAILED' ${f} | wc -l
 # count downloaded files
-# -> all - failed
-find data/features/$(tag)/ -type f -name '*_feature_table.txt.gz' | wc -l
+# -> should be (all - failed)
+find data/features/${tag}/ -type f -name '*_feature_table.txt.gz' | wc -l
 ```
 
 ### Embedding

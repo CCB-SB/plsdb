@@ -182,7 +182,7 @@ rule download_genome_fastas:
         script="src/download_plasmid_fastas.py",
         dtype="genomes",
         suffix=config["data"]["assembly_files"]["genomes"],
-        cores=30
+        cores=10
     message:
         "Download genome FASTAs"
     shell:
