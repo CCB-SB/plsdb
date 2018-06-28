@@ -181,7 +181,7 @@ rule download_genome_fastas:
         script="src/download_plasmid_fastas.py",
         dtype="genomes",
         suffix=config["data"]["assembly_files"]["genomes"],
-        cores=10
+        cores=20
     message:
         "Download genome FASTAs"
     shell:
@@ -215,7 +215,7 @@ rule download_assembly_files:
     params:
         script="src/download_from_ncbi.py",
         suffix=config["data"]["assembly_files"]["features"],
-        cores=10
+        cores=20
     shell:
         "mkdir -p $(dirname {output}) && python {params.script} --reports {input.reports} --seqs {input.sreport} --suffix {params.suffix} --odir $(dirname {output}) --cores {params.cores} 2>&1 | tee {log} && touch {output}"
 

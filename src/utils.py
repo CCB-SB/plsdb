@@ -20,8 +20,8 @@ def run_cmd(cmd):
     p_stdout = p.stdout.read().decode()
     p_comm   = p.communicate()[0]
     p_status = p.returncode
-    if p_status != 0:
-        logging.error("CMD failed: status %d\n%s\n%s" % (p_status, cmd, p_stdout))
+    #if p_status != 0:
+        #logging.error("CMD failed: status %d\n%s\n%s" % (p_status, cmd, p_stdout))
     return cmd, p_status, p_stdout
 
 def setup_logger(level=logging.INFO):
@@ -31,6 +31,10 @@ def setup_logger(level=logging.INFO):
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         datefmt='%y:%m:%d %H:%M:%S'
     )
+
+def rm_file(fpath):
+    if os.path.exists(fpath):
+        os.remove(fpath)
 
 def download_ncbi_assembly(ftp_path, suffix, odir, file_can_exist=False):
     """
@@ -48,24 +52,27 @@ def download_ncbi_assembly(ftp_path, suffix, odir, file_can_exist=False):
     # complete sample URL
     sample_url = "%s/%s_%s" % (ftp_path, sample_id, suffix)
     # check: output file does not exist
-    wget_params = ""
     if not file_can_exist:
         assert not os.path.exists(sample_file), "File exists: %s" % sample_file
-    else:
-        wget_params = "-nc"
     # CMD
-    cmd = "wget %s -O %s %s" % (wget_params, sample_file, sample_url)
+    cmd = "curl --output %s --fail %s" % (sample_file, sample_url)
     logging.info('CMD: %s' % cmd)
-    cmd, cmd_s, cmd_o = run_cmd(cmd)
-    if cmd_s == 0:
-        return sample_file, True
-    else:
-        if file_can_exist and re.search("File .* already there; not retrieving", cmd_o):
-            logging.info('ALREADY EXISTS: %s' % sample_url)
+    # execute, try multiple times
+    tried = 0
+    while tried < 5:
+        cmd, cmd_s, cmd_o = run_cmd(cmd)
+        if cmd_s == 0: # OK
             return sample_file, True
         else:
-            logging.info('FAILED DOWNLOAD: %s' % sample_url)
-            return sample_file, False
+            cmd2, cmd2_s, cmd2_o = run_cmd(cmd + ' --head')
+            if re.search("file does not exist", cmd2_o): # nothing to download
+                logging.info('NO SUCH FILE: %s' % sample_url)
+                rm_file(sample_file)
+                return sample_file, False
+            tried += 1
+    rm_file(sample_file)
+    logging.info('FAILED DOWNLOAD: %s' % sample_url)
+    return sample_file, False
 
 def is_gzipped(fname):
     """

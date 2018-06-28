@@ -42,7 +42,7 @@ def extract_plasmid_features(fname):
     if len(seq_ids) == 0:
         # no plasmids -> remove
         logging.info("NO PLASMIDS in %s" % fname)
-        os.remove(fname)
+        rm_file(fname)
     else:
         # filter
         df = df[df['genomic_accession'].isin(seq_ids)]
@@ -60,11 +60,14 @@ def download_and_extract_plasmids(ftp_path):
     fname, downloaded = download_ncbi_assembly(ftp_path=ftp_path, suffix=SUFFIX, odir=ODIR, file_can_exist=False)
     # download failed
     if not downloaded:
-        os.remove(fname)
+        rm_file(fname)
         return
     # extract plasmids
     if SUFFIX == 'feature_table.txt.gz':
-        extract_plasmid_features(fname)
+        try:
+            extract_plasmid_features(fname)
+        except Exception as e:
+            logging.info('EXTR ERROR: %s: %s' % (fname, e))
     return
 
 if __name__ == "__main__":

@@ -40,7 +40,7 @@ def extract_plasmid_seqs(fname):
     if len(plasmids) == 0:
         # no plasmids -> remove
         logging.info("NO PLASMIDS in %s" % fname)
-        os.remove(fname)
+        rm_file(fname)
     else:
         # save found plasmids
         records2fasta(records=plasmids, fname=fname)
@@ -60,10 +60,13 @@ def download_and_extract_plasmids(ftp_path):
     fname, downloaded = download_ncbi_assembly(ftp_path=ftp_path, suffix=SUFFIX, odir=ODIR, file_can_exist=False)
     # download failed
     if not downloaded:
-        os.remove(fname)
+        rm_file(fname)
         return
     # extract plasmids
-    extract_plasmid_seqs(fname)
+    try:
+        extract_plasmid_seqs(fname)
+    except Exception as e:
+        logging.info('EXTR ERROR: %s: %s' % (fname, e))
     return
 
 if __name__ == "__main__":
