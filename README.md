@@ -60,6 +60,10 @@ grep 'CMD: wget' ${f} | grep -o '\-O .* ftp://' | cut -d' ' -f2 | sort | uniq > 
 # -> should be the number of FASTAs in filtered RefSeq and Genbank reports
 wc -l check_fastas_all.tmp
 
+# Failed downloads
+# -> should be 0
+grep 'FAILED DOWNLOAD' ${f} | wc -l
+
 # FASTAs without plasmids
 grep -o 'NO PLASMIDS.*$' ${f} | cut -d' ' -f4 | sort | uniq > check_fastas_no.tmp
 # FASTAs with plasmids
