@@ -31,7 +31,6 @@ def bname_wo_ext(fname):
 ##################################################
 # Date
 today = datetime.datetime.now().strftime("%Y_%m_%d")
-# today = "2018_05_07" # NOTE for testing
 
 # BLAST DB file ext.
 blastdb_ext = ['nin', 'nhr', 'nsq']
