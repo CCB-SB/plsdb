@@ -1,13 +1,15 @@
 ##################################################
 # Python venv.s
 ##################################################
-VENV="venv/bin/activate"
+# VENV="venv/bin/activate"
 
 ##################################################
 # Config
 ##################################################
 CONFIG_JSON = "pipeline.json"
 configfile: CONFIG_JSON
+
+GMAPS_API_KEY_FILE = "gmaps_api_key.txt"
 
 ##################################################
 # Python modules
@@ -30,7 +32,8 @@ def bname_wo_ext(fname):
 # Some settings
 ##################################################
 # Date
-today = datetime.datetime.now().strftime("%Y_%m_%d")
+# today = datetime.datetime.now().strftime("%Y_%m_%d")
+today = "2018_06_28"
 
 # BLAST DB file ext.
 blastdb_ext = ['nin', 'nhr', 'nsq']
@@ -294,13 +297,14 @@ rule create_master_table:
         os.path.splitext(MASTER_TAB)[0] + ".log"
     params:
         script="src/create_master_table.py",
+        gmaps_key=GMAPS_API_KEY_FILE,
         cores=30,
         fa_dir=os.path.dirname(DOWNLOAD_GFASTAS),
         fe_dir=os.path.dirname(DOWNLOAD_FEATURES)
     message:
         "Creating master table from {input}"
     shell:
-        "python {params.script} --assemblies {input.assemblies} --sequences {input.sequences} --fa_dir {params.fa_dir} --fe_dir {params.fe_dir} --ofile {output} --cores {params.cores} 2>&1 | tee {log}"
+        "python {params.script} --assemblies {input.assemblies} --sequences {input.sequences} --fa_dir {params.fa_dir} --fe_dir {params.fe_dir} --ofile {output} --gmaps_api_key $(cat {params.gmaps_key}) --cores {params.cores} 2>&1 | tee {log}"
 
 # Features
 rule create_master_features:

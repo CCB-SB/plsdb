@@ -159,3 +159,78 @@ def chunk_list(ilist, num=1):
     n = math.ceil(len(ilist) / num)
     for i in range(0, len(ilist), n):
         yield ilist[i:i + n]
+
+def preproc_loc_str(loc_str):
+    import pandas
+    if loc_str is None or pandas.isnull(loc_str):
+        return None
+    # trailing/leading whitespaces
+    loc_str = loc_str.strip()
+    #
+    na_strs = ["", "-","na","n/a","missing","none","not applicable","not available","not collected","not determined","not recorded","unavailable","unknown","unspecified"]
+    for na_str in na_strs:
+        if re.fullmatch(na_str, loc_str, re.IGNORECASE):
+            return None
+    return loc_str
+
+def preproc_loc_coords(loc_str):
+    import pandas
+    if loc_str is None or pandas.isnull(loc_str):
+        return None
+    if re.fullmatch(r'[0-9]+(\.[0-9]+)?\s?[N|S][\s,]*[0-9]+(\.[0-9]+)?\s?[W|E]', loc_str):
+        matches = [re.sub(' ','',m.group()) for m in re.finditer(r'[0-9]+(\.[0-9]+)?\s?[N|S|W|E]', loc_str)]
+        assert len(matches) == 2, 'Problem to parse %s' % loc_str
+        return matches[0], matches[1]
+    elif re.fullmatch(r'[0-9]+(\.[0-9]+)?[\s,]*[0-9]+(\.[0-9]+)?', loc_str):
+        matches = [re.sub(' ','',m.group()) for m in re.finditer(r'[0-9]+(\.[0-9]+)?', loc_str)]
+        assert len(matches) == 2, 'Problem to parse %s' % loc_str
+        return matches[0], matches[1]
+    else:
+        return None
+
+def parse_location(loc_name, loc_coords, api_key):
+    """
+    Location name and coordinates
+    Returns {'lat': <float>, 'lng': <float>} if successful otherwise None
+    Uses https://github.com/googlemaps/google-maps-services-python
+    """
+    import time
+    import googlemaps
+    input = '%s | %s' % (loc_name, loc_coords)
+    gmaps = googlemaps.Client(key=api_key)
+    loc = None
+    # try name
+    loc_name = preproc_loc_str(loc_name)
+    if loc_name is not None:
+        try:
+            loc = gmaps.geocode(loc_name)
+        except Exception as e:
+            logging.error('Location: Error: %s\n%s' % (input, e))
+            loc = []
+    # try coordinates
+    if loc_name is None or len(loc) == 0:
+        loc_coords = preproc_loc_str(loc_coords)
+        loc_coords = preproc_loc_coords(loc_coords)
+        if loc_coords is None:
+            logging.info('Location: no name/no hit | no coords: %s' % input)
+            return None
+        if re.search(r'N|W|E|S', loc_coords[0]) or re.search(r'N|W|E|S', loc_coords[1]):
+            try:
+                loc = gmaps.geocode(loc_coords)
+            except Exception as e:
+                logging.error('Location: Error: %s\n%s' % (input, e))
+                loc = []
+        else:
+            try:
+                loc = gmaps.reverse_geocode(loc_coords)
+            except Exception as e:
+                logging.error('Location: Error: %s\n%s' % (input, e))
+                loc = []
+        if len(loc) == 0:
+            logging.info('Location: no name/no hit | no hit: %s' % input)
+            return None
+    # got location
+    assert 'geometry' in loc[0], 'Location: hit w/o geometry: %s' % input
+    assert 'location' in loc[0]['geometry'], 'Location: hit w/o coordinates: %s' % input
+    time.sleep(0.1)
+    return loc[0]['geometry']['location']

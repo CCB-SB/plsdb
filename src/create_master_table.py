@@ -10,6 +10,7 @@ from glob import glob
 from Bio import Entrez
 from Bio.SeqUtils import GC
 from multiprocessing import Pool
+import xml.etree.ElementTree as ET
 
 from utils import *
 
@@ -26,6 +27,7 @@ def get_arg_parser():
     parser.add_argument('--fe_dir', help="Directory containing genomic feature files", required=True)
     parser.add_argument('--cores', help="How many cores to use for parallel execution", type=int, default=1)
     parser.add_argument('--freshstart', help="Do not use checkpoints to restore data", action="store_true")
+    parser.add_argument('--gmaps_api_key', help="GoogleMaps API key", required=True)
     return parser
 
 ##################################################
@@ -115,7 +117,7 @@ def get_seqsmeta(ids):
     """
     ids, ids_str = prep_ids(ids)
     seqs_meta = {}
-    records   = [r for r in Entrez.parse(Entrez.efetch(db="nuccore", id=prep_ids(ids), retmode="xml"))]
+    records   = [r for r in Entrez.parse(Entrez.efetch(db="nuccore", id=ids_str, retmode="xml"))]
     for i, record in enumerate(records):
         assert ids[i] == record['GBSeq_accession-version'], 'Not matching IDs %s and %s' % (ids[i], record['GBSeq_accession-version'])
         seqs_meta[ids[i]] = {
@@ -127,6 +129,30 @@ def get_seqsmeta(ids):
         }
     return seqs_meta
 
+def get_biosamplemeta(ids):
+    """
+    Extract BioSample information
+    Need XML parser as Entrez.read/parse does not work for BioSample
+    returns a dict with (<BioSample ID>: <dict>)
+    """
+    ids, ids_str = prep_ids(ids)
+    handle = Entrez.efetch(db="biosample", id=ids_str, retmode="xml")
+    records = ET.parse(handle).getroot()
+    bs_meta = {}
+    keys = ['geo_loc_name', 'lat_lon', 'isolation_source', 'specific_host', 'host_disease', 'host_tissue_sampled', 'host_description']
+    for record in records:
+        # BioSample ID
+        assert record.tag == "BioSample", record.tag
+        record_id = record.attrib['accession']
+        bs_meta[record_id] = {}
+        # Get data
+        for c in record:
+            if c.tag == 'Attributes':
+                for cc in c:
+                    if cc.attrib['attribute_name'] in keys:
+                        bs_meta[record_id][cc.attrib['attribute_name']] = cc.text
+    return bs_meta
+
 def get_seqsstats(ffile):
     stats = dict()
     for record in fasta_records(ffile):
@@ -135,20 +161,6 @@ def get_seqsstats(ffile):
             'sequence_gc': GC(str(record.seq))
         }
     return stats
-
-def get_seqsfeats(ffile):
-    fs = read_ncbi_tables([ffile])
-    # count by unique feature and accession ID
-    fs = fs[['feature', 'assembly', 'genomic_accession']].groupby(by=['feature', 'genomic_accession'], axis=0).count()
-    # {(<feature>, <genomic accession>) : {assembly: <count>}, ...}
-    fs = fs.to_dict(orient='index')
-    df = pandas.DataFrame(index=set([k[1] for k in fs.keys()]))
-    for k, v in fs.items():
-        if k[0] not in list(df.columns):
-            df[k[0]] = None
-        assert df.loc[k[1], k[0]] is None, 'Feature count already set: %s, %s - %d (%s)' % (k[0], k[1], v['assembly'], ffile)
-        df.loc[k[1], k[0]] = v['assembly']
-    return df
 
 def collect_lineages(pool, ids, chunk_num):
     logging.info('Retrieve taxonomy lineages')
@@ -177,8 +189,21 @@ def collect_seqsmeta(pool, ids, chunk_num):
         seq_meta.update(d)
     # dict to dataframe
     seq_meta = pandas.DataFrame.from_dict(seq_meta, orient="index")
-    # seq_meta = seq_meta.assign(sequence_accession=seq_meta.index)
     return seq_meta
+
+def collect_biosamplemeta(pool, ids, chunk_num):
+    logging.info('Retrieve BioSample meta data')
+    tmp = pool.map(
+        get_biosamplemeta,
+        [chunk for chunk in chunk_list(set(ids), chunk_num)]
+    )
+    # lists to dict
+    bs_meta = {}
+    for d in tmp:
+        bs_meta.update(d)
+    # dict to dataframe
+    bs_meta = pandas.DataFrame.from_dict(bs_meta, orient="index")
+    return bs_meta
 
 def collect_seqsstats(pool, idir, df):
     # find files
@@ -193,20 +218,6 @@ def collect_seqsstats(pool, idir, df):
     # add to df
     df = df.assign(sequence_length=[stats[k]["sequence_length"] for k in df.index])
     df = df.assign(sequence_gc=[stats[k]["sequence_gc"] for k in df.index])
-    return df
-
-def collect_seqsfeats(pool, idir, df):
-    # find files
-    fe_files = sorted(glob("%s/*_feature_table.txt.gz" % idir))
-    logging.info("Found %d genomic feature files" % len(fe_files))
-    # collect data
-    tmp = pool.map(get_seqsfeats, fe_files)
-    # add to df
-    for d in tmp:
-        for h in d.columns:
-            if h not in df.columns:
-                df[h] = None
-            df.loc[d.index,h] = d[h]
     return df
 
 ##################################################
@@ -224,8 +235,9 @@ if __name__ == "__main__":
     cp = {
         "lins": "%s_lins.pck" % os.path.splitext(args.ofile)[0],
         "meta": "%s_meta.pck" % os.path.splitext(args.ofile)[0],
+        "bios": "%s_bios.pck" % os.path.splitext(args.ofile)[0],
+        "locs": "%s_locs.pck" % os.path.splitext(args.ofile)[0],
         "seqs-fa": "%s_seqs-fa.pck" % os.path.splitext(args.ofile)[0],
-        "seqs-fe": "%s_seqs-fe.pck" % os.path.splitext(args.ofile)[0],
     }
 
     # E-utils settings
@@ -281,15 +293,49 @@ if __name__ == "__main__":
     logging.info('Added sequence-derived statistics')
 
     ##############################################
-    # Feature statistics
-    if args.freshstart or not os.path.exists(cp["seqs-fe"]):
-        seq_meta = collect_seqsfeats(pool=pool, idir=args.fe_dir, df=seq_meta)
-        with open(cp["seqs-fe"], "wb") as ofile:
-            pickle.dump(seq_meta, ofile)
+    # BioSample meta data
+    if args.freshstart or not os.path.exists(cp["bios"]):
+        bs_meta = collect_biosamplemeta(pool=pool, ids=set(asms['biosample']), chunk_num=args.cores*100)
+        with open(cp["bios"], "wb") as ofile:
+            pickle.dump(bs_meta, ofile)
     else:
-        with open(cp["seqs-fe"], "rb") as ifile:
-            seq_meta = pickle.load(ifile)
-    logging.info('Added feature-derived statistics')
+        with open(cp["bios"], "rb") as ifile:
+            bs_meta = pickle.load(ifile)
+    logging.info("BioSample meta data: %d entries" % bs_meta.shape[0])
+
+    ##############################################
+    # Parse BioSample location data
+    bs_meta['loc_lat'] = None
+    bs_meta['loc_lng'] = None
+    if args.freshstart or not os.path.exists(cp["locs"]):
+        locs = {}
+    else:
+        with open(cp["locs"], "rb") as ifile:
+            locs = pickle.load(ifile)
+    for i in bs_meta.index:
+        l_n = bs_meta.loc[i,'geo_loc_name']
+        l_c = bs_meta.loc[i,'lat_lon']
+        if pandas.isnull(l_n):
+            l_n = ''
+        if pandas.isnull(l_c):
+            l_c = ''
+        if (l_n, l_c) not in locs:
+            logging.info('Retrieving coordinates for location: %s, %s' % (l_n, l_c))
+            try:
+                loc = parse_location(loc_name=l_n, loc_coords=l_c, api_key=args.gmaps_api_key)
+            except Exception as e:
+                logging.error('Error while retrieving coordinates for location: %s, %s' % (l_n, l_c))
+                raise(e)
+            locs[(l_n,l_c)] = loc
+        if locs[(l_n,l_c)] is None:
+            bs_meta.loc[i,'loc_lat'] = None
+            bs_meta.loc[i,'loc_lng'] = None
+        else:
+            bs_meta.loc[i,'loc_lat'] = locs[(l_n,l_c)]['lat']
+            bs_meta.loc[i,'loc_lng'] = locs[(l_n,l_c)]['lng']
+    if args.freshstart or not os.path.exists(cp["locs"]):
+        with open(cp["locs"], "wb") as ofile:
+            pickle.dump(locs, ofile)
 
     # Close pool
     pool.close(); pool.join()
@@ -311,6 +357,17 @@ if __name__ == "__main__":
     )
     assert len([i for i in asms['taxon_id'] if i is None]) == 0, 'Not all assemblies have a taxonomy match'
     logging.info("Assemblies: taxonomy info was added - %d entries" % asms.shape[0])
+
+    # Add BioSample meta data to assemblies
+    asms = pandas.merge(
+        left=asms,
+        right=bs_meta,
+        how='left',
+        left_on='biosample',
+        right_index=True,
+        sort=False
+    )
+    logging.info("Assemblies: BioSample meta data was added - %d entries" % bs_meta.shape[0])
 
     # Merge seqs and seqs meta
     seqs = pandas.merge(

@@ -14,6 +14,8 @@ pip install -r requirements.txt
 comm -3 <(pip freeze | sort) <(sort requirements.txt)
 ```
 
+Create a file `gmaps_api_key.txt` containing your GoogleMaps API key.
+
 Call the pipeline using `snakemake -s pipeline.snake`.
 
 ### Pipeline steps
@@ -46,7 +48,8 @@ Call the pipeline using `snakemake -s pipeline.snake`.
         - Assembly information
         - Taxonomic information
         - Sequence information (length, GC)
-        - Count genomic features
+        - BioSample information
+            - Parse locations using GoogleMaps (requires a GoogleMaps API key)
 
 ## Output checks
 
