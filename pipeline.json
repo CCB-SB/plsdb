@@ -29,7 +29,7 @@
         "mash": {
             "url": "https://github.com/marbl/Mash/releases/download/v2.0/mash-Linux64-v2.0.tar",
             "dir": "mash-Linux64-v2.0",
-            "sketch_params": "-i -S 42 -p 10 -k 31 -s 5000",
+            "sketch_params": "-i -S 42 -p 10 -k 31 -s 1000",
             "dist_params": "-t -p 10"
         },
         "umap": {
