@@ -22,12 +22,13 @@ def get_arg_parser():
     # Input/output
     parser.add_argument('--assemblies', '-a', help="Assembly tables", required=True, nargs="+")
     parser.add_argument('--sequences',  '-s', help="Sequence table", required=True)
-    parser.add_argument('--ofile', '-o', help="Output file", required=True)
+    parser.add_argument('--emb',        '-e', help="Embedding", required=True)
+    parser.add_argument('--locs',       '-l', help="Location information", required=False)
+    parser.add_argument('--ofile',      '-o', help="Output file", required=True)
     parser.add_argument('--fa_dir', help="Directory containing genomic FASTA files", required=True)
-    parser.add_argument('--fe_dir', help="Directory containing genomic feature files", required=True)
     parser.add_argument('--cores', help="How many cores to use for parallel execution", type=int, default=1)
     parser.add_argument('--freshstart', help="Do not use checkpoints to restore data", action="store_true")
-    parser.add_argument('--gmaps_api_key', help="GoogleMaps API key", required=True)
+    parser.add_argument('--gmaps_api_keys', help="GoogleMaps API key", required=True, nargs="+")
     return parser
 
 ##################################################
@@ -139,7 +140,7 @@ def get_biosamplemeta(ids):
     handle = Entrez.efetch(db="biosample", id=ids_str, retmode="xml")
     records = ET.parse(handle).getroot()
     bs_meta = {}
-    keys = ['geo_loc_name', 'lat_lon', 'isolation_source', 'specific_host', 'host_disease', 'host_tissue_sampled', 'host_description']
+    keys = ['geo_loc_name', 'lat_lon', 'isolation_source', 'specific_host', 'host_disease', 'host_tissue_sampled', 'host_description', 'collection_date']
     for record in records:
         # BioSample ID
         assert record.tag == "BioSample", record.tag
@@ -260,12 +261,22 @@ if __name__ == "__main__":
     logging.info("Assemblies: %d entries" % asms.shape[0])
 
     ##############################################
+    # Embedding
+    emb = pandas.read_csv(
+        filepath_or_buffer=args.emb,
+        sep='\t',
+        header=0,
+        index_col=0
+    )
+
+    ##############################################
     # Taxonomic lineages
     if args.freshstart or not os.path.exists(cp["lins"]):
         lineages = collect_lineages(pool=pool, ids=asms['taxid'], chunk_num=args.cores*10)
         with open(cp["lins"], "wb") as ofile:
             pickle.dump(lineages, ofile)
     else:
+        logging.info('Restoring checkpoint data from %s' % cp["lins"])
         with open(cp["lins"], "rb") as ifile:
             lineages = pickle.load(ifile)
     logging.info("Lineages: %d entries" % lineages.shape[0])
@@ -277,6 +288,7 @@ if __name__ == "__main__":
         with open(cp["meta"], "wb") as ofile:
             pickle.dump(seq_meta, ofile)
     else:
+        logging.info('Restoring checkpoint data from %s' % cp["meta"])
         with open(cp["meta"], "rb") as ifile:
             seq_meta = pickle.load(ifile)
     logging.info("Meta data: %d entries" % seq_meta.shape[0])
@@ -288,6 +300,7 @@ if __name__ == "__main__":
         with open(cp["seqs-fa"], "wb") as ofile:
             pickle.dump(seq_meta, ofile)
     else:
+        logging.info('Restoring checkpoint data from %s' % cp["seqs-fa"])
         with open(cp["seqs-fa"], "rb") as ifile:
             seq_meta = pickle.load(ifile)
     logging.info('Added sequence-derived statistics')
@@ -299,6 +312,7 @@ if __name__ == "__main__":
         with open(cp["bios"], "wb") as ofile:
             pickle.dump(bs_meta, ofile)
     else:
+        logging.info('Restoring checkpoint data from %s' % cp["bios"])
         with open(cp["bios"], "rb") as ifile:
             bs_meta = pickle.load(ifile)
     logging.info("BioSample meta data: %d entries" % bs_meta.shape[0])
@@ -308,25 +322,51 @@ if __name__ == "__main__":
     bs_meta['loc_lat'] = None
     bs_meta['loc_lng'] = None
     if args.freshstart or not os.path.exists(cp["locs"]):
-        locs = {}
+        if args.locs is not None:
+            logging.info('Reading location mapping from %s' % args.locs)
+            with open(args.locs, "rb") as ifile:
+                locs = pickle.load(ifile)
+        else:
+            locs = {}
     else:
+        logging.info('Restoring checkpoint data from %s' % cp["locs"])
         with open(cp["locs"], "rb") as ifile:
             locs = pickle.load(ifile)
+    current_key = args.gmaps_api_keys.pop()
     for i in bs_meta.index:
+        # location name and coordinates
         l_n = bs_meta.loc[i,'geo_loc_name']
         l_c = bs_meta.loc[i,'lat_lon']
-        if pandas.isnull(l_n):
+        # avoid nulls
+        if pandas.isnull(l_n) or l_n is None:
             l_n = ''
-        if pandas.isnull(l_c):
+        if pandas.isnull(l_c) or l_c is None:
             l_c = ''
+        # location is not already saved
         if (l_n, l_c) not in locs:
-            logging.info('Retrieving coordinates for location: %s, %s' % (l_n, l_c))
-            try:
-                loc = parse_location(loc_name=l_n, loc_coords=l_c, api_key=args.gmaps_api_key)
-            except Exception as e:
-                logging.error('Error while retrieving coordinates for location: %s, %s' % (l_n, l_c))
-                raise(e)
-            locs[(l_n,l_c)] = loc
+            logging.info('Retrieving coordinates for location: \"%s\", \"%s\"' % (l_n, l_c))
+            try_new_key = True
+            set_new_key = False
+            while try_new_key:
+                try:
+                    loc = parse_location(loc_name=l_n, loc_coords=l_c, api_key=current_key)
+                    # save location
+                    locs[(l_n,l_c)] = loc
+                    with open(cp["locs"], "wb") as ofile:
+                        pickle.dump(locs, ofile)
+                    # new key worked
+                    try_new_key = False
+                except Exception as e:
+                    if set_new_key:
+                        logging.error('Error while retrieving coordinates for location with new key: %s, %s' % (l_n, l_c))
+                        raise(e)
+                    else:
+                        logging.error('Error while retrieving coordinates for location: %s, %s' % (l_n, l_c))
+                        assert len(args.gmaps_api_keys) > 0, 'No new API keys'
+                        current_key = args.gmaps_api_keys.pop()
+                        try_new_key = True
+                        set_new_key = True
+        # if (l_n, l_c) not in locs or locs[(l_n,l_c)] is None: # TODO: rm
         if locs[(l_n,l_c)] is None:
             bs_meta.loc[i,'loc_lat'] = None
             bs_meta.loc[i,'loc_lng'] = None
@@ -380,6 +420,18 @@ if __name__ == "__main__":
     )
     assert len([i for i in seqs['strandedness'] if i is None]) == 0, 'Not all sequences have a meta data match'
     logging.info("Sequences: meta data was added - %d entries" % seqs.shape[0])
+
+    # Add embedding
+    seqs = pandas.merge(
+        left=seqs,
+        right=emb,
+        how='left',
+        left_index=True,
+        right_index=True,
+        sort=False
+    )
+    assert len([i for i in seqs['D1'] if i is None]) == 0, 'Not all sequences have embedding coordinates'
+    logging.info("Sequences: embedding was added - %d entries" % seqs.shape[0])
 
     ##############################################
     # Master table

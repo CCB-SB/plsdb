@@ -1,20 +1,36 @@
 # Retrieving and processing plasmids from NCBI
 
-## Pipeline summary
+## Requirements
 
+### Python modules
 Create a python environment and install required modules:
 
 ```bash
 # create and activate venv
 virtualenv -p /usr/bin/python3 venv
 source venv/bin/activate
-# other requirements
+# requirements
 pip install -r requirements.txt
 # check
 comm -3 <(pip freeze | sort) <(sort requirements.txt)
 ```
 
-Create a file `gmaps_api_key.txt` containing your GoogleMaps API key.
+### Other software
+
+The binaries of [Mash](https://github.com/marbl/Mash) and [BLAST](https://blast.ncbi.nlm.nih.gov/Blast.cgi) are downloaded by the pipeline.
+
+### GoogleMaps API queries
+
+To map locations of associated BioSamples the GoogleMaps API is used.
+Thus, a Google API key is needed.
+The keys should be stored in a local file specified in the pipeline config
+(`pipeline.json`, see the keys `misc`, `gmaps_api_keys`).
+Also, as there are many location one run is not sufficient
+due to the max. limit of queries per day set by Google.
+Thus, a file with some of the already retrieved locations is included (`locs.pck`).
+Otherwise, the script for creating the master table should be run multiple times on different days.
+
+## Pipeline
 
 Call the pipeline using `snakemake -s pipeline.snake`.
 
@@ -32,24 +48,21 @@ Call the pipeline using `snakemake -s pipeline.snake`.
 - Download plasmid FASTAs: `*_genomic.fna.gz`
     - Download FASTA files with nucl. sequences
     - Filter out non-plasmid sequences
-    - *Note: do not use more than 10 cores (may result in failed downloads)*
 - Create table of downloaded plasmid sequences
 - Download and filter other assembly data
     - Genomic features: `*_feature_table.txt.gz`
-    - *Note: do not use more than 10 cores (may result in failed downloads)*
 - Create "master" files
     - FASTA with all nucl. sequences
     - BLAST DB from the FASTA file
     - Mash sketch from the FASTA file
-    - Mash distances
-    - Embedding using UMAP
+    - Mash distances from the Mash sketch
+    - Embedding using UMAP from Mash distances
     - File with all genomic features
     - Table with meta data
         - Assembly information
-        - Taxonomic information
+        - Taxonomic information from assembly taxon
         - Sequence information (length, GC)
         - BioSample information
-            - Parse locations using GoogleMaps (requires a GoogleMaps API key)
 
 ## Output checks
 
@@ -58,7 +71,7 @@ To check if all required FASTAs were successfully downloaded and processed.
 
 **Count downloads**
 ```bash
-# replace by our tag, i.e. date (year_month_day) when the data was downloaded
+# replace by your tag, i.e. date (year_month_day) when the data was downloaded
 tag='2018_06_28'
 f="data/genomes/${tag}/download.log"
 # numbre of FASTAs in filtered report files
@@ -143,7 +156,7 @@ Visuialize in R:
 require(ggplot2)
 
 # path to file containing embedding
-tag <- '2018_06_28' # replace by our tag
+tag <- '2018_06_28' # replace by your tag
 f <- sprintf('data/master/%s__master_genomic.fna.umap', tag)
 
 # read in

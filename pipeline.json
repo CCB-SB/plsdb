@@ -15,7 +15,9 @@
             "master": "data/master"
         },
         "misc": {
-            "features_header": "features_header.tsv"
+            "features_header": "features_header.tsv",
+            "gmaps_api_keys": "gmaps_api_keys.txt",
+            "locs": "locs.pck"
         }
     },
     "tools": {
@@ -27,7 +29,7 @@
         "mash": {
             "url": "https://github.com/marbl/Mash/releases/download/v2.0/mash-Linux64-v2.0.tar",
             "dir": "mash-Linux64-v2.0",
-            "sketch_params": "-i -S 42 -p 10",
+            "sketch_params": "-i -S 42 -p 10 -k 31 -s 5000",
             "dist_params": "-t -p 10"
         },
         "umap": {

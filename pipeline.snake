@@ -1,15 +1,8 @@
 ##################################################
-# Python venv.s
-##################################################
-# VENV="venv/bin/activate"
-
-##################################################
 # Config
 ##################################################
 CONFIG_JSON = "pipeline.json"
 configfile: CONFIG_JSON
-
-GMAPS_API_KEY_FILE = "gmaps_api_key.txt"
 
 ##################################################
 # Python modules
@@ -108,10 +101,6 @@ rule all:
 		# master files
         # fasta
         master_gfna=MASTER_GFASTA,
-        # features
-        master_feas=MASTER_FEATURES,
-		# meta data
-        master_tab=MASTER_TAB,
 		# mash
         master_sig=MASTER_MASH_SIG,
         master_dist=MASTER_MASH_DIST,
@@ -119,6 +108,10 @@ rule all:
         master_umap=MASTER_MASH_UMAP,
 		# blastdb
 		master_blastdb=MASTER_BLASTDB,
+        # features
+        master_feas=MASTER_FEATURES,
+        # meta data
+        master_tab=MASTER_TAB,
 
 # Tools
 ##################################################
@@ -290,21 +283,21 @@ rule create_master_table:
         assemblies=REPORTS_FILT,
         sequences=SREPORT,
         d_gfastas=DOWNLOAD_GFASTAS,
-        d_features=DOWNLOAD_FEATURES,
+        umap=MASTER_MASH_UMAP,
+        locs=config['data']['misc']['locs'],
     output:
         MASTER_TAB
     log:
         os.path.splitext(MASTER_TAB)[0] + ".log"
     params:
         script="src/create_master_table.py",
-        gmaps_key=GMAPS_API_KEY_FILE,
+        gmaps_api_keys=config['data']['misc']['gmaps_api_keys'],
         cores=30,
         fa_dir=os.path.dirname(DOWNLOAD_GFASTAS),
-        fe_dir=os.path.dirname(DOWNLOAD_FEATURES)
     message:
         "Creating master table from {input}"
     shell:
-        "python {params.script} --assemblies {input.assemblies} --sequences {input.sequences} --fa_dir {params.fa_dir} --fe_dir {params.fe_dir} --ofile {output} --gmaps_api_key $(cat {params.gmaps_key}) --cores {params.cores} 2>&1 | tee {log}"
+        "python {params.script} --assemblies {input.assemblies} --sequences {input.sequences} --fa_dir {params.fa_dir} --emb {input.umap} --locs {input.locs} --ofile {output} --gmaps_api_keys $(cat {params.gmaps_api_keys} | tr '\n' ' ') --cores {params.cores} 2>&1 | tee {log}"
 
 # Features
 rule create_master_features:
