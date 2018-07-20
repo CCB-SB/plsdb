@@ -4,6 +4,7 @@ import os
 import pandas
 import logging
 import argparse
+from tqdm import tqdm
 from glob import glob
 
 from utils import *
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     # record ID -> assembly ID
     rinfo = {}
     dupl  = {}
-    for dfile in dfiles:
+    for dfile in tqdm(dfiles):
         asm_id = os.path.basename(dfile)
         asm_id = re.sub(re_suffix, "", asm_id)
         asm_id = (
@@ -49,14 +50,13 @@ if __name__ == "__main__":
             '_'.join(asm_id.split('_')[2:])
         )
         # for each sequence in FASTA
-        for record in fasta_records(dfile):
+        for record in get_fasta_records(dfile):
             # already saved
             if record.id in rinfo:
                 dupl[record.id] = dfile
             rinfo[record.id] = {
-                'assembly_accession': asm_id[0],
-                'asm_name': asm_id[1],
-                'sequence_description': ' '.join(record.description.split(' ')[1:])
+                'sequence_description': ' '.join(record.description.split(' ')[1:]),
+                'assembly': asm_id[0],
             }
     logging.info("Found %d records in %d files" % (len(rinfo), len(dfiles)))
     assert len(dupl) == 0, "There are %d duplicate records" % len(dupl)
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     # add row names as column
     rinfo = rinfo.assign(sequence_accession=rinfo.index)
     # re-order columns
-    rinfo = rinfo[["sequence_accession", "sequence_description", "assembly_accession", "asm_name"]]
+    rinfo = rinfo[["sequence_accession", "sequence_description", "assembly"]]
 
     # save
     rinfo.to_csv(path_or_buf=args.ofile, sep="\t", header=True, index=False, index_label=False)

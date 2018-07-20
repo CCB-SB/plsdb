@@ -39,7 +39,17 @@ if __name__ == "__main__":
     args = get_arg_parser().parse_args()
 
     # Distances
-    dist = pandas.read_csv(args.dist, sep='\t', header=0, index_col=0)
+    ncols = 0
+    with open(args.dist) as f:
+        ncols = len(f.readline().split('\t'))
+        logging.info('There are %d columns' % ncols)
+    dist = pandas.read_csv(
+        args.dist, sep='\t',
+        header=None, index_col=None,
+        dtype=numpy.float16,
+        skiprows=1, usecols=range(1, ncols + 1),
+        low_memory=True
+    )
     logging.info('Distance matrix: %d x %d' % (dist.shape[0], dist.shape[1]))
 
     # Sample names

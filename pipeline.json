@@ -1,39 +1,43 @@
 {
     "data": {
-        "report_urls": {
-            "genbank": "ftp://ftp.ncbi.nlm.nih.gov/genomes/genbank/bacteria/assembly_summary.txt",
-            "refseq": "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt"
-        },
-        "assembly_files": {
-            "genomes": "genomic.fna.gz",
-            "features": "feature_table.txt.gz"
-        },
         "odir": {
             "reports": "data/reports",
-            "genomes": "data/genomes",
-            "features": "data/features",
-            "master": "data/master"
+            "sequences": "data/sequences",
+            "master": "data/master",
         },
-        "misc": {
-            "features_header": "features_header.tsv",
-            "gmaps_api_keys": "gmaps_api_keys.txt",
-            "locs": "locs.pck"
+        "gmaps_api_keys": "gmaps_api_keys.txt",
+        "locs": "locs.pck"
+    },
+    "eutils": {
+        "dir": "tools/edirect",
+        "header": {
+            "plasmid": ["UID", "ACC", "Description", "CreateDate", "Topology", "Completeness", "ProjectID", "BioSampleACC", "AssemblyACC", "TaxonID", "Genome", "Length"],
+            "biosample": ["ACC", "Location", "Coordinates", "IsolationSource"],
+            "ranks": ["species", "genus", "family", "order", "class", "phylum", "superkingdom"]
+        },
+        "query": {
+            "plasmid": "{path}/esearch -db nuccore -query 'plasmid' | {path}/efilter -location plasmid -molecule genomic -organism bacteria -source {db} | {path}/efetch -format docsum | {path}/xtract -pattern DocumentSummary -ID '(NA)' -CAP '(NA)' -TITLE '(NA)' -DATE '(NA)' -TOPO '(NA)' -COMPL '(NA)' -PID '(NA)' -SID '(NA)' -AID '(NA)' -TID '(NA)' -GEN '(NA)' -LEN '(NA)' -ID Id -CAP Caption -TITLE Title -DATE CreateDate -TOPO Topology -COMPL Completeness -PID ProjectId -SID BioSample -AID AssemblyAcc -TID TaxId -GEN Genome -LEN Slen -element '&ID' '&CAP' '&TITLE' '&DATE' '&TOPO' '&COMPL' '&PID' '&SID' '&AID' '&TID' '&GEN' '&LEN'",
+            "biosample": {
+                "before": "{path}/epost -db biosample -id",
+                "after": "-format acc | {path}/efetch -format xml | {path}/xtract -pattern BioSample  -LOC '(NA)' -COORD '(NA)' -SOURCE '(NA)' -group Attribute -if Attribute@attribute_name -equals 'geo_loc_name' -LOC Attribute -group Attribute -if Attribute@attribute_name -equals 'lat_lon' -COORD Attribute -group Attribute -if Attribute@attribute_name -equals 'isolation_source' -SOURCE Attribute -group BioSample -element @accession -element '&LOC' '&COORD' '&SOURCE'"
+            },
+            "taxon": {
+                "before": "{path}/efetch -db taxonomy -id",
+                "after": "-format xml | {path}/xtract -pattern Taxon -sep '|' -element TaxId,ScientificName,Rank -element Lineage -block '*/Taxon' -sep '|' -element TaxId,ScientificName,Rank"
+            }
         }
     },
-    "tools": {
-        "basedir": "tools",
-        "blast": {
-            "url": "ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.7.1+-x64-linux.tar.gz",
-            "dir": "ncbi-blast-2.7.1+",
-        },
-        "mash": {
-            "url": "https://github.com/marbl/Mash/releases/download/v2.0/mash-Linux64-v2.0.tar",
-            "dir": "mash-Linux64-v2.0",
-            "sketch_params": "-i -S 42 -p 10 -k 31 -s 1000",
-            "dist_params": "-t -p 10"
-        },
-        "umap": {
-            "params": "--n_neighbors 50 --n_components 2"
-        }
-    }
+    "blast": {
+        "url": "ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.7.1+-x64-linux.tar.gz",
+        "dir": "tools/ncbi-blast-2.7.1+",
+    },
+    "mash": {
+        "url": "https://github.com/marbl/Mash/releases/download/v2.0/mash-Linux64-v2.0.tar",
+        "dir": "tools/mash-Linux64-v2.0",
+        "sketch_params": "-i -S 42 -p 20 -k 21 -s 1000",
+        "dist_params": "-t -p 20"
+    },
+    "umap": {
+        "params": "--n_neighbors 50 --n_components 2"
+    },
 }

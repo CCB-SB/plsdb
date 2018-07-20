@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-import os
-import gzip
 import pandas
 import logging
 import argparse
@@ -33,8 +31,10 @@ def extract_plasmid_seqs(fname):
     Filter given FASTA for plasmid sequences
     """
     plasmids = []
-    for record in fasta_records(fname):
-        if seq_is_plasmid(record.description):
+    for i, record in enumerate(get_fasta_records(fname)):
+        record_type = get_record_type(record)
+        logging.info('TYPE: %s: %s in %s' % (record_type, record.id, fname))
+        if record_type == 'plasmid':
             logging.info('PLASMID: %s in %s' % (record.description, fname))
             plasmids.append(record)
     if len(plasmids) == 0:
@@ -42,15 +42,7 @@ def extract_plasmid_seqs(fname):
         logging.info("NO PLASMIDS in %s" % fname)
         rm_file(fname)
     else:
-        # save found plasmids
-        records2fasta(records=plasmids, fname=fname)
-
-def seq_is_plasmid(seq_header):
-    """
-    Whether the given sequence header indicates that the
-    corresponding sequnece is a plasmid
-    """
-    return re.search('plasmid', seq_header, re.IGNORECASE)
+        records2fasta(plasmids, fname)
 
 def download_and_extract_plasmids(ftp_path):
     """
@@ -59,7 +51,7 @@ def download_and_extract_plasmids(ftp_path):
     # download
     fname, downloaded = download_ncbi_assembly(ftp_path=ftp_path, suffix=SUFFIX, odir=ODIR, file_can_exist=False)
     # download failed
-    if not downloaded:
+    if not downloaded: # will log errors
         rm_file(fname)
         return
     # extract plasmids

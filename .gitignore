@@ -2,8 +2,10 @@
 *.log
 .snakemake/*
 src/__pycache__/*
+__pycache__
 tmp
 data
 tools
 venv
 gmaps_api_keys.txt
+*.backup

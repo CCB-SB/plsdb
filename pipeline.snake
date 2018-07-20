@@ -8,76 +8,92 @@ configfile: CONFIG_JSON
 # Python modules
 ##################################################
 import os
+import re
+import gzip
 import pandas
+import pickle
+import logging
 import datetime
 from glob import glob
+from Bio import SeqIO
+
+from utils import location_exceptions, location_missing, add_dotzero, preproc_loc_str, parse_location, setup_logger
 
 ##################################################
 # Python functions
 ##################################################
-def name_wo_ext(fname):
-    return os.path.splitext(fname)[0]
+# def name_wo_ext(fname):
+    # return os.path.splitext(fname)[0]
 
-def bname_wo_ext(fname):
-    return name_wo_ext(os.path.basename(fname))
+# def bname_wo_ext(fname):
+#     return name_wo_ext(os.path.basename(fname))
 
 ##################################################
 # Some settings
 ##################################################
 # Date
-# today = datetime.datetime.now().strftime("%Y_%m_%d")
-today = "2018_06_28"
+today = datetime.datetime.now().strftime("%Y_%m_%d")
+# today = "2018_06_28"
 
 # BLAST DB file ext.
 blastdb_ext = ['nin', 'nhr', 'nsq']
+
+# DBs
+dbs = ['refseq', 'genbank']
 
 ##################################################
 # Tools
 ##################################################
 # BLAST
-BIN_MAKEBLASTDB = os.path.join('tools', config["tools"]["blast"]["dir"], "bin/makeblastdb")
+BIN_MAKEBLASTDB = os.path.join(config["blast"]["dir"], "bin/makeblastdb")
 
 # Mash
-BIN_MASH = os.path.join('tools', config["tools"]["mash"]["dir"], "mash")
+BIN_MASH = os.path.join(config["mash"]["dir"], "mash")
+
+# Eutils
+EUTILS_INSTALL = os.path.join(config["eutils"]["dir"], "install.done")
 
 ##################################################
 # Data
 ##################################################
-# Assembly reports
-REPORTS = [os.path.join(config["data"]["odir"]["reports"], "%s__%s__assembly_report.tsv" % (today, f)) for f in config["data"]["report_urls"].keys()]
-# Filtered assembly reports
-REPORTS_FILT = [os.path.join(config["data"]["odir"]["reports"], "%s__%s__assembly_report__filt.tsv" % (today, f)) for f in config["data"]["report_urls"].keys()]
+PLASMIDS_TAB = [
+    os.path.join(config['data']['odir']['reports'], '%s__%s__query.txt' % (today, db)) for db in dbs
+]
+PLASMIDS_TAB_FILTERED = [
+    re.sub('query', 'filtered', fname) for fname in PLASMIDS_TAB
+]
 
-# Download genomic FASTAs
-DOWNLOAD_GFASTAS = os.path.join(config["data"]["odir"]["genomes"], today, "download.done")
+BIOSAMPLES_TAB = [
+    os.path.join(config['data']['odir']['reports'], '%s__%s__biosamples.txt' % (today, db)) for db in dbs
+]
 
-# Download and filter other assembly files
-DOWNLOAD_FEATURES = os.path.join(config["data"]["odir"]["features"], today, "add_download.done")
+TAXA_TAB = [
+    os.path.join(config['data']['odir']['reports'], '%s__%s__taxa.txt' % (today, db)) for db in dbs
+]
+TAXA_TAB2 = [
+    os.path.join(config['data']['odir']['reports'], '%s__%s__taxaproc.txt' % (today, db)) for db in dbs
+]
 
-# Create table of downloaded sequences
-SREPORT = os.path.join(config["data"]["odir"]["reports"], "%s__downloaded_seqs__report.tsv" % today)
+LOCS_TAB = [
+    os.path.join(config['data']['odir']['reports'], '%s__%s__locs.txt' % (today, db)) for db in dbs
+]
 
 # Master files
 ##############
-
-# FASTA
-MASTER_GFASTA = os.path.join(config["data"]["odir"]["master"], "%s__master_genomic.fna" % today)
-
-# Features
-MASTER_FEATURES = os.path.join(config["data"]["odir"]["master"], "%s__master_features.tsv" % today)
+MASTER_GFASTA = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.fna" % today), db=dbs)
 
 # Mash
-MASTER_MASH_SIG  = os.path.join(config["data"]["odir"]["master"], "%s__master_genomic.fna.msh" % today)
-MASTER_MASH_DIST = os.path.join(config["data"]["odir"]["master"], "%s__master_genomic.fna.tsv" % today)
+MASTER_MASH_SIG  = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.msh" % today), db=dbs)
+MASTER_MASH_DIST = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.dist" % today), db=dbs)
 
 # UMAP
-MASTER_MASH_UMAP = os.path.join(config["data"]["odir"]["master"], "%s__master_genomic.fna.umap" % today)
+MASTER_MASH_UMAP = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.umap" % today), db=dbs)
 
 # Master info table
-MASTER_TAB = os.path.join(config["data"]["odir"]["master"], "%s__master_table.tsv" % today)
+# MASTER_TAB = os.path.join(config["data"]["odir"]["master"], "%s__master_table.tsv" % today)
 
 # BLASTdb from master FASTA
-MASTER_BLASTDB = [os.path.join(config["data"]["odir"]["master"], "%s__master_genomic.fna.%s" % (today, e)) for e in blastdb_ext]
+MASTER_BLASTDB = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.fna.{ext}" % today), db=dbs, ext=blastdb_ext)
 
 ##################################################
 # Rules
@@ -90,28 +106,29 @@ rule all:
         # tools
 		blast=BIN_MAKEBLASTDB,
         mash=BIN_MASH,
-        # assembly reports
-        reports=REPORTS_FILT,
-        # genomic FASTAs
-        d_gfastas=DOWNLOAD_GFASTAS,
-        # downloaded plasmids
-        sreport=SREPORT,
-        # gneopmic features
-        d_features=DOWNLOAD_FEATURES,
+        eutils=EUTILS_INSTALL,
+        # plasmid query
+        query_plasmids=PLASMIDS_TAB,
+        filter_plasmids=PLASMIDS_TAB_FILTERED,
+        # biosamples
+        query_biosamples=BIOSAMPLES_TAB,
+        # taxa
+        query_taxa=TAXA_TAB,
+        proc_taxa=TAXA_TAB2,
+        # locations
+        proc_locs=LOCS_TAB,
 		# master files
         # fasta
-        master_gfna=MASTER_GFASTA,
+        # master_fasta=MASTER_GFASTA,
 		# mash
-        master_sig=MASTER_MASH_SIG,
-        master_dist=MASTER_MASH_DIST,
+        # master_sig=MASTER_MASH_SIG,
+        # master_dist=MASTER_MASH_DIST,
 		# umap
-        master_umap=MASTER_MASH_UMAP,
-		# blastdb
-		master_blastdb=MASTER_BLASTDB,
-        # features
-        master_feas=MASTER_FEATURES,
-        # meta data
-        master_tab=MASTER_TAB,
+        # master_umap=MASTER_MASH_UMAP,
+		# # blastdb
+		# master_blastdb=MASTER_BLASTDB,
+        # # meta data
+        # # master_tab=MASTER_TAB,
 
 # Tools
 ##################################################
@@ -119,8 +136,8 @@ rule install_blast:
     output:
         BIN_MAKEBLASTDB
     params:
-        url=config["tools"]["blast"]["url"],
-        name=os.path.basename(config["tools"]["blast"]["url"])
+        url=config["blast"]["url"],
+        name=os.path.basename(config["blast"]["url"])
     message:
         "installing blast from {params.url}"
     shell:
@@ -130,204 +147,307 @@ rule install_mash:
     output:
         BIN_MASH
     params:
-        url=config["tools"]["mash"]["url"],
-        name=os.path.basename(config["tools"]["mash"]["url"])
+        url=config["mash"]["url"],
+        name=os.path.basename(config["mash"]["url"])
     message:
         "installing mash from {params.url}"
     shell:
         "mkdir -p tools && cd tools && wget {params.url} && tar -xvf {params.name} && rm {params.name}"
 
-# Download
+rule install_eutils:
+    output:
+        EUTILS_INSTALL
+    message:
+        "Install eUtils"
+    shell:
+        """
+        mkdir -p $(dirname {output}) && cd tools
+        perl -MNet::FTP -e \
+            '$ftp = new Net::FTP("ftp.ncbi.nlm.nih.gov", Passive => 1);
+             $ftp->login; $ftp->binary;
+             $ftp->get("/entrez/entrezdirect/edirect.tar.gz");'
+        gunzip -c edirect.tar.gz | tar xf -
+        rm edirect.tar.gz
+        cd edirect && wget https://ftp.ncbi.nlm.nih.gov/entrez/entrezdirect/xtract.Linux.gz && gunzip -f xtract.Linux.gz && chmod +x xtract.Linux
+        touch $(basename {output})
+        """
+
+# Make queries & filtering
 ##################################################
-# Download assembly report files
-rule download_report:
-	output:
-		"{report_dir}/{report_date}__{report_name}__assembly_report.tsv"
-	params:
-		url=lambda wildcards: config["data"]["report_urls"][wildcards.report_name]
-	message:
-		"Download assembly report file {output}"
-	shell:
-		"mkdir -p {wildcards.report_dir} && wget -O {output} {params.url}"
-
-# Filter assembly report files
-rule filter_report:
-    input:
-        "{report_dir}/{report_date}__{report_name}__assembly_report.tsv"
+rule query_plasmids:
     output:
-        "{report_dir}/{report_date}__{report_name}__assembly_report__filt.tsv"
+        "{dir}/{date}__{db}__query.txt"
     message:
-        "Filter assembly report file {input}"
+        "Query for plasmids in {wildcards.db}"
+    params:
+        query=lambda wildcards: config['eutils']['query']['plasmid'].format(db=wildcards.db, path=config['eutils']['dir']),
+        header='\t'.join(config['eutils']['header']['plasmid'])
+    shell:
+        """
+        mkdir -p $(dirname {output}) &&
+        echo -e \"{params.header}\" > {output}
+        {params.query} >> {output}
+        """
+
+rule filter_plasmids:
+    input:
+        "{dir}/{date}__{db}__query.txt"
+    output:
+        "{dir}/{date}__{db}__filtered.txt"
+    message:
+        "Filter plasmids in {input}"
     run:
-        df = pandas.read_csv(filepath_or_buffer=input[0], sep='\t', header=0, skiprows=1)
-        df = df[df["version_status"] == "latest"]
-        df = df[df["assembly_level"] != "Contig"]
-        df = df[df["assembly_level"] != "Scaffold"]
-        df.to_csv(path_or_buf=output[0], sep="\t", header=True, index=False, index_label=False)
+        df = pandas.read_csv(filepath_or_buffer=input[0], sep='\t', header=0)
+        df.fillna(value="NA", axis="columns", inplace=True)
+        print(df.head())
+        print(df.groupby('Completeness')['UID'].nunique())
+        print(df.groupby('Genome')['UID'].nunique())
+        print('Min length = {}; max length = {}'.format(min(df['Length']), max(df['Length'])))
+        total = df.shape[0]
+        df = df.loc[((df['Completeness'] == "NA") | (df['Completeness'] == "complete")) & ((df['Genome'] == "NA") | (df['Genome'] == "plasmid")) & (df['Length'] >= 100),]
+        print('Filtering: {} of {} entries were kept'.format(df.shape[0], total))
+        df.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
 
-# Download genome FASTAs
-rule download_genome_fastas:
+rule query_biosamples:
     input:
-        REPORTS_FILT
+        "{dir}/{date}__{db}__filtered.txt"
     output:
-        "{download_pdir}/genomes/{date}/download.done"
-    log:
-        "{download_pdir}/genomes/{date}/download.log"
-    params:
-        script="src/download_plasmid_fastas.py",
-        dtype="genomes",
-        suffix=config["data"]["assembly_files"]["genomes"],
-        cores=20
+        "{dir}/{date}__{db}__biosamples.txt"
     message:
-        "Download genome FASTAs"
-    shell:
-        "mkdir -p $(dirname {output}) && python {params.script} -r {input} -o $(dirname {output}) -s {params.suffix} --cores {params.cores} 2>&1 | tee {log} && touch {output}"
-
-# Create list of downloaded sequences
-rule list_plasmid_seqs:
-    input:
-        DOWNLOAD_GFASTAS
-    output:
-        SREPORT
-    log:
-        os.path.splitext(SREPORT)[0] + ".log"
+        "Query for biosamples from {input}"
     params:
-        script="src/list_downloaded_plasmids.py",
-        fdir=os.path.dirname(DOWNLOAD_GFASTAS)
+        query_before=config['eutils']['query']['biosample']['before'].format(path=config['eutils']['dir']),
+        query_after=config['eutils']['query']['biosample']['after'].format(path=config['eutils']['dir']),
+        header='\t'.join(config['eutils']['header']['biosample'])
+    shell:
+        """
+        echo -e \"{params.header}\" > {output} &&
+        {params.query_before} \"$(tail -n +2 {input} | cut -f8 | grep -v '^NA$' | sort | uniq | tr \'\n\' \' \')\" {params.query_after} >> {output}
+        """
+
+rule query_taxon:
+    input:
+        "{dir}/{date}__{db}__filtered.txt"
+    output:
+        "{dir}/{date}__{db}__taxa.txt"
     message:
-        "Create list of downloaded sequences"
-    shell:
-        "python {params.script} --fdir {params.fdir} --ofile {output} 2>&1 | tee {log}"
-
-# Download and filter assembly feature tables
-rule download_assembly_files:
-    input:
-        reports=REPORTS_FILT,
-        sreport=SREPORT
-    output:
-        "{download_pdir}/{download_type}/{date}/add_download.done"
-    log:
-        "{download_pdir}/{download_type}/{date}/add_download.log"
+        "Query for taxa from {input}"
     params:
-        script="src/download_from_ncbi.py",
-        suffix=config["data"]["assembly_files"]["features"],
-        cores=20
+        query_before=config['eutils']['query']['taxon']['before'].format(path=config['eutils']['dir']),
+        query_after=config['eutils']['query']['taxon']['after'].format(path=config['eutils']['dir'])
     shell:
-        "mkdir -p $(dirname {output}) && python {params.script} --reports {input.reports} --seqs {input.sreport} --suffix {params.suffix} --odir $(dirname {output}) --cores {params.cores} 2>&1 | tee {log} && touch {output}"
+        """
+        {params.query_before} \"$(tail -n +2 {input} | cut -f10 | grep -v '^NA$' | sort | uniq | tr \'\n\' \' \')\" {params.query_after} > {output}
+        """
+
+rule proc_taxon:
+    input:
+        "{dir}/{date}__{db}__taxa.txt"
+    output:
+        "{dir}/{date}__{db}__taxaproc.txt"
+    message:
+        "Process taxa from {input}"
+    run:
+        header  = ["taxon_id", "taxon_name", "taxon_rank", "lineage"]
+        for rank in config['eutils']['header']['ranks']:
+            header += ['taxon_%s_id' % rank, 'taxon_%s_name' % rank]
+        with open(output[0], 'w') as ofile:
+            ofile.write('\t'.join(header) + '\n')
+            with open(input[0], 'r') as ifile:
+                for line in ifile:
+                    info = dict.fromkeys(header,'NA')
+                    line = line.rstrip('\n')
+                    for field in line.split('\t'):
+                        if re.search('\|',field):
+                            tid, tname, trank = field.split('|')
+                            if trank == 'no rank':
+                                trank = 'NA'
+                            elif "taxon_%s_name" % trank in header:
+                                info["taxon_%s_name" % trank] = tname
+                                info["taxon_%s_id" % trank] = tid
+                            if info['taxon_id'] == 'NA':
+                                info['taxon_id'] = tid
+                                info['taxon_name'] = tname
+                                info['taxon_rank'] = trank
+                        else: # lineage
+                            info['lineage'] = field
+                    assert info['taxon_id'] != "NA" and info['taxon_name'] != "NA"
+                    ofile.write('\t'.join([info[k] for k in header]) + '\n')
+
+# Locations
+##################################################
+rule parse_locations:
+    input:
+        pck=config['data']['locs'],
+        tab="{dir}/{date}__{db}__biosamples.txt"
+    output:
+        "{dir}/{date}__{db}__locs.txt"
+    message:
+        "Parsing locations from {input.tab}"
+    params:
+        api_keys=config['data']['gmaps_api_keys'],
+    run:
+        setup_logger()
+        # api keys
+        with open(params.api_keys, 'r') as ifile:
+            api_key = [k.rstrip('\n').strip() for k in ifile.readlines()]
+            api_key = api_key.pop()
+        logging.info('Using API key: %s' % api_key)
+        # load known locations
+        with open(input.pck, 'rb') as ifile:
+            locs = pickle.load(ifile)
+        # locations to parse
+        df = pandas.read_csv(input.tab, header=0, index_col=0, sep='\t')
+        df = df[['Location', 'Coordinates']]
+        df.drop_duplicates(keep='first', inplace=True)
+        print(df.head())
+        df['loc_lat'] = None
+        df['loc_lng'] = None
+        # parse
+        for i in df.index:
+            # location name and coordinates
+            l_n = df.loc[i,'Location']
+            l_c = df.loc[i,'Coordinates']
+            if pandas.isnull(l_n) or l_n is None:
+                l_n = ''
+            if pandas.isnull(l_c) or l_c is None:
+                l_c = ''
+            # location is not already saved
+            if l_n in locs and locs[l_n] is not None:
+                df.loc[i,'loc_lat'] = locs[l_n]['lat']
+                df.loc[i,'loc_lng'] = locs[l_n]['lng']
+            elif l_c in locs and locs[l_c] is not None:
+                df.loc[i,'loc_lat'] = locs[l_c]['lat']
+                df.loc[i,'loc_lng'] = locs[l_c]['lng']
+            elif l_n not in locs:
+                logging.info('Retrieving coordinates for location: \"%s\"' % l_n)
+                try:
+                    new_loc = parse_location(loc_str=l_n, api_key=api_key, is_name=True)
+                    locs[l_n] = new_loc
+                    df.loc[i,'loc_lat'] = new_loc['lat']
+                    df.loc[i,'loc_lng'] = new_loc['lng']
+                    with open(input.pck, "wb") as ofile:
+                        pickle.dump(locs, ofile)
+                except Exception as e:
+                    logging.error('Error while retrieving coordinates for location \"%s\"' % l_n)
+                    raise(e)
+            elif l_c not in locs:
+                logging.info('Retrieving coordinates for location: \"%s\"' % l_c)
+                try:
+                    new_loc = parse_location(loc_str=l_c, api_key=api_key, is_name=False)
+                    locs[l_c] = new_loc
+                    df.loc[i,'loc_lat'] = new_loc['lat']
+                    df.loc[i,'loc_lng'] = new_loc['lng']
+                    with open(input.pck, "wb") as ofile:
+                        pickle.dump(locs, ofile)
+                except Exception as e:
+                    logging.error('Error while retrieving coordinates for location \"%s\"' % l_c)
+                    raise(e)
+            else:
+                df.loc[i,'loc_lat'] = None
+                df.loc[i,'loc_lng'] = None
+        df.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
 
 # Master files
 ##################################################
-# Master genomic FASTA
-rule create_master_gfasta:
+# Download FASTAs
+rule download_seqs:
     input:
-        DOWNLOAD_GFASTAS
+        "%s/{date}__{db}__filtered.txt" % config['data']['odir']['reports']
     output:
-        MASTER_GFASTA
-    params:
-        pattern=config["data"]["assembly_files"]["genomes"]
+        "%s/{date}__{db}.fna" % config["data"]["odir"]["master"]
     message:
-        "Creating master file for genomic FASTAs {output}"
+        "Downloading sequences for IDs in {input}"
+    params:
+        eutils=config['eutils']['dir']
     shell:
-        "mkdir -p $(dirname {output}) && find $(dirname {input}) -type f -name \"*_{params.pattern}\" | sort | while read f; do zcat $f; done > {output}"
+        """
+        mkdir -p $(dirname {output}) &&
+        python src/download_fastas.py -t {input} -i \"Id\" -o {output} -c 20 -s 500 -e {params.eutils} 2>&1 | tee {output}.log &&
+        cat {output}.tmp.* > {output} && rm {output}.tmp.*
+        """
 
 # Mash
 rule mash_sig:
     input:
-        fasta=MASTER_GFASTA,
-        mash=BIN_MASH
+        "%s/{date}__{db}.fna" % config["data"]["odir"]["master"]
     output:
-        MASTER_MASH_SIG
+        "%s/{date}__{db}.msh" % config["data"]["odir"]["master"]
     log:
-        "%s.log" % MASTER_MASH_SIG
+        "%s/{date}__{db}.msh.log" % config["data"]["odir"]["master"]
     params:
-        params=config['tools']['mash']['sketch_params'],
+        params=config['mash']['sketch_params'],
+        mash=BIN_MASH
     message:
         "Create signatures using Mash on {input}"
     shell:
-        "{input.mash} sketch {params.params} -o $(dirname {output})/$(basename -s .msh {output}) {input.fasta} 2>&1 | tee {log}"
+        "{params.mash} sketch {params.params} -o $(dirname {output})/$(basename -s .msh {output}) {input} 2>&1 | tee {log}"
 
 rule mash_dist:
     input:
-        sig=MASTER_MASH_SIG,
-        mash=BIN_MASH
+        "%s/{date}__{db}.msh" % config["data"]["odir"]["master"]
     output:
-        MASTER_MASH_DIST
+        "%s/{date}__{db}.dist" % config["data"]["odir"]["master"]
     log:
-        "%s.log" % MASTER_MASH_DIST
+        "%s/{date}__{db}.dist.log" % config["data"]["odir"]["master"]
     params:
-        params=config['tools']['mash']['dist_params'],
+        params=config['mash']['dist_params'],
+        mash=BIN_MASH
     message:
         "Compare signatures in {input}"
     shell:
-        "{input.mash} dist {params.params} {input.sig} {input.sig} > {output} 2> {log}"
+        "{params.mash} dist {params.params} {input} {input} > {output} 2> {log}"
 
 # UMAP
 rule umap:
     input:
-        MASTER_MASH_DIST
+        "%s/{date}__{db}.dist" % config["data"]["odir"]["master"]
     output:
-        MASTER_MASH_UMAP
+        "%s/{date}__{db}.umap" % config["data"]["odir"]["master"]
     log:
-        "%s.log" % MASTER_MASH_UMAP
+        "%s/{date}__{db}.umap.log" % config["data"]["odir"]["master"]
     params:
         script="src/umap_embedding.py",
-        params=config['tools']['umap']['params']
+        params=config['umap']['params']
     message:
         "UMAP on {input}"
     shell:
-        "mkdir -p $(dirname {output}) && python {params.script} --dist {input} --ofile {output} {params.params} 2>&1 | tee {log}"
+        "python {params.script} --dist {input} --ofile {output} {params.params} 2>&1 | tee {log}"
 
 # Master table
-rule create_master_table:
-    input:
-        assemblies=REPORTS_FILT,
-        sequences=SREPORT,
-        d_gfastas=DOWNLOAD_GFASTAS,
-        umap=MASTER_MASH_UMAP,
-        locs=config['data']['misc']['locs'],
-    output:
-        MASTER_TAB
-    log:
-        os.path.splitext(MASTER_TAB)[0] + ".log"
-    params:
-        script="src/create_master_table.py",
-        gmaps_api_keys=config['data']['misc']['gmaps_api_keys'],
-        cores=30,
-        fa_dir=os.path.dirname(DOWNLOAD_GFASTAS),
-    message:
-        "Creating master table from {input}"
-    shell:
-        "python {params.script} --assemblies {input.assemblies} --sequences {input.sequences} --fa_dir {params.fa_dir} --emb {input.umap} --locs {input.locs} --ofile {output} --gmaps_api_keys $(cat {params.gmaps_api_keys} | tr '\n' ' ') --cores {params.cores} 2>&1 | tee {log}"
-
-# Features
-rule create_master_features:
-    input:
-        DOWNLOAD_FEATURES
-    output:
-        MASTER_FEATURES
-    params:
-        header=config["data"]["misc"]["features_header"],
-        pattern=config["data"]["assembly_files"]["features"]
-    message:
-        "Creating master file for features {output}"
-    shell:
-        """
-            mkdir -p $(dirname {output})
-            cp {params.header} {output}
-            find $(dirname {input}) -type f -name \"*_{params.pattern}\" | sort | while read f; do zcat $f | tail -n +2; done >> {output}
-        """
+# rule create_master_table:
+#     input:
+#         asm_seqs=SREPORT,
+#         bio_projs=BIOPROJ_SUM,
+#         bio_samples=BIOPSAMPLES_SUM,
+#         fasta=MASTER_GFASTA,
+#         umap=MASTER_MASH_UMAP,
+#         locs=config['data']['misc']['locs'],
+#     output:
+#         MASTER_TAB
+#     log:
+#         os.path.splitext(MASTER_TAB)[0] + ".log"
+#     params:
+#         script="src/create_master_table_v2.py",
+#         gmaps_api_keys=config['data']['misc']['gmaps_api_keys'],
+#         cores=30,
+#         fa_dir=os.path.dirname(DOWNLOAD_GFASTAS),
+#     message:
+#         "Creating master table from {input}"
+#     shell:
+#         "python {params.script} --fasta {input.fasta} --asm_seqs {input.asm_seqs} --bio_projs {input.bio_projs} --bio_samples {input.bio_samples} --emb {input.umap} --locs {input.locs} --ofile {output} --gmaps_api_keys $(cat {params.gmaps_api_keys} | tr '\n' ' ') --cores {params.cores} 2>&1 | tee {log}"
 
 # BLASTn databases
-rule create_plasmidfinder_blastndb:
-    input:
-        fasta=MASTER_GFASTA,
-        bin=BIN_MAKEBLASTDB
-    output:
-        MASTER_BLASTDB
-    params:
-        tool_bin=BIN_MAKEBLASTDB,
-        title="ncbi_plasmids_%s" % today
-    log:
-        os.path.join(config["data"]["odir"]["master"], 'makeblastdb.log')
-    shell:
-        "{input.bin} -in {input.fasta} -input_type fasta -dbtype nucl -title {params.title} -logfile {log}"
+# rule create_plasmidfinder_blastndb:
+#     input:
+#         fasta=MASTER_GFASTA,
+#         bin=BIN_MAKEBLASTDB
+#     output:
+#         MASTER_BLASTDB
+#     params:
+#         tool_bin=BIN_MAKEBLASTDB,
+#         title="ncbi_plasmids_%s" % today
+#     log:
+#         os.path.join(config["data"]["odir"]["master"], 'makeblastdb.log')
+#     shell:
+#         "{input.bin} -in {input.fasta} -input_type fasta -dbtype nucl -title {params.title} -logfile {log}"
