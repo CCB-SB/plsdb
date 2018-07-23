@@ -2,7 +2,7 @@
     "data": {
         "odir": {
             "reports": "data/reports",
-            "sequences": "data/sequences",
+            "checks": "data/checks",
             "master": "data/master",
         },
         "gmaps_api_keys": "gmaps_api_keys.txt",
@@ -38,6 +38,7 @@
         "dist_params": "-t -p 20"
     },
     "umap": {
-        "params": "--n_neighbors 50 --n_components 2"
+        "neighbors": 50,
+        "components": 2
     },
 }

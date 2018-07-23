@@ -14,19 +14,11 @@ import pandas
 import pickle
 import logging
 import datetime
+from tqdm import tqdm
 from glob import glob
 from Bio import SeqIO
 
-from utils import location_exceptions, location_missing, add_dotzero, preproc_loc_str, parse_location, setup_logger
-
-##################################################
-# Python functions
-##################################################
-# def name_wo_ext(fname):
-    # return os.path.splitext(fname)[0]
-
-# def bname_wo_ext(fname):
-#     return name_wo_ext(os.path.basename(fname))
+from utils import preproc_loc_str, preproc_loc_coords, parse_location, setup_logger
 
 ##################################################
 # Some settings
@@ -56,31 +48,31 @@ EUTILS_INSTALL = os.path.join(config["eutils"]["dir"], "install.done")
 ##################################################
 # Data
 ##################################################
-PLASMIDS_TAB = [
-    os.path.join(config['data']['odir']['reports'], '%s__%s__query.txt' % (today, db)) for db in dbs
-]
-PLASMIDS_TAB_FILTERED = [
-    re.sub('query', 'filtered', fname) for fname in PLASMIDS_TAB
-]
+# Table with plasmid records
+PLASMIDS_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__query.txt' % (today, db)) for db in dbs]
+PLASMIDS_TAB_FILTERED = [re.sub('query', 'filtered', fname) for fname in PLASMIDS_TAB]
 
-BIOSAMPLES_TAB = [
-    os.path.join(config['data']['odir']['reports'], '%s__%s__biosamples.txt' % (today, db)) for db in dbs
-]
+# Table with BioSamples
+BIOSAMPLES_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__biosamples.txt' % (today, db)) for db in dbs]
+BIOSAMPLES_LOCS_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__biosamples_locs.txt' % (today, db)) for db in dbs]
 
-TAXA_TAB = [
-    os.path.join(config['data']['odir']['reports'], '%s__%s__taxa.txt' % (today, db)) for db in dbs
-]
-TAXA_TAB2 = [
-    os.path.join(config['data']['odir']['reports'], '%s__%s__taxaproc.txt' % (today, db)) for db in dbs
-]
+# Table with taxa
+TAXA_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__taxa.txt' % (today, db)) for db in dbs]
+TAXA_TAB2 = [os.path.join(config['data']['odir']['reports'], '%s__%s__taxaproc.txt' % (today, db)) for db in dbs]
 
-LOCS_TAB = [
-    os.path.join(config['data']['odir']['reports'], '%s__%s__locs.txt' % (today, db)) for db in dbs
-]
+##################################################
+# Checks
+##################################################
+# Retrieved BioSamples
 
-# Master files
-##############
+##################################################
+# Data: "Master" files
+##################################################
+# Plasmid sequences
 MASTER_GFASTA = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.fna" % today), db=dbs)
+
+# BLASTdb from master FASTA
+MASTER_BLASTDB = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.fna.{ext}" % today), db=dbs, ext=blastdb_ext)
 
 # Mash
 MASTER_MASH_SIG  = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.msh" % today), db=dbs)
@@ -90,10 +82,7 @@ MASTER_MASH_DIST = expand(os.path.join(config["data"]["odir"]["master"], "%s__{d
 MASTER_MASH_UMAP = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.umap" % today), db=dbs)
 
 # Master info table
-# MASTER_TAB = os.path.join(config["data"]["odir"]["master"], "%s__master_table.tsv" % today)
-
-# BLASTdb from master FASTA
-MASTER_BLASTDB = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.fna.{ext}" % today), db=dbs, ext=blastdb_ext)
+MASTER_TAB = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.tsv" % today), db=dbs)
 
 ##################################################
 # Rules
@@ -111,24 +100,22 @@ rule all:
         query_plasmids=PLASMIDS_TAB,
         filter_plasmids=PLASMIDS_TAB_FILTERED,
         # biosamples
-        query_biosamples=BIOSAMPLES_TAB,
+        query_biosamples=BIOSAMPLES_LOCS_TAB,
         # taxa
         query_taxa=TAXA_TAB,
         proc_taxa=TAXA_TAB2,
-        # locations
-        proc_locs=LOCS_TAB,
 		# master files
         # fasta
-        # master_fasta=MASTER_GFASTA,
+        master_fasta=MASTER_GFASTA,
+        # blastdb
+		master_blastdb=MASTER_BLASTDB,
 		# mash
-        # master_sig=MASTER_MASH_SIG,
-        # master_dist=MASTER_MASH_DIST,
+        master_sig=MASTER_MASH_SIG,
+        master_dist=MASTER_MASH_DIST,
 		# umap
-        # master_umap=MASTER_MASH_UMAP,
-		# # blastdb
-		# master_blastdb=MASTER_BLASTDB,
-        # # meta data
-        # # master_tab=MASTER_TAB,
+        master_umap=MASTER_MASH_UMAP,
+        # table
+        master_tab=MASTER_TAB,
 
 # Tools
 ##################################################
@@ -278,14 +265,14 @@ rule proc_taxon:
 ##################################################
 rule parse_locations:
     input:
-        pck=config['data']['locs'],
-        tab="{dir}/{date}__{db}__biosamples.txt"
+        tab="{dir}/{date}__{db}__biosamples.txt",
+        pck=config['data']['locs']
     output:
-        "{dir}/{date}__{db}__locs.txt"
+        "{dir}/{date}__{db}__biosamples_locs.txt"
     message:
-        "Parsing locations from {input.tab}"
+        "Parsing locations from {input}"
     params:
-        api_keys=config['data']['gmaps_api_keys'],
+        api_keys=config['data']['gmaps_api_keys']
     run:
         setup_logger()
         # api keys
@@ -294,13 +281,12 @@ rule parse_locations:
             api_key = api_key.pop()
         logging.info('Using API key: %s' % api_key)
         # load known locations
-        with open(input.pck, 'rb') as ifile:
-            locs = pickle.load(ifile)
-        # locations to parse
+        locs = dict()
+        if os.path.exists(input.pck):
+            with open(input.pck, 'rb') as ifile:
+                locs = pickle.load(ifile)
+        # sample table with locations
         df = pandas.read_csv(input.tab, header=0, index_col=0, sep='\t')
-        df = df[['Location', 'Coordinates']]
-        df.drop_duplicates(keep='first', inplace=True)
-        print(df.head())
         df['loc_lat'] = None
         df['loc_lng'] = None
         # parse
@@ -308,45 +294,41 @@ rule parse_locations:
             # location name and coordinates
             l_n = df.loc[i,'Location']
             l_c = df.loc[i,'Coordinates']
-            if pandas.isnull(l_n) or l_n is None:
-                l_n = ''
-            if pandas.isnull(l_c) or l_c is None:
-                l_c = ''
-            # location is not already saved
-            if l_n in locs and locs[l_n] is not None:
-                df.loc[i,'loc_lat'] = locs[l_n]['lat']
-                df.loc[i,'loc_lng'] = locs[l_n]['lng']
-            elif l_c in locs and locs[l_c] is not None:
+
+            # pre-processing
+            l_n = preproc_loc_str(l_n)
+            l_c = preproc_loc_coords(preproc_loc_str(l_c))
+
+            # no location data
+            if l_n is None and l_c is None:
+                continue
+
+            # at least name or coordinates given
+            if l_c is not None:
+                if l_c not in locs:
+                    logging.info('Retrieving coordinates for location: \"{}\"'.format(l_c))
+                    try:
+                        locs[l_c] = parse_location(loc_str=l_c, api_key=api_key, is_name=False)
+                        with open(input.pck, "wb") as ofile:
+                            pickle.dump(locs, ofile)
+                    except Exception as e:
+                        logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_c))
+                        raise(e)
                 df.loc[i,'loc_lat'] = locs[l_c]['lat']
                 df.loc[i,'loc_lng'] = locs[l_c]['lng']
-            elif l_n not in locs:
-                logging.info('Retrieving coordinates for location: \"%s\"' % l_n)
-                try:
-                    new_loc = parse_location(loc_str=l_n, api_key=api_key, is_name=True)
-                    locs[l_n] = new_loc
-                    df.loc[i,'loc_lat'] = new_loc['lat']
-                    df.loc[i,'loc_lng'] = new_loc['lng']
-                    with open(input.pck, "wb") as ofile:
-                        pickle.dump(locs, ofile)
-                except Exception as e:
-                    logging.error('Error while retrieving coordinates for location \"%s\"' % l_n)
-                    raise(e)
-            elif l_c not in locs:
-                logging.info('Retrieving coordinates for location: \"%s\"' % l_c)
-                try:
-                    new_loc = parse_location(loc_str=l_c, api_key=api_key, is_name=False)
-                    locs[l_c] = new_loc
-                    df.loc[i,'loc_lat'] = new_loc['lat']
-                    df.loc[i,'loc_lng'] = new_loc['lng']
-                    with open(input.pck, "wb") as ofile:
-                        pickle.dump(locs, ofile)
-                except Exception as e:
-                    logging.error('Error while retrieving coordinates for location \"%s\"' % l_c)
-                    raise(e)
-            else:
-                df.loc[i,'loc_lat'] = None
-                df.loc[i,'loc_lng'] = None
-        df.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
+            elif l_n is not None:
+                if l_n not in locs:
+                    logging.info('Retrieving coordinates for location: \"{}\"'.format(l_n))
+                    try:
+                        locs[l_n] = parse_location(loc_str=l_n, api_key=api_key, is_name=True)
+                        with open(input.pck, "wb") as ofile:
+                            pickle.dump(locs, ofile)
+                    except Exception as e:
+                        logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_n))
+                        raise(e)
+                df.loc[i,'loc_lat'] = locs[l_n]['lat']
+                df.loc[i,'loc_lng'] = locs[l_n]['lng']
+        df.to_csv(output[0], sep='\t', header=True, index=True, index_label='ACC')
 
 # Master files
 ##################################################
@@ -363,9 +345,24 @@ rule download_seqs:
     shell:
         """
         mkdir -p $(dirname {output}) &&
-        python src/download_fastas.py -t {input} -i \"Id\" -o {output} -c 20 -s 500 -e {params.eutils} 2>&1 | tee {output}.log &&
+        python src/download_fastas.py -t {input} -i \"ACC\" -o {output} -c 20 -s 500 -e {params.eutils} 2>&1 | tee {output}.log &&
         cat {output}.tmp.* > {output} && rm {output}.tmp.*
         """
+
+# BLASTn databases
+rule blastndb:
+    input:
+        "%s/{date}__{db}.fna" % config["data"]["odir"]["master"]
+    output:
+        ["%s/{date}__{db}.fna.%s" % (config["data"]["odir"]["master"], ext) for ext in blastdb_ext]
+    log:
+        "%s/{date}__{db}.makeblastdb.log" % config["data"]["odir"]["master"]
+    params:
+        bin=BIN_MAKEBLASTDB
+    message:
+        "Create BLASTDB from {input}"
+    shell:
+        "{params.bin} -in {input} -input_type fasta -dbtype nucl -title \"ncbi__{wildcards.db}__{wildcards.date}\" -logfile {log}"
 
 # Mash
 rule mash_sig:
@@ -407,47 +404,125 @@ rule umap:
     log:
         "%s/{date}__{db}.umap.log" % config["data"]["odir"]["master"]
     params:
-        script="src/umap_embedding.py",
-        params=config['umap']['params']
+        neighbors=config['umap']['neighbors'],
+        components=config['umap']['components']
     message:
         "UMAP on {input}"
-    shell:
-        "python {params.script} --dist {input} --ofile {output} {params.params} 2>&1 | tee {log}"
+    run:
+        import umap
+        import numpy
+        setup_logger()
+        # IDs
+        ids = None
+        with open(input[0], 'r') as ifile:
+            ids = ifile.readline().rstrip('\n').split('\t')[1:]
+            logging.info('Distance matrix: {num} x {num}'.format(num=len(ids)))
+        # distance matrix
+        logging.info('Start loading distances...')
+        dist = numpy.loadtxt(
+            fname=input[0],
+            skiprows=1,
+            usecols=range(1,len(ids) + 1) # skip 1st (contains IDs)
+        )
+        logging.info('Done.')
+        # embedding
+        logging.info('Start embedding...')
+        embedding = umap.UMAP(
+            n_neighbors=params.neighbors,
+            n_components=params.components,
+            init='random',
+            metric='precomputed'
+        ).fit_transform(dist)
+        logging.info('Done.')
+        # save to file
+        embedding = pandas.DataFrame(
+            embedding,
+            columns=['D1', 'D2'],
+            index=ids
+        )
+        embedding.to_csv(
+            path_or_buf=output[0],
+            sep='\t',
+            header=True,
+            index=True,
+            index_label='ID'
+        )
 
-# Master table
-# rule create_master_table:
-#     input:
-#         asm_seqs=SREPORT,
-#         bio_projs=BIOPROJ_SUM,
-#         bio_samples=BIOPSAMPLES_SUM,
-#         fasta=MASTER_GFASTA,
-#         umap=MASTER_MASH_UMAP,
-#         locs=config['data']['misc']['locs'],
-#     output:
-#         MASTER_TAB
-#     log:
-#         os.path.splitext(MASTER_TAB)[0] + ".log"
-#     params:
-#         script="src/create_master_table_v2.py",
-#         gmaps_api_keys=config['data']['misc']['gmaps_api_keys'],
-#         cores=30,
-#         fa_dir=os.path.dirname(DOWNLOAD_GFASTAS),
-#     message:
-#         "Creating master table from {input}"
-#     shell:
-#         "python {params.script} --fasta {input.fasta} --asm_seqs {input.asm_seqs} --bio_projs {input.bio_projs} --bio_samples {input.bio_samples} --emb {input.umap} --locs {input.locs} --ofile {output} --gmaps_api_keys $(cat {params.gmaps_api_keys} | tr '\n' ' ') --cores {params.cores} 2>&1 | tee {log}"
+# Table
+rule infotable:
+    input:
+        plasmids="%s/{date}__{db}__filtered.txt" % config["data"]["odir"]["reports"],
+        samples="%s/{date}__{db}__biosamples_locs.txt" % config["data"]["odir"]["reports"],
+        taxa="%s/{date}__{db}__taxaproc.txt" % config["data"]["odir"]["reports"],
+        embedding="%s/{date}__{db}.umap" % config["data"]["odir"]["master"],
+        fasta="%s/{date}__{db}.fna" % config["data"]["odir"]["master"]
+    output:
+        "%s/{date}__{db}.tsv" % config["data"]["odir"]["master"]
+    message:
+        "Create info table for records in {input.plasmids}"
+    run:
+        from Bio import SeqIO
+        from Bio.SeqUtils import GC
+        setup_logger()
 
-# BLASTn databases
-# rule create_plasmidfinder_blastndb:
-#     input:
-#         fasta=MASTER_GFASTA,
-#         bin=BIN_MAKEBLASTDB
-#     output:
-#         MASTER_BLASTDB
-#     params:
-#         tool_bin=BIN_MAKEBLASTDB,
-#         title="ncbi_plasmids_%s" % today
-#     log:
-#         os.path.join(config["data"]["odir"]["master"], 'makeblastdb.log')
-#     shell:
-#         "{input.bin} -in {input.fasta} -input_type fasta -dbtype nucl -title {params.title} -logfile {log}"
+        # read in data
+        # plasmids
+        pls = pandas.read_csv(input.plasmids, sep='\t', header=0, index_col=None)
+        pls.set_index(keys='ACC', drop=False, inplace=True, verify_integrity=True)
+        pls['ProjectID'].replace(0, None)
+        # samples
+        smp = pandas.read_csv(input.samples, sep='\t', header=0, index_col=0)
+        # taxonomy
+        tax = pandas.read_csv(input.taxa, sep='\t', header=0, index_col=None)
+        # embedding
+        emb = pandas.read_csv(input.embedding, sep='\t', header=0, index_col='ID')
+
+        # add info from FASTA
+        logging.info('Adding info from FASTA {}'.format(input.fasta))
+        pls['ACCFasta'] = None
+        pls['GC'] = None
+        with open(input.fasta, 'r') as ifile:
+            for record in tqdm(SeqIO.parse(ifile, 'fasta')):
+                assert re.fullmatch(r'\w+\.\d+', record.id), 'Unexpected ID format in FASTA: {}'.format(record.id)
+                rid = record.id.split('.')[0]
+                assert rid in pls.index.values, 'FASTA record ID {}: not in plasmid table'.format(rid)
+                assert len(record.seq) == pls.loc[rid,'Length'], 'FASTA record ID {}: {} vs {} as length'.format(rid, len(record.seq), pls.loc[rid,'Length'])
+                pls.loc[rid,'ACCFasta'] = record.id
+                pls.loc[rid,'GC'] = GC(str(record.seq))
+
+        # add info from other tables
+        logging.info('Adding info from {}'.format(input.samples))
+        pls = pandas.merge(
+            left=pls,
+            right=smp,
+            how='left',
+            left_on='BioSampleACC',
+            right_index=True,
+            sort=False
+        )
+        logging.info('Adding info from {}'.format(input.taxa))
+        pls = pandas.merge(
+            left=pls,
+            right=tax,
+            how='left',
+            left_on='TaxonID',
+            right_on='taxon_id',
+            sort=False
+        )
+        pls = pandas.merge(
+            left=pls,
+            right=emb,
+            how='left',
+            left_on='ACCFasta',
+            right_index=True,
+            sort=False
+        )
+
+        # save
+        pls.to_csv(
+            path_or_buf=output[0],
+            sep='\t',
+            header=True,
+            index=False,
+            index_label=False
+        )
