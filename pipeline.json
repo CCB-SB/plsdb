@@ -11,15 +11,20 @@
     "eutils": {
         "dir": "tools/edirect",
         "header": {
-            "plasmid": ["UID", "ACC", "Description", "CreateDate", "Topology", "Completeness", "ProjectID", "BioSampleACC", "AssemblyACC", "TaxonID", "Genome", "Length"],
-            "biosample": ["ACC", "Location", "Coordinates", "IsolationSource"],
+            "plasmid": ["UID_NUCCORE", "ACC_NUCCORE", "Description_NUCCORE", "CreateDate_NUCCORE", "Topology_NUCCORE", "Completeness_NUCCORE", "TaxonID_NUCCORE", "Genome_NUCCORE", "Length_NUCCORE"],
+            "link_bios": ["UID_NUCCORE", "UID_BIOSAMPLE"],
+            "biosample": ["UID_BIOSAMPLE", "ACC_BIOSAMPLE", "Location_BIOSAMPLE", "Coordinates_BIOSAMPLE", "IsolationSource_BIOSAMPLE"],
             "ranks": ["species", "genus", "family", "order", "class", "phylum", "superkingdom"]
         },
         "query": {
-            "plasmid": "{path}/esearch -db nuccore -query 'plasmid' | {path}/efilter -location plasmid -molecule genomic -organism bacteria -source {db} | {path}/efetch -format docsum | {path}/xtract -pattern DocumentSummary -ID '(NA)' -CAP '(NA)' -TITLE '(NA)' -DATE '(NA)' -TOPO '(NA)' -COMPL '(NA)' -PID '(NA)' -SID '(NA)' -AID '(NA)' -TID '(NA)' -GEN '(NA)' -LEN '(NA)' -ID Id -CAP Caption -TITLE Title -DATE CreateDate -TOPO Topology -COMPL Completeness -PID ProjectId -SID BioSample -AID AssemblyAcc -TID TaxId -GEN Genome -LEN Slen -element '&ID' '&CAP' '&TITLE' '&DATE' '&TOPO' '&COMPL' '&PID' '&SID' '&AID' '&TID' '&GEN' '&LEN'",
+            "plasmid": "{path}/esearch -db nuccore -query 'plasmid' | {path}/efilter -location plasmid -molecule genomic -organism bacteria -source {db} | {path}/efetch -format docsum | {path}/xtract -pattern DocumentSummary -ID '(NA)' -CAP '(NA)' -TITLE '(NA)' -DATE '(NA)' -TOPO '(NA)' -COMPL '(NA)' -TID '(NA)' -GEN '(NA)' -LEN '(NA)' -ID Id -CAP Caption -TITLE Title -DATE CreateDate -TOPO Topology -COMPL Completeness -TID TaxId -GEN Genome -LEN Slen -element '&ID' '&CAP' '&TITLE' '&DATE' '&TOPO' '&COMPL' '&TID' '&GEN' '&LEN'",
+            "link_bios": {
+                "before": "{path}/epost -db nuccore -id",
+                "after": "-format uid | {path}/elink -target biosample -cmd neighbor -batch | {path}/xtract -pattern LinkSet -element IdList/Id -block LinkSetDb -sep ';' -element Id",
+            },
             "biosample": {
                 "before": "{path}/epost -db biosample -id",
-                "after": "-format acc | {path}/efetch -format xml | {path}/xtract -pattern BioSample  -LOC '(NA)' -COORD '(NA)' -SOURCE '(NA)' -group Attribute -if Attribute@attribute_name -equals 'geo_loc_name' -LOC Attribute -group Attribute -if Attribute@attribute_name -equals 'lat_lon' -COORD Attribute -group Attribute -if Attribute@attribute_name -equals 'isolation_source' -SOURCE Attribute -group BioSample -element @accession -element '&LOC' '&COORD' '&SOURCE'"
+                "after": "-format uid | {path}/efetch -format xml | {path}/xtract -pattern BioSample  -LOC '(NA)' -COORD '(NA)' -SOURCE '(NA)' -group Attribute -if Attribute@attribute_name -equals 'geo_loc_name' -LOC Attribute -group Attribute -if Attribute@attribute_name -equals 'lat_lon' -COORD Attribute -group Attribute -if Attribute@attribute_name -equals 'isolation_source' -SOURCE Attribute -group BioSample -element @id -element @accession -element '&LOC' '&COORD' '&SOURCE'"
             },
             "taxon": {
                 "before": "{path}/efetch -db taxonomy -id",

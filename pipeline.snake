@@ -23,14 +23,14 @@ from utils import preproc_loc_str, preproc_loc_coords, parse_location, setup_log
 ##################################################
 # Some settings
 ##################################################
+
 # Date
 today = datetime.datetime.now().strftime("%Y_%m_%d")
-# today = "2018_06_28"
 
 # BLAST DB file ext.
 blastdb_ext = ['nin', 'nhr', 'nsq']
 
-# DBs
+# NCBI DBs
 dbs = ['refseq', 'genbank']
 
 ##################################################
@@ -49,8 +49,10 @@ EUTILS_INSTALL = os.path.join(config["eutils"]["dir"], "install.done")
 # Data
 ##################################################
 # Table with plasmid records
-PLASMIDS_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__query.txt' % (today, db)) for db in dbs]
-PLASMIDS_TAB_FILTERED = [re.sub('query', 'filtered', fname) for fname in PLASMIDS_TAB]
+PLASMIDS_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__nuccore.txt' % (today, db)) for db in dbs]
+
+# Associated BioSamples
+PLASMIDS_BIOS_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__linkbiosamples.txt' % (today, db)) for db in dbs]
 
 # Table with BioSamples
 BIOSAMPLES_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__biosamples.txt' % (today, db)) for db in dbs]
@@ -58,12 +60,7 @@ BIOSAMPLES_LOCS_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__
 
 # Table with taxa
 TAXA_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__taxa.txt' % (today, db)) for db in dbs]
-TAXA_TAB2 = [os.path.join(config['data']['odir']['reports'], '%s__%s__taxaproc.txt' % (today, db)) for db in dbs]
-
-##################################################
-# Checks
-##################################################
-# Retrieved BioSamples
+TAXA_PROC_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__taxaproc.txt' % (today, db)) for db in dbs]
 
 ##################################################
 # Data: "Master" files
@@ -96,14 +93,13 @@ rule all:
 		blast=BIN_MAKEBLASTDB,
         mash=BIN_MASH,
         eutils=EUTILS_INSTALL,
-        # plasmid query
+        # plasmids
         query_plasmids=PLASMIDS_TAB,
-        filter_plasmids=PLASMIDS_TAB_FILTERED,
-        # biosamples
-        query_biosamples=BIOSAMPLES_LOCS_TAB,
-        # taxa
-        query_taxa=TAXA_TAB,
-        proc_taxa=TAXA_TAB2,
+        # linked samples
+        query_bios=PLASMIDS_BIOS_TAB,
+        query_biosamples=[BIOSAMPLES_TAB, BIOSAMPLES_LOCS_TAB],
+        # linked taxa
+        query_taxa=[TAXA_TAB, TAXA_PROC_TAB],
 		# master files
         # fasta
         master_fasta=MASTER_GFASTA,
@@ -163,7 +159,7 @@ rule install_eutils:
 ##################################################
 rule query_plasmids:
     output:
-        "{dir}/{date}__{db}__query.txt"
+        "{dir}/{date}__{db}__nuccore.txt"
     message:
         "Query for plasmids in {wildcards.db}"
     params:
@@ -176,28 +172,42 @@ rule query_plasmids:
         {params.query} >> {output}
         """
 
-rule filter_plasmids:
+# BioSamples
+##################################################
+rule query_linked_biosamples:
     input:
-        "{dir}/{date}__{db}__query.txt"
+        "{dir}/{date}__{db}__nuccore.txt"
     output:
-        "{dir}/{date}__{db}__filtered.txt"
+        "{dir}/{date}__{db}__linkbiosamples.txt"
     message:
-        "Filter plasmids in {input}"
+        "Query for linked BioSamples from {input}"
+    params:
+        query_before=config['eutils']['query']['link_bios']['before'].format(path=config['eutils']['dir']),
+        query_after=config['eutils']['query']['link_bios']['after'].format(path=config['eutils']['dir']),
+        header='\t'.join(config['eutils']['header']['link_bios'])
     run:
-        df = pandas.read_csv(filepath_or_buffer=input[0], sep='\t', header=0)
-        df.fillna(value="NA", axis="columns", inplace=True)
-        print(df.head())
-        print(df.groupby('Completeness')['UID'].nunique())
-        print(df.groupby('Genome')['UID'].nunique())
-        print('Min length = {}; max length = {}'.format(min(df['Length']), max(df['Length'])))
-        total = df.shape[0]
-        df = df.loc[((df['Completeness'] == "NA") | (df['Completeness'] == "complete")) & ((df['Genome'] == "NA") | (df['Genome'] == "plasmid")) & (df['Length'] >= 100),]
-        print('Filtering: {} of {} entries were kept'.format(df.shape[0], total))
-        df.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
+        from utils import split_list, run_cmd
+        setup_logger(logging.INFO)
+        ids = pandas.read_csv(input[0], sep='\t', header=0)['UID_NUCCORE'].values
+        assert len(set(ids)) == len(ids)
+        logging.info('There are {} unique IDs'.format(len(ids)))
+        with open(output[0], 'w') as ofile:
+            ofile.write(params.header + '\n')
+            for chunk in tqdm(split_list(ids, 200)):
+                cmd = '{} \"{}\" {}'.format(params.query_before, ','.join([str(i) for i in chunk]), params.query_after)
+                cmd, cmd_s, cmd_o = run_cmd(cmd)
+                assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
+                ofile.write(cmd_o)
+        # checks
+        result = pandas.read_csv(output[0], sep='\t', header=0, index_col=0)
+        for i in result.index:
+            i_b = result.loc[i, 'UID_BIOSAMPLE']
+            assert i in ids, 'Unexpected nuccore ID {}'.format(i)
+            assert pandas.isnull(i_b) or (not re.search(';', str(i_b))), 'Multiple hits for {}: {}'.format(i, i_b)
 
 rule query_biosamples:
     input:
-        "{dir}/{date}__{db}__filtered.txt"
+        "{dir}/{date}__{db}__linkbiosamples.txt"
     output:
         "{dir}/{date}__{db}__biosamples.txt"
     message:
@@ -206,25 +216,43 @@ rule query_biosamples:
         query_before=config['eutils']['query']['biosample']['before'].format(path=config['eutils']['dir']),
         query_after=config['eutils']['query']['biosample']['after'].format(path=config['eutils']['dir']),
         header='\t'.join(config['eutils']['header']['biosample'])
-    shell:
-        """
-        echo -e \"{params.header}\" > {output} &&
-        {params.query_before} \"$(tail -n +2 {input} | cut -f8 | grep -v '^NA$' | sort | uniq | tr \'\n\' \' \')\" {params.query_after} >> {output}
-        """
+    run:
+        from utils import split_list, run_cmd
+        setup_logger(logging.INFO)
+        ids = pandas.read_csv(input[0], sep='\t', header=0)['UID_BIOSAMPLE']
+        ids = set(ids.loc[pandas.notnull(ids)].values)
+        logging.info('There are {} unique IDs'.format(len(ids)))
+        with open(output[0], 'w') as ofile:
+            ofile.write(params.header + '\n')
+            for chunk in tqdm(split_list(ids, 200)):
+                cmd = '{} \"{}\" {}'.format(params.query_before, ','.join([str(i) for i in chunk]), params.query_after)
+                cmd, cmd_s, cmd_o = run_cmd(cmd)
+                assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
+                ofile.write(cmd_o)
+        # checks
+        result = pandas.read_csv(output[0], sep='\t', header=0)
+        not_found = list(ids.difference(result['UID_BIOSAMPLE'].values)) # not found IDs
+        une_found = list(set(result['UID_BIOSAMPLE']).difference(ids)) # unexpected IDs, i.e. should not be searched
+        assert result.shape[0] == len(set(result['UID_BIOSAMPLE']))
+        assert len(not_found) == 0, 'Not found: {}: {}, ...'.format(len(not_found), ', '.join(not_found[0:5]))
+        assert len(une_found) == 0, 'Not expected: {}: {}, ...'.format(len(une_found), ', '.join(une_found[0:5]))
 
+# Taxa
+##################################################
 rule query_taxon:
     input:
-        "{dir}/{date}__{db}__filtered.txt"
+        "{dir}/{date}__{db}__nuccore.txt"
     output:
         "{dir}/{date}__{db}__taxa.txt"
     message:
         "Query for taxa from {input}"
     params:
         query_before=config['eutils']['query']['taxon']['before'].format(path=config['eutils']['dir']),
-        query_after=config['eutils']['query']['taxon']['after'].format(path=config['eutils']['dir'])
+        query_after=config['eutils']['query']['taxon']['after'].format(path=config['eutils']['dir']),
+        col=config['eutils']['header']['plasmid'].index('TaxonID_NUCCORE') + 1
     shell:
         """
-        {params.query_before} \"$(tail -n +2 {input} | cut -f10 | grep -v '^NA$' | sort | uniq | tr \'\n\' \' \')\" {params.query_after} > {output}
+        {params.query_before} \"$(tail -n +2 {input} | cut -f{params.col} | grep -v '^NA$' | sort | uniq | tr \'\n\' \' \')\" {params.query_after} > {output}
         """
 
 rule proc_taxon:
@@ -265,16 +293,15 @@ rule proc_taxon:
 ##################################################
 rule parse_locations:
     input:
-        tab="{dir}/{date}__{db}__biosamples.txt",
-        pck=config['data']['locs']
+        tab="{dir}/{date}__{db}__biosamples.txt"
     output:
         "{dir}/{date}__{db}__biosamples_locs.txt"
     message:
         "Parsing locations from {input}"
     params:
-        api_keys=config['data']['gmaps_api_keys']
+        api_keys=config['data']['gmaps_api_keys'],
+        pck=config['data']['locs']
     run:
-        setup_logger()
         # api keys
         with open(params.api_keys, 'r') as ifile:
             api_key = [k.rstrip('\n').strip() for k in ifile.readlines()]
@@ -282,8 +309,8 @@ rule parse_locations:
         logging.info('Using API key: %s' % api_key)
         # load known locations
         locs = dict()
-        if os.path.exists(input.pck):
-            with open(input.pck, 'rb') as ifile:
+        if os.path.exists(params.pck):
+            with open(params.pck, 'rb') as ifile:
                 locs = pickle.load(ifile)
         # sample table with locations
         df = pandas.read_csv(input.tab, header=0, index_col=0, sep='\t')
@@ -292,8 +319,8 @@ rule parse_locations:
         # parse
         for i in df.index:
             # location name and coordinates
-            l_n = df.loc[i,'Location']
-            l_c = df.loc[i,'Coordinates']
+            l_n = df.loc[i,'Location_BIOSAMPLE']
+            l_c = df.loc[i,'Coordinates_BIOSAMPLE']
 
             # pre-processing
             l_n = preproc_loc_str(l_n)
@@ -309,7 +336,7 @@ rule parse_locations:
                     logging.info('Retrieving coordinates for location: \"{}\"'.format(l_c))
                     try:
                         locs[l_c] = parse_location(loc_str=l_c, api_key=api_key, is_name=False)
-                        with open(input.pck, "wb") as ofile:
+                        with open(params.pck, "wb") as ofile:
                             pickle.dump(locs, ofile)
                     except Exception as e:
                         logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_c))
@@ -321,21 +348,21 @@ rule parse_locations:
                     logging.info('Retrieving coordinates for location: \"{}\"'.format(l_n))
                     try:
                         locs[l_n] = parse_location(loc_str=l_n, api_key=api_key, is_name=True)
-                        with open(input.pck, "wb") as ofile:
+                        with open(params.pck, "wb") as ofile:
                             pickle.dump(locs, ofile)
                     except Exception as e:
                         logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_n))
                         raise(e)
                 df.loc[i,'loc_lat'] = locs[l_n]['lat']
                 df.loc[i,'loc_lng'] = locs[l_n]['lng']
-        df.to_csv(output[0], sep='\t', header=True, index=True, index_label='ACC')
+        df.to_csv(output[0], sep='\t', header=True, index=True, index_label='UID_BIOSAMPLE')
 
-# Master files
+# FASTAs
 ##################################################
 # Download FASTAs
 rule download_seqs:
     input:
-        "%s/{date}__{db}__filtered.txt" % config['data']['odir']['reports']
+        "%s/{date}__{db}__nuccore.txt" % config['data']['odir']['reports']
     output:
         "%s/{date}__{db}.fna" % config["data"]["odir"]["master"]
     message:
@@ -345,11 +372,12 @@ rule download_seqs:
     shell:
         """
         mkdir -p $(dirname {output}) &&
-        python src/download_fastas.py -t {input} -i \"ACC\" -o {output} -c 20 -s 500 -e {params.eutils} 2>&1 | tee {output}.log &&
+        python download_fastas.py -t {input} -i \"UID_NUCCORE\" -o {output} -c 20 -s 500 -e {params.eutils} 2>&1 | tee {output}.log &&
         cat {output}.tmp.* > {output} && rm {output}.tmp.*
         """
 
-# BLASTn databases
+# BLASTn DBs
+##################################################
 rule blastndb:
     input:
         "%s/{date}__{db}.fna" % config["data"]["odir"]["master"]
@@ -365,6 +393,8 @@ rule blastndb:
         "{params.bin} -in {input} -input_type fasta -dbtype nucl -title \"ncbi__{wildcards.db}__{wildcards.date}\" -logfile {log}"
 
 # Mash
+##################################################
+# signatures
 rule mash_sig:
     input:
         "%s/{date}__{db}.fna" % config["data"]["odir"]["master"]
@@ -380,6 +410,7 @@ rule mash_sig:
     shell:
         "{params.mash} sketch {params.params} -o $(dirname {output})/$(basename -s .msh {output}) {input} 2>&1 | tee {log}"
 
+# distance matrix
 rule mash_dist:
     input:
         "%s/{date}__{db}.msh" % config["data"]["odir"]["master"]
@@ -395,7 +426,8 @@ rule mash_dist:
     shell:
         "{params.mash} dist {params.params} {input} {input} > {output} 2> {log}"
 
-# UMAP
+# Embedding
+##################################################
 rule umap:
     input:
         "%s/{date}__{db}.dist" % config["data"]["odir"]["master"]
@@ -411,7 +443,6 @@ rule umap:
     run:
         import umap
         import numpy
-        setup_logger()
         # IDs
         ids = None
         with open(input[0], 'r') as ifile:
@@ -448,10 +479,12 @@ rule umap:
             index_label='ID'
         )
 
-# Table
+# Info table
+##################################################
 rule infotable:
     input:
-        plasmids="%s/{date}__{db}__filtered.txt" % config["data"]["odir"]["reports"],
+        plasmids="%s/{date}__{db}__nuccore.txt" % config["data"]["odir"]["reports"],
+        linked_samples="%s/{date}__{db}__linkbiosamples.txt" % config["data"]["odir"]["reports"],
         samples="%s/{date}__{db}__biosamples_locs.txt" % config["data"]["odir"]["reports"],
         taxa="%s/{date}__{db}__taxaproc.txt" % config["data"]["odir"]["reports"],
         embedding="%s/{date}__{db}.umap" % config["data"]["odir"]["master"],
@@ -463,60 +496,80 @@ rule infotable:
     run:
         from Bio import SeqIO
         from Bio.SeqUtils import GC
-        setup_logger()
 
         # read in data
         # plasmids
-        pls = pandas.read_csv(input.plasmids, sep='\t', header=0, index_col=None)
-        pls.set_index(keys='ACC', drop=False, inplace=True, verify_integrity=True)
-        pls['ProjectID'].replace(0, None)
+        pls = pandas.read_csv(input.plasmids, sep='\t', header=0, index_col=None, dtype=str)
+        pls[['Length_NUCCORE']] = pls[['Length_NUCCORE']].apply(pandas.to_numeric)
+        pls.set_index(keys='ACC_NUCCORE', drop=False, inplace=True, verify_integrity=True)
+        # linked samples
+        lsmp = pandas.read_csv(input.linked_samples, sep='\t', header=None, names=['UID_NUCCORE', 'UID_BIOSAMPLE'], dtype=str)
+        lsmp.set_index(keys='UID_NUCCORE', drop=True, inplace=True, verify_integrity=True)
         # samples
-        smp = pandas.read_csv(input.samples, sep='\t', header=0, index_col=0)
+        smp = pandas.read_csv(input.samples, sep='\t', header=0, index_col=None, dtype=str)
+        smp.set_index(keys='UID_BIOSAMPLE', drop=True, inplace=True, verify_integrity=True)
         # taxonomy
-        tax = pandas.read_csv(input.taxa, sep='\t', header=0, index_col=None)
+        tax = pandas.read_csv(input.taxa, sep='\t', header=0, index_col=None, dtype=str)
         # embedding
-        emb = pandas.read_csv(input.embedding, sep='\t', header=0, index_col='ID')
+        emb = pandas.read_csv(input.embedding, sep='\t', header=0, index_col='ID', dtype=str)
 
         # add info from FASTA
         logging.info('Adding info from FASTA {}'.format(input.fasta))
-        pls['ACCFasta'] = None
-        pls['GC'] = None
+        pls['ACC_FASTA'] = None
+        pls['GC_NUCCORE'] = None
         with open(input.fasta, 'r') as ifile:
             for record in tqdm(SeqIO.parse(ifile, 'fasta')):
                 assert re.fullmatch(r'\w+\.\d+', record.id), 'Unexpected ID format in FASTA: {}'.format(record.id)
                 rid = record.id.split('.')[0]
                 assert rid in pls.index.values, 'FASTA record ID {}: not in plasmid table'.format(rid)
-                assert len(record.seq) == pls.loc[rid,'Length'], 'FASTA record ID {}: {} vs {} as length'.format(rid, len(record.seq), pls.loc[rid,'Length'])
-                pls.loc[rid,'ACCFasta'] = record.id
-                pls.loc[rid,'GC'] = GC(str(record.seq))
+                assert pls.loc[rid,'GC_NUCCORE'] is None, 'FASTA record ID {}: GC value already set'.format(rid)
+                assert len(record.seq) == pls.loc[rid,'Length_NUCCORE'], 'FASTA record ID {}: {} vs {} as length'.format(rid, len(record.seq), pls.loc[rid,'Length_NUCCORE'])
+                pls.loc[rid,'ACC_FASTA'] = record.id
+                pls.loc[rid,'GC_NUCCORE'] = GC(str(record.seq))
 
         # add info from other tables
+        logging.info('Adding info from {}'.format(input.linked_samples))
+        pls = pandas.merge(
+            left=pls,
+            right=lsmp,
+            how='left',
+            left_on='UID_NUCCORE',
+            right_index=True,
+            sort=False,
+            # suffixes=('_NUCCORE', '_BIOSAMPLE'),
+        )
         logging.info('Adding info from {}'.format(input.samples))
         pls = pandas.merge(
             left=pls,
             right=smp,
             how='left',
-            left_on='BioSampleACC',
+            left_on='UID_BIOSAMPLE',
             right_index=True,
-            sort=False
+            sort=False,
+            # suffixes=('_NUCCORE', '_BIOSAMPLE'),
         )
         logging.info('Adding info from {}'.format(input.taxa))
         pls = pandas.merge(
             left=pls,
             right=tax,
             how='left',
-            left_on='TaxonID',
+            left_on='TaxonID_NUCCORE',
             right_on='taxon_id',
-            sort=False
+            sort=False,
+            # suffixes=('_NUCCORE', '_TAXON'),
         )
         pls = pandas.merge(
             left=pls,
             right=emb,
             how='left',
-            left_on='ACCFasta',
+            left_on='ACC_FASTA',
             right_index=True,
-            sort=False
+            sort=False,
+            # suffixes=('_NUCCORE', '_EMB'),
         )
+
+        # drop not needed columns
+        pls.drop(columns=['TaxonID_NUCCORE'], inplace=True)
 
         # save
         pls.to_csv(

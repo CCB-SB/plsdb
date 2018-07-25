@@ -7,13 +7,31 @@ import pandas
 ##################################################
 # MISC
 ##################################################
-def setup_logger(level=logging.INFO):
+def setup_logger(log_level=logging.DEBUG):
     """Logger"""
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=log_level,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         datefmt='%y:%m:%d %H:%M:%S'
     )
+
+def split_list(values, size):
+    values = list(values)
+    for i in range(0, len(values), size):
+        yield values[i:(i + size)]
+
+def run_cmd(cmd):
+    """
+    Run given CMD
+    :param cmd: CMD (str)
+    :return: cmd (str), status (int), stdout + stderr (str)
+    """
+    import subprocess
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    p_stdout = p.stdout.read().decode()
+    p_comm   = p.communicate()[0]
+    p_status = p.returncode
+    return cmd, p_status, p_stdout
 
 ##################################################
 # LOCATIONS
