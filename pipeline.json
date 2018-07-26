@@ -46,4 +46,8 @@
         "neighbors": 50,
         "components": 2
     },
+    "krona": {
+        "url": "https://github.com/marbl/Krona/archive/xl2.5.zip",
+        "dir": "tools/KronaTools"
+    }
 }

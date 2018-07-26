@@ -9,14 +9,13 @@ configfile: CONFIG_JSON
 ##################################################
 import os
 import re
-import gzip
 import pandas
 import pickle
 import logging
 import datetime
 from tqdm import tqdm
-from glob import glob
 from Bio import SeqIO
+from collections import OrderedDict
 
 from utils import preproc_loc_str, preproc_loc_coords, parse_location, setup_logger
 
@@ -25,13 +24,16 @@ from utils import preproc_loc_str, preproc_loc_coords, parse_location, setup_log
 ##################################################
 
 # Date
-today = datetime.datetime.now().strftime("%Y_%m_%d")
+# today = datetime.datetime.now().strftime("%Y_%m_%d")
+today = "2018_07_25"
 
 # BLAST DB file ext.
 blastdb_ext = ['nin', 'nhr', 'nsq']
 
 # NCBI DBs
-dbs = ['refseq', 'genbank']
+dbs = OrderedDict()
+dbs['genbank'] = 'GenBank'
+dbs['refseq'] = 'RefSeq'
 
 ##################################################
 # Tools
@@ -42,44 +44,51 @@ BIN_MAKEBLASTDB = os.path.join(config["blast"]["dir"], "bin/makeblastdb")
 # Mash
 BIN_MASH = os.path.join(config["mash"]["dir"], "mash")
 
-# Eutils
+# edirect/eutils
 EUTILS_INSTALL = os.path.join(config["eutils"]["dir"], "install.done")
+
+# Krona
+BIN_KRONA_XML = os.path.join(config["krona"]["dir"], "bin/ktImportXML")
 
 ##################################################
 # Data
 ##################################################
 # Table with plasmid records
-PLASMIDS_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__nuccore.txt' % (today, db)) for db in dbs]
+PLASMIDS_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__nuccore.txt' % (today, db)) for db in dbs.keys()]
 
 # Associated BioSamples
-PLASMIDS_BIOS_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__linkbiosamples.txt' % (today, db)) for db in dbs]
+PLASMIDS_BIOS_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__linkbiosamples.txt' % (today, db)) for db in dbs.keys()]
 
 # Table with BioSamples
-BIOSAMPLES_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__biosamples.txt' % (today, db)) for db in dbs]
-BIOSAMPLES_LOCS_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__biosamples_locs.txt' % (today, db)) for db in dbs]
+BIOSAMPLES_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__biosamples.txt' % (today, db)) for db in dbs.keys()]
+BIOSAMPLES_LOCS_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__biosamples_locs.txt' % (today, db)) for db in dbs.keys()]
 
 # Table with taxa
-TAXA_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__taxa.txt' % (today, db)) for db in dbs]
-TAXA_PROC_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__taxaproc.txt' % (today, db)) for db in dbs]
+TAXA_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__taxa.txt' % (today, db)) for db in dbs.keys()]
+TAXA_PROC_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__taxaproc.txt' % (today, db)) for db in dbs.keys()]
 
 ##################################################
 # Data: "Master" files
 ##################################################
 # Plasmid sequences
-MASTER_GFASTA = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.fna" % today), db=dbs)
+MASTER_GFASTA = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.fna" % today), db=dbs.keys())
 
 # BLASTdb from master FASTA
-MASTER_BLASTDB = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.fna.{ext}" % today), db=dbs, ext=blastdb_ext)
+MASTER_BLASTDB = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.fna.{ext}" % today), db=dbs.keys(), ext=blastdb_ext)
 
 # Mash
-MASTER_MASH_SIG  = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.msh" % today), db=dbs)
-MASTER_MASH_DIST = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.dist" % today), db=dbs)
+MASTER_MASH_SIG  = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.msh" % today), db=dbs.keys())
+MASTER_MASH_DIST = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.dist" % today), db=dbs.keys())
 
 # UMAP
-MASTER_MASH_UMAP = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.umap" % today), db=dbs)
+MASTER_MASH_UMAP = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.umap" % today), db=dbs.keys())
 
 # Master info table
-MASTER_TAB = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.tsv" % today), db=dbs)
+MASTER_TAB = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.tsv" % today), db=dbs.keys())
+
+# Krona plot
+MASTER_KRONA_XML = os.path.join(config["data"]["odir"]["master"], "%s.xml" % today)
+MASTER_KRONA_HTML = os.path.join(config["data"]["odir"]["master"], "%s.html" % today)
 
 ##################################################
 # Rules
@@ -93,6 +102,7 @@ rule all:
 		blast=BIN_MAKEBLASTDB,
         mash=BIN_MASH,
         eutils=EUTILS_INSTALL,
+        krona=BIN_KRONA_XML,
         # plasmids
         query_plasmids=PLASMIDS_TAB,
         # linked samples
@@ -112,6 +122,8 @@ rule all:
         master_umap=MASTER_MASH_UMAP,
         # table
         master_tab=MASTER_TAB,
+        # krona plot
+        master_krona=[MASTER_KRONA_XML, MASTER_KRONA_HTML]
 
 # Tools
 ##################################################
@@ -141,7 +153,7 @@ rule install_eutils:
     output:
         EUTILS_INSTALL
     message:
-        "Install eUtils"
+        "Install edirect/euils"
     shell:
         """
         mkdir -p $(dirname {output}) && cd tools
@@ -153,6 +165,20 @@ rule install_eutils:
         rm edirect.tar.gz
         cd edirect && wget https://ftp.ncbi.nlm.nih.gov/entrez/entrezdirect/xtract.Linux.gz && gunzip -f xtract.Linux.gz && chmod +x xtract.Linux
         touch $(basename {output})
+        """
+
+rule install_krona:
+    output:
+        BIN_KRONA_XML
+    message:
+        "Install Krona"
+    params:
+        url=config["krona"]["url"],
+        name=os.path.basename(config["krona"]["url"])
+    shell:
+        """
+        mkdir -p tools && cd tools && wget {params.url} && unzip {params.name} && rm {params.name} &&
+        rsync -av Krona-xl2.5/KronaTools . && rm -r Krona-xl2.5/ && cd KronaTools && ./install.pl --prefix .
         """
 
 # Make queries & filtering
@@ -579,3 +605,29 @@ rule infotable:
             index=False,
             index_label=False
         )
+
+# Krona plot
+##################################################
+rule krona_xml:
+    input:
+        MASTER_TAB
+    output:
+        MASTER_KRONA_XML
+    message:
+        "Create XML file for Krona plot from {input}"
+    params:
+        labels=' '.join(dbs.values())
+    shell:
+        "python create_krona_xml.py -t {input} -o {output} -l {params.labels}"
+
+rule krona_html:
+    input:
+        MASTER_KRONA_XML
+    output:
+        MASTER_KRONA_HTML
+    message:
+        "Create Krona plot from {input}"
+    params:
+        bin=BIN_KRONA_XML
+    shell:
+        "{params.bin} {input} -o {output}"
