@@ -6,7 +6,11 @@
             "master": "data/master",
         },
         "gmaps_api_keys": "gmaps_api_keys.txt",
-        "locs": "locs.pck"
+        "locs": "locs.pck",
+        "filter": {
+            "min_len": 1000,
+            "dfilter": "cds|scaffold|contig|whole genome shotgun sequence|whole genome shotgun sequencing project"
+        }
     },
     "eutils": {
         "dir": "tools/edirect",
@@ -17,7 +21,7 @@
             "ranks": ["species", "genus", "family", "order", "class", "phylum", "superkingdom"]
         },
         "query": {
-            "plasmid": "{path}/esearch -db nuccore -query 'plasmid' | {path}/efilter -location plasmid -molecule genomic -organism bacteria -source {db} | {path}/efetch -format docsum | {path}/xtract -pattern DocumentSummary -ID '(NA)' -CAP '(NA)' -TITLE '(NA)' -DATE '(NA)' -TOPO '(NA)' -COMPL '(NA)' -TID '(NA)' -GEN '(NA)' -LEN '(NA)' -ID Id -CAP Caption -TITLE Title -DATE CreateDate -TOPO Topology -COMPL Completeness -TID TaxId -GEN Genome -LEN Slen -element '&ID' '&CAP' '&TITLE' '&DATE' '&TOPO' '&COMPL' '&TID' '&GEN' '&LEN'",
+            "plasmid": "{path}/esearch -db nuccore -query 'plasmid[ALL]' | {path}/efilter -location plasmid -organism bacteria -source {db} | {path}/efetch -format docsum | {path}/xtract -pattern DocumentSummary -ID '(NA)' -CAP '(NA)' -TITLE '(NA)' -DATE '(NA)' -TOPO '(NA)' -COMPL '(NA)' -TID '(NA)' -GEN '(NA)' -LEN '(NA)' -ID Id -CAP Caption -TITLE Title -DATE CreateDate -TOPO Topology -COMPL Completeness -TID TaxId -GEN Genome -LEN Slen -element '&ID' '&CAP' '&TITLE' '&DATE' '&TOPO' '&COMPL' '&TID' '&GEN' '&LEN'",
             "link_bios": {
                 "before": "{path}/epost -db nuccore -id",
                 "after": "-format uid | {path}/elink -target biosample -cmd neighbor -batch | {path}/xtract -pattern LinkSet -element IdList/Id -block LinkSetDb -sep ';' -element Id",
@@ -42,12 +46,12 @@
         "sketch_params": "-i -S 42 -p 20 -k 21 -s 1000",
         "dist_params": "-t -p 20"
     },
-    "umap": {
-        "neighbors": 50,
-        "components": 2
-    },
     "krona": {
         "url": "https://github.com/marbl/Krona/archive/xl2.5.zip",
         "dir": "tools/KronaTools"
+    },
+    "umap": {
+        "neighbors": 50,
+        "components": 2
     }
 }

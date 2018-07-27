@@ -40,14 +40,18 @@ snakemake -s pipeline.snake
 
 ### Pipeline steps
 
-*Note: All relevant files will be created for plasmids from GenBank and RefSeq respectively.*
+*Note: All relevant files will be created for each source separately.*
 
+- NCBI nucleotide database sources:
+    - EMBL
+    - INSDC (DDBJ, ENA, GenBank): [International Nucleotide Sequence Database Collaboration](https://www.ncbi.nlm.nih.gov/genbank/collab/)
+    - RefSeq
 - Tools:
     - Install [Mash](https://github.com/marbl/Mash)
     - Install [BLAST](https://blast.ncbi.nlm.nih.gov/Blast.cgi)
     - Install [edirect/eutils](https://www.ncbi.nlm.nih.gov/books/NBK179288/)
 - Plasmid records:
-    - Query for plasmids in the NCBI database
+    - Query for plasmids in the NCBI nucleotide database
 - BioSamples:
     - Query for BioSamples associated with retrieved plasmids
     - For each BioSample retrieve additional information
@@ -75,6 +79,12 @@ snakemake -s pipeline.snake
             - Isolation source
         - Embedding coordinates
 
+#### Notes to plasmid query in `nuccore`
+
+- `-molecule genomic` in `efilter` can remove some plasmid sequences
+    - Example: NZ_CP013186
+    - Thus, not used in the query
+
 #### Plot embedding in R
 
 ```R
@@ -99,5 +109,4 @@ dev.off()
 
 - **Mash**: "Mash: fast genome and metagenome distance estimation using MinHash", B. D. Ondov, T. J. Treangen, P. Melsted, A. B. Mallonee, N. H. Bergman, S. Koren and A. M. Phillippy, Genome Biology, 2016, [paper link](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-0997-x), [repository link](https://github.com/marbl/Mash)
 - **UMAP**: "UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction", L. McInnes and J. Healy, arXiv, 2018,
-[paper link](https://arxiv.org/abs/1802.03426), [repository link](https://github.com/lmcinnes/umap)
-- **BLAST**: "Basic local alignment search tool." , Altschul, S.F., Gish, W., Miller, W., Myers, E.W. & Lipman, D.J., J. Mol. Biol. 215:403-410, [paper link](https://www.ncbi.nlm.nih.gov/pubmed/2231712?dopt=Citation), [tool link](https://blast.ncbi.nlm.nih.gov/Blast.cgi)
+[
