@@ -8,7 +8,7 @@
         "gmaps_api_keys": "gmaps_api_keys.txt",
         "locs": "locs.pck",
         "filter": {
-            "min_len": 1000,
+            "min_len": 500,
             "dfilter": "cds|scaffold|contig|whole genome shotgun sequence|whole genome shotgun sequencing project"
         }
     },

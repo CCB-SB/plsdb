@@ -214,6 +214,7 @@ rule filter_plasmids:
     message:
         "Filter plasmids from {wildcards.db}"
     params:
+        min_len=config['data']['filter']['min_len'],
         dfilter=config['data']['filter']['dfilter'],
     run:
         setup_logger(logging.INFO)
@@ -230,6 +231,9 @@ rule filter_plasmids:
         keep_rows = pandas.Series([False if re.search(params.dfilter, d, re.IGNORECASE) else True for d in pls['Description_NUCCORE']], index=pls.index)
         pls = pls.loc[keep_rows,:]
         logging.info('Filtered: description "{}": kept {} records'.format(params.dfilter, pls.shape[0]))
+        # filter by length
+        pls = pls.loc[pls['Length_NUCCORE'] >= params.min_len,:]
+        logging.info('Filtered: seq. length < {}: kept {} records'.format(params.min_len, pls.shape[0]))
 
         # save
         pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
@@ -291,7 +295,7 @@ rule query_biosamples:
         setup_logger(logging.INFO)
 
         ids = pandas.read_csv(input[0], sep='\t', header=0)['UID_BIOSAMPLE']
-        ids = set(ids.loc[pandas.notnull(ids)].values)
+        ids = set(ids.loc[pandas.notnull(ids)].astype(int).values)
         logging.info('There are {} unique IDs'.format(len(ids)))
 
         with open(output[0], 'w') as ofile:
@@ -304,8 +308,10 @@ rule query_biosamples:
                 found = [int(l.split('\t')[0]) for l in cmd_o.split('\n') if l != '']
                 not_found = list(set(chunk).difference(found)) # not found IDs
                 une_found = list(set(found).difference(chunk)) # unexpected IDs, i.e. should not be searched
-                assert len(not_found) == 0, 'Not found: {}: {}, ...'.format(len(not_found), ', '.join(not_found[0:5]))
-                assert len(une_found) == 0, 'Not expected: {}: {}, ...'.format(len(une_found), ', '.join(une_found[0:5]))
+                # assert len(not_found) == 0, 'Not found: {}: {}, ...'.format(len(not_found), ', '.join([str(s) for s in not_found[0:5]]))
+                assert len(une_found) == 0, 'Not expected: {}: {}, ...'.format(len(une_found), ', '.join([str(s) for s in une_found[0:5]]))
+                if len(not_found) > 0:
+                    logging.warn('Could not find: %s' % ', '.join([str(s) for s in not_found]))
                 # save
                 ofile.write(cmd_o)
 
@@ -647,6 +653,11 @@ rule infotable:
 
         # drop not needed columns
         pls.drop(columns=['TaxonID_NUCCORE'], inplace=True)
+
+        # checks
+        assert all(pandas.notnull(pls['ACC_FASTA']))
+        assert all(pandas.notnull(pls['Length_NUCCORE']))
+        assert all(pandas.notnull(pls['GC_NUCCORE']))
 
         # save
         pls.to_csv(

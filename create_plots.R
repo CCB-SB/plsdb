@@ -93,7 +93,7 @@ plot_locs <- ggplot(data=info, aes(x=loc_lng, y=loc_lat)) +
 # plot: sequence length distribution
 plot_length <-  ggplot(data=info, aes(x=source, y=Length_NUCCORE, fill=source)) +
                 geom_violin(scale="width", draw_quantiles=c(0.5), size=1) +
-                geom_boxplot(width=.1)
+                geom_boxplot(width=.1) +
                 scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x), labels = trans_format("log10", math_format(10^.x))) +
                 guides(fill=FALSE) +
                 xlab('') + ylab('Nucleotide sequence length [bp]') +
