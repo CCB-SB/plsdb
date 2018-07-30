@@ -26,12 +26,8 @@ from utils import preproc_loc_str, preproc_loc_coords, parse_location, setup_log
 # Date
 today = datetime.datetime.now().strftime("%Y_%m_%d")
 
-# BLAST DB file ext.
-blastdb_ext = ['nin', 'nhr', 'nsq']
-
 # NCBI DBs
 dbs = OrderedDict()
-dbs['embl'] = 'EMBL'
 dbs['insd'] = 'INSDC'
 dbs['refseq'] = 'RefSeq'
 
@@ -75,7 +71,7 @@ TAXA_PROC_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__taxapr
 MASTER_GFASTA = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.fna" % today), db=dbs.keys())
 
 # BLASTdb from master FASTA
-MASTER_BLASTDB = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.fna.{ext}" % today), db=dbs.keys(), ext=blastdb_ext)
+MASTER_BLASTDB = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.fna.{ext}" % today), db=dbs.keys(), ext=config['blast']['ext'])
 
 # Mash
 MASTER_MASH_SIG  = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.msh" % today), db=dbs.keys())
@@ -461,7 +457,7 @@ rule blastndb:
     input:
         "%s/{date}__{db}.fna" % config["data"]["odir"]["master"]
     output:
-        ["%s/{date}__{db}.fna.%s" % (config["data"]["odir"]["master"], ext) for ext in blastdb_ext]
+        ["%s/{date}__{db}.fna.%s" % (config["data"]["odir"]["master"], ext) for ext in config['blast']['ext']]
     log:
         "%s/{date}__{db}.makeblastdb.log" % config["data"]["odir"]["master"]
     params:

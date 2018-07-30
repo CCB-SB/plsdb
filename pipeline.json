@@ -39,6 +39,7 @@
     "blast": {
         "url": "ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.7.1+-x64-linux.tar.gz",
         "dir": "tools/ncbi-blast-2.7.1+",
+        "ext": ["nin", "nhr", "nsq"]
     },
     "mash": {
         "url": "https://github.com/marbl/Mash/releases/download/v2.0/mash-Linux64-v2.0.tar",

@@ -13,6 +13,10 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### R packages
+
+Only the R-packages imported in `create_plots.R` are quired. Use `install.packages()` to install missing packages.
+
 ### Other software
 
 The binaries of [edirect/eutils](https://www.ncbi.nlm.nih.gov/books/NBK179288/), [Mash](https://github.com/marbl/Mash), and [BLAST](https://blast.ncbi.nlm.nih.gov/Blast.cgi) are downloaded by the pipeline.
@@ -27,7 +31,7 @@ will be updated with newly retrieved locations if you run the pipeline.
 
 ## Pipeline
 
-To print all rules to be executes run:
+To print all rules to be executed run:
 
 ```bash
 snakemake -s pipeline.snake -np
@@ -43,8 +47,7 @@ snakemake -s pipeline.snake
 *Note: All relevant files will be created for each source separately.*
 
 - NCBI nucleotide database sources:
-    - EMBL
-    - INSDC (DDBJ, ENA, GenBank): [International Nucleotide Sequence Database Collaboration](https://www.ncbi.nlm.nih.gov/genbank/collab/)
+    - INSDC (DDBJ, EMBL/ENA, GenBank): [International Nucleotide Sequence Database Collaboration](https://www.ncbi.nlm.nih.gov/genbank/collab/)
     - RefSeq
 - Tools:
     - Install [Mash](https://github.com/marbl/Mash)
@@ -58,6 +61,7 @@ snakemake -s pipeline.snake
         - Process location information
             - Uses GoogleMaps API
             - Uses coordinates if available, otherwise location
+        - Note that it can happen that some bio-sample UIDs have no hits which will be printed during the rule execution
 - Taxa:
     - Query for taxa associated with retrieved plasmids
     - Process retrieved data to extract queried taxon (ID, name, rank), complete lineage, and taxa/IDs for relevant ranks (from species to superkingdom)
@@ -69,44 +73,24 @@ snakemake -s pipeline.snake
         - Compute pairwise distances between plasmids using Mash
         - Compute embedding using UMAP
             - Requires ca. 42Gb for ca. 37.6K sequences
-    - Create an info table containing:
-        - Record information
-            - Sequence length and GC content
-            - Taxonomic information
-            - Other
-        - BioSample information
-            - Location (as given in DB) and coordinates retrieved with GoogleMaps
-            - Isolation source
-        - Embedding coordinates
-
-#### Notes to plasmid query in `nuccore`
-
-- `-molecule genomic` in `efilter` can remove some plasmid sequences
-    - Example: NZ_CP013186
-    - Thus, not used in the query
-
-#### Plot embedding in R
-
-```R
-# load ggplot2 for plotting
-require(ggplot2)
-
-# data tag
-tag <- '2018_07_25' # replace by your tag
-
-# read in
-d_g <- read.csv(file=sprintf('data/master/%s__genbank.umap', tag), header=TRUE, sep='\t')
-d_r <- read.csv(file=sprintf('data/master/%s__refseq.umap', tag), header=TRUE, sep='\t')
-
-# plot
-pdf('embedding.pdf')
-ggplot(data=d_g, aes(x=D1, y=D2)) + geom_point(size=1, alpha=0.5, colour='white', fill='#3399FF', shape=21) + ggtitle('GenBank') + theme_bw()
-ggplot(data=d_r, aes(x=D1, y=D2)) + geom_point(size=1, alpha=0.5, colour='white', fill='#3399FF', shape=21) + ggtitle('RefSeq') + theme_bw()
-dev.off()
-```
+- Create an info table containing:
+    - Record information
+        - Sequence length and GC content
+        - Taxonomic information
+        - Other
+    - BioSample information
+        - Location (as given in DB) and coordinates retrieved with GoogleMaps
+        - Isolation source
+    - Embedding coordinates
 
 # References
 
-- **Mash**: "Mash: fast genome and metagenome distance estimation using MinHash", B. D. Ondov, T. J. Treangen, P. Melsted, A. B. Mallonee, N. H. Bergman, S. Koren and A. M. Phillippy, Genome Biology, 2016, [paper link](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-0997-x), [repository link](https://github.com/marbl/Mash)
-- **UMAP**: "UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction", L. McInnes and J. Healy, arXiv, 2018,
-[
+- **Mash**: "Mash: fast genome and metagenome distance estimation using MinHash", B. D. Ondov, T. J. Treangen, P. Melste
+d, A. B. Mallonee, N. H. Bergman, S. Koren and A. M. Phillippy, Genome Biology, 2016, [paper link](https://genomebiology
+.biomedcentral.com/articles/10.1186/s13059-016-0997-x), [repository link](https://github.com/marbl/Mash)
+- **UMAP**: "UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction", L. McInnes and J. Healy, arXi
+v, 2018,
+[paper link](https://arxiv.org/abs/1802.03426), [repository link](https://github.com/lmcinnes/umap)
+- **BLAST**: "Basic local alignment search tool." , Altschul, S.F., Gish, W., Miller, W., Myers, E.W. & Lipman, D.J., J.
+ Mol. Biol. 215:403-410, [BLAST paper link](https://www.ncbi.nlm.nih.gov/pubmed/2231712?dopt=Citation), [BLAST+ paper link](https://www.ncbi.nlm.nih.gov/pubmed/20003500), [tool link](https://bl
+ast.ncbi.nlm.nih.gov/Blast.cgi)
