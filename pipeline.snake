@@ -36,6 +36,7 @@ dbs['refseq'] = 'RefSeq'
 ##################################################
 # BLAST
 BIN_MAKEBLASTDB = os.path.join(config["blast"]["dir"], "bin/makeblastdb")
+BIN_BLASTN = os.path.join(config["blast"]["dir"], "bin/blastn")
 
 # Mash
 BIN_MASH = os.path.join(config["mash"]["dir"], "mash")
@@ -70,6 +71,10 @@ TAXA_PROC_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__taxapr
 # Plasmid sequences
 MASTER_GFASTA = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.fna" % today), db=dbs.keys())
 
+# ABRicate
+MASTER_ABRICATE_DBS = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.abr.{rdb}" % today), db=dbs.keys(), rdb=config['abricate']['dbs'])
+MASTER_ABRICATE = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.abr" % today), db=dbs.keys())
+
 # BLASTdb from master FASTA
 MASTER_BLASTDB = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.fna.{ext}" % today), db=dbs.keys(), ext=config['blast']['ext'])
 
@@ -100,7 +105,7 @@ MASTER_PLOTS = os.path.join(config["data"]["odir"]["master"], "%s.pdf" % today)
 rule all:
 	input:
         # tools
-		blast=BIN_MAKEBLASTDB,
+		blast=[BIN_MAKEBLASTDB, BIN_BLASTN],
         mash=BIN_MASH,
         eutils=EUTILS_INSTALL,
         krona=BIN_KRONA_XML,
@@ -114,6 +119,8 @@ rule all:
 		# master files
         # fasta
         master_fasta=MASTER_GFASTA,
+        # abricate
+        abricate=MASTER_ABRICATE_DBS + [MASTER_ABRICATE],
         # blastdb
 		master_blastdb=MASTER_BLASTDB,
 		# mash
@@ -132,7 +139,7 @@ rule all:
 ##################################################
 rule install_blast:
     output:
-        BIN_MAKEBLASTDB
+        BIN_MAKEBLASTDB, BIN_BLASTN
     params:
         url=config["blast"]["url"],
         name=os.path.basename(config["blast"]["url"])
@@ -451,6 +458,104 @@ rule download_seqs:
         cat {output}.tmp.* > {output} && rm {output}.tmp.*
         """
 
+# ABRicate annot
+##################################################
+# NOTE: Because of an unknown issue some ABRicate calls terminate with an error:
+#       "ERROR: WARNING: can not find sequence data in ...".
+#       Thus, blastn is run using ABRicate DBs and the results are filtered by indentity and coverage
+#       analogous to the ABRicate implementation.
+rule abricate:
+    input:
+        "%s/{date}__{db}.fna" % config["data"]["odir"]["master"]
+    output:
+        "%s/{date}__{db}.abr.{rdb}" % config["data"]["odir"]["master"]
+    message:
+        "ABRicate on fasta: {input}"
+    params:
+        blastn=BIN_BLASTN,
+        cores=10
+    run:
+        from utils import run_cmd
+        setup_logger()
+        header = config['abricate']['blastn']['header']
+        cov = config['abricate']['params'][wildcards.rdb]['cov']
+        ident = config['abricate']['params'][wildcards.rdb]['ident']
+
+        # blastn search
+        cmd = config['abricate']['blastn']['cmd'].format(
+            blastn=params.blastn,
+            input=input[0],
+            rdb=wildcards.rdb,
+            ident=ident,
+            output=output[0],
+            header=' '.join(header),
+            cores=params.cores
+        )
+        logging.info(cmd)
+        cmd, cmd_s, cmd_o = run_cmd(cmd)
+        assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
+
+        # read in results
+        df = pandas.read_csv(output[0], sep='\t', header=None, names=header)
+
+        # compute coverage
+        # https://github.com/tseemann/abricate/blob/f38e303611291336a7dbb01e94c22fd894e51016/bin/abricate#L135
+        df['cov'] =  100 * (df['length'] - df['gaps']) / df['slen']
+        # filter by coverage
+        df = df.loc[df['cov'] >= cov,:]
+
+        # sseqid -> DB + ID
+        df['sseqdb'] = df['sseqid'].map(lambda x: x.split('~~~')[0])
+        df['sseqid'] = df['sseqid'].map(lambda x: ', '.join(x.split('~~~')[1:]))
+
+        # save
+        df.to_csv(
+            path_or_buf=output[0],
+            sep='\t',
+            header=True,
+            index=False,
+            index_label=False
+        )
+
+rule cat_abricate:
+    input:
+        ["%s/{date}__{db}.abr.%s" % (config["data"]["odir"]["master"], db) for db in config['abricate']['dbs']]
+    output:
+        "%s/{date}__{db}.abr" % config["data"]["odir"]["master"]
+    message:
+        "Concat ABRicate hits: {input}"
+    params:
+        blastn=BIN_BLASTN,
+        cores=10
+    run:
+        dfs = []
+        for ifile in input:
+            dfs.append(
+                pandas.read_csv(ifile, sep='\t', header=0)
+            )
+        dfs = pandas.concat(dfs, axis=0)
+        dfs.to_csv(
+            path_or_buf=output[0],
+            sep='\t',
+            header=True,
+            index=False,
+            index_label=False
+        )
+
+# rule abricate:
+#     input:
+#         "%s/{date}__{db}.fna" % config["data"]["odir"]["master"]
+#     output:
+#         "%s/{date}__{db}.abr" % config["data"]["odir"]["master"]
+#     message:
+#         "ABRicate on fasta: {input}"
+#     params:
+#         dbs=config['abricate']['dbs'],
+#         params=config['abricate']['params'],
+#         header='\t'.join(config['abricate']['header'])
+#     shell:
+#         "echo -n {params.header} > {output} && for db in {params.dbs}; do abricate {input} --db ${{db}} {params.params}; done >> {output}"
+
 # BLASTn DBs
 ##################################################
 rule blastndb:
@@ -564,6 +669,7 @@ rule infotable:
         samples="%s/{date}__{db}__biosamples_locs.txt" % config["data"]["odir"]["reports"],
         taxa="%s/{date}__{db}__taxaproc.txt" % config["data"]["odir"]["reports"],
         embedding="%s/{date}__{db}.umap" % config["data"]["odir"]["master"],
+        plasmidfinder="%s/{date}__{db}.abr.plasmidfinder" % config["data"]["odir"]["master"],
         fasta="%s/{date}__{db}.fna" % config["data"]["odir"]["master"]
     output:
         "%s/{date}__{db}.tsv" % config["data"]["odir"]["master"]
@@ -589,6 +695,16 @@ rule infotable:
         tax = pandas.read_csv(input.taxa, sep='\t', header=0, index_col=None, dtype=str)
         # embedding
         emb = pandas.read_csv(input.embedding, sep='\t', header=0, index_col='ID', dtype=str)
+        # PlasmidFinder
+        pf  = pandas.read_csv(input.plasmidfinder, sep='\t', header=0)
+        pfs = []
+        for aggr_id, aggr_df in pf.groupby(['qseqid']):
+            pfs.append({
+                'qseqid': aggr_id,
+                'plasmidfinder': '|'.join(aggr_df['sseqid'].values)
+            })
+        pfs = pandas.DataFrame(pfs)
+        pfs.set_index(keys='qseqid', drop=True, inplace=True, verify_integrity=True)
 
         # add info from FASTA
         logging.info('Adding info from FASTA {}'.format(input.fasta))
@@ -614,7 +730,6 @@ rule infotable:
             left_on='UID_NUCCORE',
             right_index=True,
             sort=False,
-            # suffixes=('_NUCCORE', '_BIOSAMPLE'),
         )
         logging.info('Adding info from {}'.format(input.samples))
         pls = pandas.merge(
@@ -624,7 +739,6 @@ rule infotable:
             left_on='UID_BIOSAMPLE',
             right_index=True,
             sort=False,
-            # suffixes=('_NUCCORE', '_BIOSAMPLE'),
         )
         logging.info('Adding info from {}'.format(input.taxa))
         pls = pandas.merge(
@@ -634,7 +748,6 @@ rule infotable:
             left_on='TaxonID_NUCCORE',
             right_on='taxon_id',
             sort=False,
-            # suffixes=('_NUCCORE', '_TAXON'),
         )
         logging.info('Adding info from {}'.format(input.embedding))
         pls = pandas.merge(
@@ -644,7 +757,15 @@ rule infotable:
             left_on='ACC_FASTA',
             right_index=True,
             sort=False,
-            # suffixes=('_NUCCORE', '_EMB'),
+        )
+        logging.info('Adding info from {}'.format(input.plasmidfinder))
+        pls = pandas.merge(
+            left=pls,
+            right=pfs,
+            how='left',
+            left_on='ACC_FASTA',
+            right_index=True,
+            sort=False,
         )
 
         # drop not needed columns

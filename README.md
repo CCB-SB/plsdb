@@ -2,15 +2,28 @@
 
 ## Requirements
 
-### Python modules
-Create a python environment and install required modules:
+### Python modules with Conda
 
+*Requires Python 3*
+
+#### Miniconda
 ```bash
-# create and activate venv
-virtualenv -p /usr/bin/python3 venv
-source venv/bin/activate
-# requirements
-pip install -r requirements.txt
+# get miniconda (for linux)
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+# install
+bash Miniconda3-latest-Linux-x86_64.sh
+# set path to binaries
+export PATH=/home/vgalata/miniconda3/bin:$PATH
+```
+
+#### Environment and modules
+```bash
+# create env
+conda create --name plsdb python=3
+# install packages
+conda install --name plsdb -c anaconda -c bioconda -c conda-forge --file requirements.txt
+# activate env
+source activate plsdb
 ```
 
 ### R packages
@@ -26,7 +39,7 @@ The binaries of [edirect/eutils](https://www.ncbi.nlm.nih.gov/books/NBK179288/),
 To map locations of associated BioSamples the GoogleMaps API is used.
 Thus, a Google API key is needed.
 The key should be stored in a local file specified in the pipeline config (`pipeline.json`, see the entry for `misc/gmaps_api_keys`).
-Also, a file with some of the already retrieved locations is included (`locs.pck`, Python `pickle` object) and
+Also, a file with some of the already retrieved locations is included (`locs.pck`, Python 3 `pickle` object) and
 will be updated with newly retrieved locations if you run the pipeline.
 
 ## Pipeline
@@ -73,7 +86,10 @@ snakemake -s pipeline.snake
         - Compute pairwise distances between plasmids using Mash
         - Compute embedding using UMAP
             - Requires ca. 42Gb for ca. 37.6K sequences
-- Create an info table containing:
+    - Annotate using ABRicate:
+        - BLASTn search in DBs provided by ABRicate
+        - Hits are processed and filtered, and collected in one file
+- Create info table:
     - Record information
         - Sequence length and GC content
         - Taxonomic information
@@ -82,6 +98,7 @@ snakemake -s pipeline.snake
         - Location (as given in DB) and coordinates retrieved with GoogleMaps
         - Isolation source
     - Embedding coordinates
+    - PlasmidFinder hits
 
 # References
 
@@ -94,3 +111,4 @@ v, 2018,
 - **BLAST**: "Basic local alignment search tool." , Altschul, S.F., Gish, W., Miller, W., Myers, E.W. & Lipman, D.J., J.
  Mol. Biol. 215:403-410, [BLAST paper link](https://www.ncbi.nlm.nih.gov/pubmed/2231712?dopt=Citation), [BLAST+ paper link](https://www.ncbi.nlm.nih.gov/pubmed/20003500), [tool link](https://bl
 ast.ncbi.nlm.nih.gov/Blast.cgi)
+- **ABRicate**: Tool implemented by Thorsten Seemann [repository link](https://github.com/tseemann/abricate)
