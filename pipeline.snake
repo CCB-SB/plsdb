@@ -460,9 +460,8 @@ rule download_seqs:
 
 # ABRicate annot
 ##################################################
-# NOTE: Because of an unknown issue some ABRicate calls terminate with an error:
-#       "ERROR: WARNING: can not find sequence data in ...".
-#       Thus, blastn is run using ABRicate DBs and the results are filtered by indentity and coverage
+# NOTE: To have more control over the BLAST search and filtering ABRicate is not used directly.
+#       BLASTn is run using ABRicate DBs and the results are filtered by indentity and coverage
 #       analogous to the ABRicate implementation.
 rule abricate:
     input:
