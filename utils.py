@@ -33,6 +33,21 @@ def run_cmd(cmd):
     p_status = p.returncode
     return cmd, p_status, p_stdout
 
+def mkdir(dpath, p=True):
+    import os
+    if p and not os.path.exists(dpath):
+        os.makedirs(dpath)
+    else:
+        os.makedirs(dpath)
+
+def proc_mlst_scheme_name(scheme_name):
+    import re
+    return re.sub('/', '_', re.sub('\s+', '__', scheme_name))
+
+def reproc_mlst_scheme_name(scheme_name):
+    import re
+    return re.sub('_', '/', re.sub('__', ' ', scheme_name))
+
 ##################################################
 # LOCATIONS
 ##################################################

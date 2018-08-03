@@ -1,4 +1,5 @@
 {
+    "env_name": "plsdb",
     "data": {
         "odir": {
             "reports": "data/reports",
@@ -57,7 +58,6 @@
     },
     "abricate": {
         "blastn":{
-            "count": "grep '^>' $(conda info --base)/envs/plsdb/db/{rdb}/sequences | wc -l",
             "cmd": "{blastn} -query {input} -db $(conda info --base)/envs/plsdb/db/{rdb}/sequences -task blastn -perc_identity {ident} -out {output} -outfmt '6 {header}' -num_threads {cores} -evalue 1E-20 -culling_limit 1",
             "header": ["qseqid", "qstart", "qend", "qlen", "sseqid", "sstart", "send", "slen", "stitle", "evalue", "pident", "length", "gaps"]
         },
@@ -84,5 +84,19 @@
                 "cov": 95
             },
         }
+    },
+    "pmlst": {
+        "ids": {
+            "IncI1": 1,
+            "IncHI2": 2,
+            "IncF": 3,
+            "IncN": 4,
+            "IncHI1": 5,
+            "IncA/C PMLST": 6,
+            "IncA/C cgPMLST": 7
+        },
+        "db": "pubmlst_plasmid_seqdef",
+        "url": "http://rest.pubmlst.org",
+        "cmd": "mlst --minid 95 --mincov 10 --minscore 1 --threads 2"
     }
 }
