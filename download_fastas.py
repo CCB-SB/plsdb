@@ -35,7 +35,7 @@ def prep_ids(ids):
 
 def download_sequences(i, ids):
     # tmp output file
-    ofile = ARGS.ofile + ".tmp.%d" % i
+    ofile = ARGS.ofile + ".tmp.%d.fasta" % i
     # CMD
     cmd = CMD.format(
         epath=ARGS.eutils,

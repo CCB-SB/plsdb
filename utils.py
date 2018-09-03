@@ -49,6 +49,55 @@ def reproc_mlst_scheme_name(scheme_name):
     return re.sub('_', '/', re.sub('__', ' ', scheme_name))
 
 ##################################################
+# Edirect/eutils
+##################################################
+def run_epost_split(df_file, ofile, header, cmd, df_col, split_size, split_str, **kwargs):
+    import pandas, tqdm
+
+    logging.info('CMD: {}'.format(cmd))
+
+    ids = pandas.read_csv(df_file, sep='\t', header=0, dtype=str)[df_col]
+    logging.info('There are {} IDs'.format(len(ids)))
+    ids.fillna(value='', inplace=True)
+    ids = ids.loc[ids != ""]
+    ids = set(ids.values)
+    if split_str is not None and split_str != "":
+        ids_ = set()
+        for id_ in ids:
+            ids_ = ids_.union(id_.split(split_str))
+        ids = ids_
+    logging.info('There are {} unique IDs'.format(len(ids)))
+
+    with open(ofile, 'w') as ohandle:
+        ohandle.write(header + '\n')
+        for chunk in tqdm.tqdm(split_list(ids, split_size)):
+            cmd_c = cmd.format(**kwargs, ids=','.join(chunk))
+            cmd_c, cmd_s, cmd_o = run_cmd(cmd_c)
+            assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd_c, cmd_s, cmd_o)
+            # checks
+            if re.search('elink', cmd):
+                for line in cmd_o.split('\n'):
+                    if line == '':
+                        continue
+                    if re.search('\t', line):
+                        i_n, i_s = line.split('\t')
+                    else:
+                        i_n = line.strip()
+                        i_s = None
+                    assert i_n in ids, 'Unexpected nuccore ID {}'.format(i_n)
+                    # assert i_s is None or (not re.search(';', i_s)), 'Multiple hits for {}: {}'.format(i_n, i_s)
+            else:
+                found = [l.split('\t')[0] for l in cmd_o.split('\n') if l != '']
+                not_found = list(set(chunk).difference(found)) # not found IDs
+                une_found = list(set(found).difference(chunk)) # unexpected IDs, i.e. should not be searched
+                # assert len(not_found) == 0, 'Not found: {}: {}, ...'.format(len(not_found), ', '.join([str(s) for s in not_found[0:5]]))
+                assert len(une_found) == 0, 'Not expected: {}: {}, ...'.format(len(une_found), ', '.join([str(s) for s in une_found[0:5]]))
+                if len(not_found) > 0:
+                    logging.warn('Could not find: %s' % ', '.join([str(s) for s in not_found]))
+            # save
+            ohandle.write(cmd_o)
+
+##################################################
 # LOCATIONS
 ##################################################
 # Parsing location information from NCBI (BioSample) using GoogleMaps

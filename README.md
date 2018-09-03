@@ -71,6 +71,16 @@ snakemake -s pipeline.snake
     - Get and process [pMLST data from PubMLST DB](https://pubmlst.org/plasmid/)
 - Plasmid records:
     - Query for plasmids in the NCBI nucleotide database
+    - XX Orlek et al.
+- Filtering
+    1. XX
+    2. XX
+        - Retrieve linked assembly UIDs
+        - Get assembly level, status, and if it is the latest version
+            - [NCBI assembly help page](https://www.ncbi.nlm.nih.gov/assembly/help/)
+        - Filtering:
+            - No assembly: Completeness status of the nuccore record has to be "complete"
+            - Has assembly: assembly status of the latest version has to be "Complete genome"
 - BioSamples:
     - Query for BioSamples associated with retrieved plasmids
     - For each BioSample retrieve additional information

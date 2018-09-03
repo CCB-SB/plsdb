@@ -3,38 +3,39 @@
     "data": {
         "odir": {
             "reports": "data/reports",
+            "checkm_fasta": "data/checkm/fasta",
+            "checkm_output": "data/checkm/output",
             "checks": "data/checks",
             "master": "data/master",
         },
         "gmaps_api_keys": "gmaps_api_keys.txt",
         "locs": "locs.pck",
-        "filter": {
-            "min_len": 500,
-            "dfilter": "cds|scaffold|contig|whole genome shotgun sequence|whole genome shotgun sequencing project"
-        }
+    },
+    "filtering": {
+        "dfilter": 'contig|\sgene(?!tic|ral|rat|ric)|integron|transposon|scaffold|insertion sequence|insertion element|phage|operon|partial sequence|partial plasmid|region|fragment|locus|complete (?!sequence|genome|plasmid|\.|,)|(?<!complete sequence, )whole genome shotgun|artificial|synthetic|vector'
     },
     "eutils": {
         "dir": "tools/edirect",
         "header": {
             "plasmid": ["UID_NUCCORE", "ACC_NUCCORE", "Description_NUCCORE", "CreateDate_NUCCORE", "Topology_NUCCORE", "Completeness_NUCCORE", "TaxonID_NUCCORE", "Genome_NUCCORE", "Length_NUCCORE"],
+            "link_asm": ["UID_NUCCORE", "UID_ASSEMBLY"],
             "link_bios": ["UID_NUCCORE", "UID_BIOSAMPLE"],
+            "assembly": ["UID_ASSEMBLY", "Status_ASSEMBLY", "SeqReleaseDate_ASSEMBLY", "SubmissionDate_ASSEMBLY", "Latest_ASSEMBLY"],
             "biosample": ["UID_BIOSAMPLE", "ACC_BIOSAMPLE", "Location_BIOSAMPLE", "Coordinates_BIOSAMPLE", "IsolationSource_BIOSAMPLE"],
+            "taxon": ["taxon_id", "taxon_name", "taxon_rank", "lineage"],
             "ranks": ["species", "genus", "family", "order", "class", "phylum", "superkingdom"]
         },
         "query": {
-            "plasmid": "{path}/esearch -db nuccore -query 'plasmid[ALL]' | {path}/efilter -location plasmid -organism bacteria -source {db} | {path}/efetch -format docsum | {path}/xtract -pattern DocumentSummary -ID '(NA)' -CAP '(NA)' -TITLE '(NA)' -DATE '(NA)' -TOPO '(NA)' -COMPL '(NA)' -TID '(NA)' -GEN '(NA)' -LEN '(NA)' -ID Id -CAP Caption -TITLE Title -DATE CreateDate -TOPO Topology -COMPL Completeness -TID TaxId -GEN Genome -LEN Slen -element '&ID' '&CAP' '&TITLE' '&DATE' '&TOPO' '&COMPL' '&TID' '&GEN' '&LEN'",
-            "link_bios": {
-                "before": "{path}/epost -db nuccore -id",
-                "after": "-format uid | {path}/elink -target biosample -cmd neighbor -batch | {path}/xtract -pattern LinkSet -element IdList/Id -block LinkSetDb -sep ';' -element Id",
+            "plasmid": {
+                "esearch_query": "biomol_genomic[PROP] AND plasmid[FILT] NOT complete cds[TITL] NOT gene[TITL] NOT genes[TITL] NOT contig[TITL] NOT scaffold[TITL] NOT whole genome map[TITL] NOT partial sequence[TITL] NOT partial plasmid[TITL] NOT locus[TITL] NOT region[TITL] NOT fragment[TITL] NOT integron[TITL] NOT transposon[TITL] NOT insertion sequence[TITL] NOT insertion element[TITL] NOT phage[TITL] NOT operon[TITL]",
+                "xtract_query": "-pattern DocumentSummary -ID '(NA)' -CAP '(NA)' -TITLE '(NA)' -DATE '(NA)' -TOPO '(NA)' -COMPL '(NA)' -TID '(NA)' -GEN '(NA)' -LEN '(NA)' -ID Id -CAP Caption -TITLE Title -DATE CreateDate -TOPO Topology -COMPL Completeness -TID TaxId -GEN Genome -LEN Slen -element '&ID' '&CAP' '&TITLE' '&DATE' '&TOPO' '&COMPL' '&TID' '&GEN' '&LEN'",
+                "efilter_query": "-location plasmid -organism bacteria -source {db}",
+                "cmd": "{path}/esearch -db nuccore -query \"{esearch_query}\" | {path}/efilter {efilter_query} | {path}/efetch -format docsum | {path}/xtract {xtract_query}"
             },
-            "biosample": {
-                "before": "{path}/epost -db biosample -id",
-                "after": "-format uid | {path}/efetch -format xml | {path}/xtract -pattern BioSample  -LOC '(NA)' -COORD '(NA)' -SOURCE '(NA)' -group Attribute -if Attribute@attribute_name -equals 'geo_loc_name' -LOC Attribute -group Attribute -if Attribute@attribute_name -equals 'lat_lon' -COORD Attribute -group Attribute -if Attribute@attribute_name -equals 'isolation_source' -SOURCE Attribute -group BioSample -element @id -element @accession -element '&LOC' '&COORD' '&SOURCE'"
-            },
-            "taxon": {
-                "before": "{path}/efetch -db taxonomy -id",
-                "after": "-format xml | {path}/xtract -pattern Taxon -sep '|' -element TaxId,ScientificName,Rank -element Lineage -block '*/Taxon' -sep '|' -element TaxId,ScientificName,Rank"
-            }
+            "linked": "{path}/epost -db {db_source} -id \"{ids}\" -format uid | {path}/elink -target {db_target} -cmd neighbor -batch | {path}/xtract -pattern LinkSet -element IdList/Id -block LinkSetDb -sep ';' -element Id",
+            "assembly": "{path}/epost -db assembly -id \"{ids}\" -format uid | {path}/efetch -format docsum | {path}/xtract -pattern DocumentSummary -LATEST '(False)' -element Id assembly-status SeqReleaseDate SubmissionDate -block PropertyList -if string -equals 'latest' -LATEST '(True)' -block DocumentSummary -element '&LATEST'",
+            "biosample": "{path}/epost -db biosample -id \"{ids}\" -format uid | {path}/efetch -format xml | {path}/xtract -pattern BioSample  -LOC '(NA)' -COORD '(NA)' -SOURCE '(NA)' -group Attribute -if Attribute@attribute_name -equals 'geo_loc_name' -LOC Attribute -group Attribute -if Attribute@attribute_name -equals 'lat_lon' -COORD Attribute -group Attribute -if Attribute@attribute_name -equals 'isolation_source' -SOURCE Attribute -group BioSample -element @id -element @accession -element '&LOC' '&COORD' '&SOURCE'",
+            "taxon": "{path}/efetch -db taxonomy -id \"{ids}\" -format xml | {path}/xtract -pattern Taxon -sep '|' -element TaxId,ScientificName,Rank -element Lineage -block '*/Taxon' -sep '|' -element TaxId,ScientificName,Rank"
         }
     },
     "blast": {
@@ -97,6 +98,7 @@
         },
         "db": "pubmlst_plasmid_seqdef",
         "url": "http://rest.pubmlst.org",
+        "url_schemes": "http://rest.pubmlst.org/db/pubmlst_plasmid_isolates/schemes",
         "cmd": "mlst --minid 95 --mincov 10 --minscore 1 --threads 2"
     }
 }
