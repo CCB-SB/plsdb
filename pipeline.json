@@ -3,13 +3,12 @@
     "data": {
         "odir": {
             "reports": "data/reports",
-            "checkm_fasta": "data/checkm/fasta",
-            "checkm_output": "data/checkm/output",
+            "rmlst": "data/rmlst/fasta",
             "checks": "data/checks",
             "master": "data/master",
         },
-        "gmaps_api_keys": "gmaps_api_keys.txt",
-        "locs": "locs.pck",
+        "api_keys": "api_keys.txt",
+        "locs": "locs.tsv",
     },
     "filtering": {
         "dfilter": 'contig|\sgene(?!tic|ral|rat|ric)|integron|transposon|scaffold|insertion sequence|insertion element|phage|operon|partial sequence|partial plasmid|region|fragment|locus|complete (?!sequence|genome|plasmid|\.|,)|(?<!complete sequence, )whole genome shotgun|artificial|synthetic|vector'
@@ -47,6 +46,7 @@
         "url": "https://github.com/marbl/Mash/releases/download/v2.0/mash-Linux64-v2.0.tar",
         "dir": "tools/mash-Linux64-v2.0",
         "sketch_params": "-i -S 42 -p 20 -k 21 -s 1000",
+        "dist0_params": "-d 0 -p 20",
         "dist_params": "-t -p 20"
     },
     "krona": {
@@ -100,5 +100,11 @@
         "url": "http://rest.pubmlst.org",
         "url_schemes": "http://rest.pubmlst.org/db/pubmlst_plasmid_isolates/schemes",
         "cmd": "mlst --minid 95 --mincov 10 --minscore 1 --threads 2"
+    },
+    "checkm": {
+        "yaml": "checkm.yaml",
+        "markers": "domain Bacteria",
+        "analysis": "-x fna -t 30",
+        "qa": "-x fna -t 20"
     }
 }

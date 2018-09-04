@@ -2,9 +2,8 @@
 
 ## Requirements
 
-### Python modules with Conda
-
-*Requires Python 3*
+### Python modules
+*Requires Python 2 and 3*
 
 #### Miniconda
 ```bash
@@ -16,7 +15,8 @@ bash Miniconda3-latest-Linux-x86_64.sh
 export PATH=$HOME/miniconda3/bin:$PATH
 ```
 
-#### Environment and modules
+#### Main conda environment
+Create the main environment and install needed packages:
 ```bash
 # create env
 conda create --name plsdb python=3
@@ -26,26 +26,32 @@ conda install --name plsdb -c anaconda -c bioconda -c conda-forge --file require
 source activate plsdb
 ```
 
-### R packages
+#### checkM conda environment
+A separate environment is needed for checkM as it requires Python 2.
+The environment is automatically created by the pipeline-snakemake file from `checkm.yaml` for the rule running checkM.
 
-Only the R-packages imported in `create_plots.R` are quired. Use `install.packages()` to install missing packages.
+### R packages
+Only the R-packages imported in `create_plots.R` are quired.
+Use `install.packages()` to install missing packages.
 
 ### Other software
+Tools/data installed by the pipeline:
+- Binaries of [edirect/eutils](https://www.ncbi.nlm.nih.gov/books/NBK179288/)
+- Binaries of [Mash](https://github.com/marbl/Mash)
+- Binaries of [BLAST+](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+)
 
-The binaries of [edirect/eutils](https://www.ncbi.nlm.nih.gov/books/NBK179288/), [Mash](https://github.com/marbl/Mash), and [BLAST](https://blast.ncbi.nlm.nih.gov/Blast.cgi) are downloaded by the pipeline.
+### Databases
+The pipeline will automatically update the following databases/datasets:
+- pMLST data is downloaded from [PubMLST](https://pubmlst.org/plasmid/)
+- ABRicate data is updated using the built-in function
+- checkM data is downloaded from [XX](XX)
 
-pMLST data is downloaded from [PubMLST](https://pubmlst.org/plasmid/).
-
-### GoogleMaps API key
-
-To map locations of associated BioSamples the GoogleMaps API is used.
-Thus, a Google API key is needed.
-The key should be stored in a local file specified in the pipeline config (`pipeline.json`, see the entry for `misc/gmaps_api_keys`).
-Also, a file with some of the already retrieved locations is included (`locs.pck`, Python 3 `pickle` object) and
-will be updated with newly retrieved locations if you run the pipeline.
+### API key for parsing location data
+To map locations of associated BioSamples the [OpenCageData](https://opencagedata.com/) API is used which requires an API key (you can register for a free trial account).
+The key should be stored in a local file specified in the pipeline config (`pipeline.json`, see `api_keys`).
+Also, a file with some of the already retrieved locations is included (`locs.tsv`) and will be updated with newly retrieved locations if you run the pipeline.
 
 ## Pipeline
-
 To print all rules to be executed run:
 
 ```bash
@@ -58,53 +64,61 @@ snakemake -s pipeline.snake
 ```
 
 ### Pipeline steps
-
-*Note: All relevant files will be created for each source separately.*
-
 - NCBI nucleotide database sources:
     - INSDC (DDBJ, EMBL/ENA, GenBank): [International Nucleotide Sequence Database Collaboration](https://www.ncbi.nlm.nih.gov/genbank/collab/)
     - RefSeq
 - Tools:
     - Install [Mash](https://github.com/marbl/Mash)
-    - Install [BLAST](https://blast.ncbi.nlm.nih.gov/Blast.cgi)
+    - Install [BLAST+](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+)
     - Install [edirect/eutils](https://www.ncbi.nlm.nih.gov/books/NBK179288/)
     - Get and process [pMLST data from PubMLST DB](https://pubmlst.org/plasmid/)
+    - Get data for [checkM](https://github.com/Ecogenomics/CheckM) and set its path
 - Plasmid records:
     - Query for plasmids in the NCBI nucleotide database
-    - XX Orlek et al.
-- Filtering
-    1. XX
-    2. XX
-        - Retrieve linked assembly UIDs
-        - Get assembly level, status, and if it is the latest version
-            - [NCBI assembly help page](https://www.ncbi.nlm.nih.gov/assembly/help/)
-        - Filtering:
-            - No assembly: Completeness status of the nuccore record has to be "complete"
-            - Has assembly: assembly status of the latest version has to be "Complete genome"
-- BioSamples:
-    - Query for BioSamples associated with retrieved plasmids
-    - For each BioSample retrieve additional information
-        - Process location information
-            - Uses GoogleMaps API
-            - Uses coordinates if available, otherwise location
-        - Note that it can happen that some bio-sample UIDs have no hits which will be printed during the rule execution
-- Taxa:
-    - Query for taxa associated with retrieved plasmids
-    - Process retrieved data to extract queried taxon (ID, name, rank), complete lineage, and taxa/IDs for relevant ranks (from species to superkingdom)
+    - `esearch` query from Orlek *et al.*
+- Plasmid meta data
+    - Retrieve linked assemblies and relevant meta data
+    - Retrieve linked BioSamples and relevant meta data
+    - Retrieve taxonomic information
+        - Process: extract queried taxon (ID, name, rank), complete lineage, and taxa/IDs for relevant ranks (from species to superkingdom)
+    - Add all new meta data to the table
+- Filtering (1): Filter by:
+    - Genome tag (must be `plasmid`): TODO: need?
+    - Description (regular expression from Orlek *et al.*)
+    - (Assembly) completeness ([NCBI assembly help page](https://www.ncbi.nlm.nih.gov/assembly/help/))
+        - If no assembly: Completeness status of the nuccore record has to be `complete`
+        - Has assembly: assembly status of the latest version has to be `Complete genome`
+    - By taxonomy: superkingdom taxon ID should be `2` (i.e. Bacteria)
+- Finding identical plasmids
+    - Download nucl. sequences
+    - Compute the sketches using Mash
+    - Get pairs of plasmids with distance of 0 using Mash
+    - Group plasmids with identical sequences
+        - Consider only pairs with Mash distances of 0
+- Filtering (2): Find putative chromosomal sequences
+    - Create FASTA file for each unique plasmid sequence
+    - Run checkM
+    - XX
+    - Remove all plasmids classified as putative chromosomes
+- Process BioSample locations
+    - Use coordinates if available, otherwise location
+    - Use OpenCageData API
 - Plasmid nucleotide sequences:
-    - Download FASTA for each plasmid record
+    - Create a new FASTA with nucl. sequences of remained plasmids
     - Create BLAST database file from plasmid FASTA
     - Create sketches from plasmid FASTA using Mash
     - Embedding:
         - Compute pairwise distances between plasmids using Mash
         - Compute embedding using UMAP
-            - Requires ca. 42Gb for ca. 37.6K sequences
+            - Requires ca. XXGb for ca. XXK sequences
     - Annotate using ABRicate:
         - BLASTn search in DBs provided by ABRicate
         - Hits are processed and filtered, and collected in one file
     - Annotate using pMLST:
         - Use `mlst` to run BLAST search on downloaded pMLST profiles
         - Process the results
+
+<!--
 - Create info table:
     - Record information
         - Sequence length and GC content
@@ -115,7 +129,7 @@ snakemake -s pipeline.snake
         - Isolation source
     - Embedding coordinates
     - PlasmidFinder hits
-    - pMLST hits
+    - pMLST hits -->
 
 #### Remarks
 
@@ -140,12 +154,10 @@ However, some things need to be considered:
 - **Mash**: "Mash: fast genome and metagenome distance estimation using MinHash", B. D. Ondov, T. J. Treangen, P. Melste
 d, A. B. Mallonee, N. H. Bergman, S. Koren and A. M. Phillippy, Genome Biology, 2016, [paper link](https://genomebiology
 .biomedcentral.com/articles/10.1186/s13059-016-0997-x), [repository link](https://github.com/marbl/Mash)
-- **UMAP**: "UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction", L. McInnes and J. Healy, arXi
+- **UMAP**: "UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction", L. McInnes and J. Healy, N. Saul and L. Großberger, Journal of Open Source Software
 v, 2018,
-[paper link](https://arxiv.org/abs/1802.03426), [repository link](https://github.com/lmcinnes/umap)
-- **BLAST**: "Basic local alignment search tool." , Altschul, S.F., Gish, W., Miller, W., Myers, E.W. & Lipman, D.J., J.
- Mol. Biol. 215:403-410, [BLAST paper link](https://www.ncbi.nlm.nih.gov/pubmed/2231712?dopt=Citation), [BLAST+ paper link](https://www.ncbi.nlm.nih.gov/pubmed/20003500), [tool link](https://bl
-ast.ncbi.nlm.nih.gov/Blast.cgi)
+[paper link](http://joss.theoj.org/papers/10.21105/joss.00861), [repository link](https://github.com/lmcinnes/umap)
+- **BLAST**: "Basic local alignment search tool." , S.F. Altschul, W. Gish, W. Miller, E. W. Myers and D. J.  Lipman, J. Mol. Biol. 215:403-410, [BLAST paper link](https://www.ncbi.nlm.nih.gov/pubmed/2231712), [BLAST+ paper link](https://www.ncbi.nlm.nih.gov/pubmed/20003500), [tool link](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+)
 - **ABRicate**: Tool implemented by Thorsten Seemann [repository link](https://github.com/tseemann/abricate)
 - **ARG-ANNOT**: "ARG-ANNOT, a new bioinformatic tool to discover antibiotic resistance genes in bacterial genomes", S. K. Gupta, B. R. Padmanabhan, S. M. Diene, R. Lopez-Rojas,
 M. Kempf, L. Landraud, and J. M. Rolain, Antimicrob. Agents Chemother., 2014, [paper link](https://www.ncbi.nlm.nih.gov/pubmed/24145532)
@@ -156,3 +168,7 @@ of the comprehensive antibiotic resistance database.", B. Jia, A. R. Raphenya, B
 - **PlasmidFinder**: "In silico detection and typing of plasmids using PlasmidFinder and plasmid multilocus sequence typing.", A. Carattoli, E. Zankari, A. Garcia-Fernandez, M. Voldby Larsen, O. Lund, L. Villa, F. Møller Aarestrup, and H. Hasman, Antimicrob. Agents Chemother., 2014, [paper link](http://aac.asm.org/content/58/7/3895.long)
 - **pMLST in PubMLST**: [web-site](https://pubmlst.org/plasmid/)
 - **mlst**: Tool implemented by Thorsten Seemann, [repository link](https://github.com/tseemann/mlst)
+- **checkM**: CheckM: assessing the quality of microbial genomes recovered from isolates, single cells, and metagenomes, D. H. Parks, M. Imelfort, C. T. Skennerton, P. Hugenholtz and G. W. Tyson, Genome Res., 2015, [paper link](https://genome.cshlp.org/content/25/7/1043.short), [repository link](https://github.com/Ecogenomics/CheckM)
+- **OpenCageData**: An API to convert coordinates to and from places, [web-site](https://opencagedata.com/)
+- **rMLST**: [rMLST at PubMLST](https://pubmlst.org/rmlst/), [paper link](http://www.ncbi.nlm.nih.gov/pubmed/22282518)
+- **Orlek et al.**: Ordering the mob: Insights into replicon and MOB typing schemes from analysis of a curated dataset of publicly available plasmids, A. Orlek, H. Phan, A. E. Sheppard, M. Doumith, M. Ellington, T. Peto, D. Crook, A. S. Walker, N. Woodford, M. F. Anjum, N. Stoesser, Plasmid, 2017, [paper link](https://www.ncbi.nlm.nih.gov/pubmed/28286183)

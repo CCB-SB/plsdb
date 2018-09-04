@@ -15,8 +15,10 @@
         * [ ] download: https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz
         * [ ] checkm data setRoot: data/checkm/data
         * [ ] marker: checkm taxon_set domain Bacteria data/checkm_marker.txt
-        * [ ] create a FASTA file and split it into individuaö FASTAs
-        * [ ] checkm analyze -x fna -t 10 data/checkm_marker.txt data/filter2/fasta/ data/filter2/checkm
+        * [ ] create a FASTA file and split it into individual FASTAs
+        * [ ] checkm analyze -x fna -t 30 data/checkm_marker.txt data/checkm/fasta/2018_09_03 data/checkm/output/2018_09_03
+        * [ ] checkm qa -t 20 data/checkm_marker.txt data/checkm/output/2018_09_03
+            - https://github.com/Ecogenomics/CheckM/wiki/Reported-Statistics
 * [ ] DB updates for annotations etc.
     * [ ] abricate
     * [ ] pMLST

@@ -17,14 +17,15 @@ from tqdm import tqdm
 from Bio import SeqIO
 from collections import OrderedDict
 
-from utils import preproc_loc_str, preproc_loc_coords, parse_location, setup_logger, run_cmd, mkdir
+from utils import setup_logger, run_cmd, mkdir
 
 ##################################################
 # Some settings
 ##################################################
 
 # Date
-today = datetime.datetime.now().strftime("%Y_%m_%d")
+# today = datetime.datetime.now().strftime("%Y_%m_%d")
+today = "2018_09_03"
 
 # NCBI DBs
 dbs = OrderedDict()
@@ -66,38 +67,36 @@ PMLST_DB = os.path.join(ENV_PATH, 'db/blast/mlst.fa')
 # Table with plasmid records
 PLASMIDS = [os.path.join(config['data']['odir']['reports'], '%s__%s__nuccore.txt' % (today, db)) for db in dbs.keys()]
 PLASMIDS_ALL = os.path.join(config['data']['odir']['reports'], '%s__nuccore.txt' % today)
+# linked assemblies
 PLASMIDS_ALL_ASM = os.path.join(config['data']['odir']['reports'], '%s__nuccore_assembly.txt' % today)
+# linked biosamples
 PLASMIDS_ALL_BIOS = os.path.join(config['data']['odir']['reports'], '%s__nuccore_biosample.txt' % today)
+# assembly info
 PLASMIDS_ASM = os.path.join(config['data']['odir']['reports'], '%s__assembly.txt' % today)
+# biosample info
 PLASMIDS_BIOS = os.path.join(config['data']['odir']['reports'], '%s__biosample.txt' % today)
+# taxonomy info (processed)
 PLASMIDS_TAX = os.path.join(config['data']['odir']['reports'], '%s__taxa.txt' % today)
 PLASMIDS_TAXP = os.path.join(config['data']['odir']['reports'], '%s__taxaproc.txt' % today)
+# all info together
+PLASMIDS_ALL_FULL = os.path.join(config['data']['odir']['reports'], '%s__full.txt' % today)
 
-# PLASMIDS_FILT1 = os.path.join(config['data']['odir']['reports'], '%s__filtered1.txt' % today)
-#
-# PLASMIDS_FILT1_ASM      = os.path.join(config['data']['odir']['reports'], '%s__filtered1_assembly.txt' % today)
-# PLASMIDS_FILT1_ASM_INFO = os.path.join(config['data']['odir']['reports'], '%s__filtered1_assembly_info.txt' % today)
-#
-# PLASMIDS_FILT2 = os.path.join(config['data']['odir']['reports'], '%s__filtered2.txt' % today)
-#
-# PLASMIDS_FILT2_FASTA = os.path.join(config['data']['odir']['reports'], '%s__filtered2.fna' % today)
-# PLASMIDS_FILT2_SKETCH = os.path.join(config['data']['odir']['reports'], '%s__filtered2.msh' % today)
-# PLASMIDS_FILT2_DIST = os.path.join(config['data']['odir']['reports'], '%s__filtered2.dist' % today)
-# PLASMIDS_FILT2_BIOS = os.path.join(config['data']['odir']['reports'], '%s__filtered2_biosample.txt' % today)
-# PLASMIDS_FILT2_BIOS_INFO = os.path.join(config['data']['odir']['reports'], '%s__filtered2_biosample_info.txt' % today)
+# filter1
+PLASMIDS_FILT1        = os.path.join(config['data']['odir']['reports'], '%s__filtered1.txt' % today)
+PLASMIDS_FILT1_FASTA  = os.path.join(config['data']['odir']['reports'], '%s__filtered1.fna' % today)
+PLASMIDS_FILT1_SKETCH = os.path.join(config['data']['odir']['reports'], '%s__filtered1.msh' % today)
+PLASMIDS_FILT1_DIST0  = os.path.join(config['data']['odir']['reports'], '%s__filtered1.dist0' % today)
+PLASMIDS_FILT1_IDENT  = os.path.join(config['data']['odir']['reports'], '%s__filtered1.ident' % today)
 
-# PLASMIDS_FILT2_FASTA = os.path.join(config['data']['odir']['reports'], '%s__filtered2.fna' % today)
+# rMLST
+PLASMIDS_FILT1_RMLST_FASTA     = os.path.join(config['data']['odir']['rmlst'], today, 'fastas.done')
+PLASMIDS_FILT1_RMLST_SUM       = os.path.join(config['data']['odir']['rmlst'], today, 'rmlst.tsv')
 
-# # Associated BioSamples
-# PLASMIDS_BIOS_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__linkbiosamples.txt' % (today, db)) for db in dbs.keys()]
-#
-# # Table with BioSamples
-# BIOSAMPLES_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__biosamples.txt' % (today, db)) for db in dbs.keys()]
-# BIOSAMPLES_LOCS_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__biosamples_locs.txt' % (today, db)) for db in dbs.keys()]
-#
-# # Table with taxa
-# TAXA_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__taxa.txt' % (today, db)) for db in dbs.keys()]
-# TAXA_PROC_TAB = [os.path.join(config['data']['odir']['reports'], '%s__%s__taxaproc.txt' % (today, db)) for db in dbs.keys()]
+# filter 2
+PLASMIDS_FILT2        = os.path.join(config['data']['odir']['reports'], '%s__filtered2.txt' % today)
+
+# process locations
+PLASMIDS_LOC = os.path.join(config['data']['odir']['reports'], '%s__locations.txt' % today)
 
 ##################################################
 # Data: "Master" files
@@ -148,18 +147,15 @@ rule all:
         krona=BIN_KRONA_XML,
         pmlstdb=[PMLST_CLEAN, PMLST_ALLELES, PMLST_DB],
         # plasmids
-        query_plasmids=[PLASMIDS_ALL, PLASMIDS_ASM, PLASMIDS_BIOS, PLASMIDS_TAXP],
-        # filtering
-        # filt1=PLASMIDS_FILT1,
-        # filt1_asm=PLASMIDS_FILT1_ASM_INFO,
-        # filt2=PLASMIDS_FILT2,
-        # filt2_sketch=PLASMIDS_FILT2_DIST,
-        # query_plasmids=[PLASMIDS_TAB, PLASMIDS_F_TAB],
-        # # linked samples
-        # query_bios=PLASMIDS_BIOS_TAB,
-        # query_biosamples=[BIOSAMPLES_TAB, BIOSAMPLES_LOCS_TAB],
-        # # linked taxa
-        # query_taxa=[TAXA_TAB, TAXA_PROC_TAB],
+        query_plasmids=PLASMIDS_ALL_FULL,
+        # plasmid filtering (1)
+        filter_plasmids=PLASMIDS_FILT1,
+        # identical plasmids
+        identical_plasmids=PLASMIDS_FILT1_IDENT,
+        # rmlst
+        # rmlst=PLASMIDS_FILT1_RMLST_SUM,
+        # locations
+        locs=PLASMIDS_LOC,
 		# # master files
         # # fasta
         # master_fasta=MASTER_GFASTA,
@@ -478,7 +474,6 @@ rule query_taxon:
     message:
         "Query for linked Taxa from {input}"
     run:
-        from utils import run_cmd
         setup_logger(logging.INFO)
 
         ids = pandas.read_csv(input[0], sep='\t', header=0, dtype=str)['TaxonID_NUCCORE'].fillna(value='')
@@ -532,450 +527,481 @@ rule proc_taxon:
                     assert info['taxon_id'] != "NA" and info['taxon_name'] != "NA"
                     ofile.write('\t'.join([info[k] for k in header]) + '\n')
 
-# # Plasmid filtering (1)
-# ##################################################
-# rule filter1:
-#     input:
-#         PLASMIDS_ALL
-#     output:
-#         PLASMIDS_FILT1
-#     message:
-#         "Filter plasmids from {input}"
-#     params:
-#         dfilter=config['filtering']['dfilter']
-#     run:
-#         setup_logger(logging.INFO)
-#         pls = pandas.read_csv(input[0], sep='\t', header=0)
-#         logging.info('Read in {} records'.format(pls.shape[0]))
-#
-#         # filter by completeness tag
-#         # pls = pls.loc[pls['Completeness_NUCCORE'] == 'complete',:]
-#         # logging.info('Filtered: completeness tag "complete": kept {} records'.format(pls.shape[0]))
-#
-#         # filter by genome tag
-#         # pls = pls.loc[pls['Genome_NUCCORE'] == 'plasmid',:]
-#         # logging.info('Filtered: genome tag "plasmid": kept {} records'.format(pls.shape[0]))
-#
-#         # filter by description
-#         keep_rows = pandas.Series([re.search(params.dfilter, d, re.IGNORECASE) is None for d in pls['Description_NUCCORE']], index=pls.index)
-#         pls = pls.loc[keep_rows,:]
-#         logging.info('Filtered: description "{}": kept {} records'.format(params.dfilter, pls.shape[0]))
-#
-#         # filter by length
-#         # pls = pls.loc[pls['Length_NUCCORE'] >= params.min_len,:]
-#         # logging.info('Filtered: seq. length < {}: kept {} records'.format(params.min_len, pls.shape[0]))
-#
-#         # save
-#         pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
-#
-# # Linked assemblies
-# rule query_linked_assemblies:
-#     input:
-#         PLASMIDS_FILT1
-#     output:
-#         PLASMIDS_FILT1_ASM
-#     message:
-#         "Query for linked Assemblies from {input}"
-#     run:
-#         from utils import run_epost_split
-#         setup_logger(logging.INFO)
-#         run_epost_split(
-#             df_file=input[0],
-#             ofile=output[0],
-#             header='\t'.join(config['eutils']['header']['link_asm']),
-#             cmd=config['eutils']['query']['linked'],
-#             df_col='UID_NUCCORE',
-#             split_size=300,
-#             split_str=None,
-#             path=config['eutils']['dir'],
-#             db_source='nuccore',
-#             db_target='assembly'
-#         )
-#
-# rule query_assemblies:
-#     input:
-#         PLASMIDS_FILT1_ASM
-#     output:
-#         PLASMIDS_FILT1_ASM_INFO
-#     message:
-#         "Query for Assemblies from {input}"
-#     run:
-#         from utils import run_epost_split
-#         setup_logger(logging.INFO)
-#         run_epost_split(
-#             df_file=input[0],
-#             ofile=output[0],
-#             header='\t'.join(config['eutils']['header']['assembly']),
-#             cmd=config['eutils']['query']['assembly'],
-#             df_col='UID_ASSEMBLY',
-#             split_size=300,
-#             split_str=';',
-#             path=config['eutils']['dir']
-#         )
-#
-# # Plasmid filtering (2)
-# ##################################################
-# rule filter2:
-#     input:
-#         plasmids=PLASMIDS_FILT1,
-#         pls_asm=PLASMIDS_FILT1_ASM,
-#         assemblies=PLASMIDS_FILT1_ASM_INFO
-#     output:
-#         PLASMIDS_FILT2
-#     message:
-#         "Filter plasmids from {input}"
-#     run:
-#         import datetime
-#         setup_logger(logging.INFO)
-#
-#         pls = pandas.read_csv(input.plasmids, sep='\t', header=0, dtype=str)
-#         pls.set_index('UID_NUCCORE', drop=False, inplace=True, verify_integrity=True)
-#         logging.info('Read in {} plasmid records'.format(pls.shape[0]))
-#
-#         asm = pandas.read_csv(input.assemblies, sep='\t', header=0, dtype=str)
-#         asm.set_index('UID_ASSEMBLY', drop=True, inplace=True, verify_integrity=True)
-#         logging.info('Read in {} assembly records'.format(pls.shape[0]))
-#
-#         pls_asm = pandas.read_csv(input.pls_asm, sep='\t', header=0, dtype=str)
-#         pls_asm.set_index('UID_NUCCORE', drop=True, inplace=True, verify_integrity=True)
-#         logging.info('Read in {} plasmid/assembly records'.format(pls.shape[0]))
-#
-#         # process plasmid/assembly mapping - only latest or none
-#         def get_latest_assembly(uids):
-#             if pandas.isnull(uids):
-#                 return None
-#             uids = uids.split(';')
-#             if len(uids) == 1:
-#                 return uids[0]
-#             for uid in uids:
-#                 if asm.loc[uid,'Latest_ASSEMBLY'] == 'True':
-#                     return uid
-#             # get dates, parse, sort, get first
-#             dates = asm.loc[uids,'SeqReleaseDate_ASSEMBLY'].map(lambda x: datetime.datetime.strptime(x, '%Y/%m/%d %H:%M'))
-#             dates.sort_values(ascending=False, inplace=True)
-#             logging.warn('No latest assembly among {}: latest w.r.t. date is {}'.format(uids, dates.index[0]))
-#             return dates.index[0]
-#
-#         pls_asm['UID_ASSEMBLY'] = pls_asm['UID_ASSEMBLY'].map(get_latest_assembly)
-#
-#         # add assembly ID
-#         pls = pandas.merge(
-#             left=pls,
-#             right=pls_asm,
-#             how='left',
-#             left_index=True,
-#             right_index=True,
-#             sort=False,
-#         )
-#
-#         # add assembly info
-#         pls = pandas.merge(
-#             left=pls,
-#             right=asm,
-#             how='left',
-#             left_on='UID_ASSEMBLY',
-#             right_index=True,
-#             sort=False,
-#         )
-#
-#         # filter
-#         def pls_filter(uid):
-#             if pandas.isnull(pls.loc[uid, 'UID_ASSEMBLY']):
-#                 return pls.loc[uid, 'Completeness_NUCCORE'] == 'complete'
-#             else:
-#                 return pls.loc[uid, 'Status_ASSEMBLY'] == 'Complete Genome'
-#
-#         pls = pls.loc[pls.index.map(pls_filter),:]
-#         logging.info('Filtered: assembly status OR completeness tag: kept {} records'.format(pls.shape[0]))
-#
-#         # save
-#         pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
-#
-# # FASTA
-# rule filter2_fasta:
-#     input:
-#         PLASMIDS_FILT2
-#     output:
-#         PLASMIDS_FILT2_FASTA
-#     message:
-#         "Downloading sequences for IDs in {input}"
-#     params:
-#         eutils=config['eutils']['dir']
-#     shell:
-#         """
-#         mkdir -p $(dirname {output}) &&
-#         python download_fastas.py -t {input} -i \"UID_NUCCORE\" -o {output} -c 10 -s 100 -e {params.eutils} 2>&1 | tee {output}.log &&
-#         cat {output}.tmp.* > {output} && rm {output}.tmp.*
-#         """
-#
-# # Mash sketch
-# rule filter2_sketch:
-#     input:
-#         PLASMIDS_FILT2_FASTA
-#     output:
-#         PLASMIDS_FILT2_SKETCH
-#     params:
-#         params=config['mash']['sketch_params'],
-#         mash=BIN_MASH
-#     message:
-#         "Create Mash signatures from {input}"
-#     shell:
-#         "{params.mash} sketch {params.params} -o $(dirname {output})/$(basename -s .msh {output}) {input}"
-#
-# # Mash dist
-# rule filter2_dist:
-#     input:
-#         PLASMIDS_FILT2_SKETCH
-#     output:
-#         PLASMIDS_FILT2_DIST
-#     params:
-#         mash=BIN_MASH
-#     message:
-#         "Compare signatures in {input}"
-#     shell:
-#         "{params.mash} dist -p 20 {input} {input} | awk -F'\t' '$1 != $2 && $3 == 0 {{print $0}}' > {output}"
+# Add to table
+rule collect_meta:
+    input:
+        pls=PLASMIDS_ALL,
+        asm=PLASMIDS_ASM,
+        bios=PLASMIDS_BIOS,
+        tax=PLASMIDS_TAXP,
+        pls_asm=PLASMIDS_ALL_ASM,
+        pls_bios=PLASMIDS_ALL_BIOS,
+    output:
+        PLASMIDS_ALL_FULL
+    message:
+        "Adding meta info to {input.pls}"
+    run:
+        import datetime
+        setup_logger(logging.INFO)
 
-# Plasmid filtering (3)
+        pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
+        pls.set_index('UID_NUCCORE', drop=False, inplace=True, verify_integrity=True)
+        logging.info('Read in {} plasmid records\n{}'.format(pls.shape[0], pls.head()))
+
+        asm = pandas.read_csv(input.asm, sep='\t', header=0, dtype=str)
+        asm.set_index('UID_ASSEMBLY', drop=True, inplace=True, verify_integrity=True)
+        logging.info('Read in {} assembly records\n{}'.format(asm.shape[0], asm.head()))
+
+        tax = pandas.read_csv(input.tax, sep='\t', header=0, dtype=str)
+        tax.set_index('taxon_id', drop=True, inplace=True, verify_integrity=True)
+        logging.info('Read in {} taxonomy records\n{}'.format(tax.shape[0], tax.head()))
+
+        bios = pandas.read_csv(input.bios, sep='\t', header=0, dtype=str)
+        bios.set_index('UID_BIOSAMPLE', drop=True, inplace=True, verify_integrity=True)
+        logging.info('Read in {} biosample records\n{}'.format(bios.shape[0], bios.head()))
+
+        pls_asm = pandas.read_csv(input.pls_asm, sep='\t', header=0, dtype=str)
+        pls_asm.set_index('UID_NUCCORE', drop=True, inplace=True, verify_integrity=True)
+        logging.info('Read in {} plasmid/assembly records\n{}'.format(pls_asm.shape[0], pls_asm.head()))
+
+        pls_bios = pandas.read_csv(input.pls_bios, sep='\t', header=0, dtype=str)
+        pls_bios.set_index('UID_NUCCORE', drop=True, inplace=True, verify_integrity=True)
+        logging.info('Read in {} plasmid/assembly records\n{}'.format(pls_bios.shape[0], pls_bios.head()))
+
+        # process plasmid/assembly mapping - only latest or none
+        def get_latest_assembly(uids):
+            if pandas.isnull(uids):
+                return None
+            uids = uids.split(';')
+            if len(uids) == 1:
+                return uids[0]
+            for uid in uids:
+                if asm.loc[uid,'Latest_ASSEMBLY'] == 'True':
+                    return uid
+            # get dates, parse, sort, get first
+            dates = asm.loc[uids,'SeqReleaseDate_ASSEMBLY'].map(lambda x: datetime.datetime.strptime(x, '%Y/%m/%d %H:%M'))
+            dates.sort_values(ascending=False, inplace=True)
+            logging.warn('No latest assembly among {}: latest w.r.t. date is {}'.format(uids, dates.index[0]))
+            return dates.index[0]
+
+        pls_asm['UID_ASSEMBLY'] = pls_asm['UID_ASSEMBLY'].map(get_latest_assembly)
+
+        # add assembly ID
+        pls = pandas.merge(
+            left=pls,
+            right=pls_asm,
+            how='left',
+            left_index=True,
+            right_index=True,
+            sort=False,
+        )
+        # add assembly info
+        pls = pandas.merge(
+            left=pls,
+            right=asm,
+            how='left',
+            left_on='UID_ASSEMBLY',
+            right_index=True,
+            sort=False,
+        )
+
+        # add biosample ID
+        pls = pandas.merge(
+            left=pls,
+            right=pls_bios,
+            how='left',
+            left_index=True,
+            right_index=True,
+            sort=False,
+        )
+        # add biosample info
+        pls = pandas.merge(
+            left=pls,
+            right=bios,
+            how='left',
+            left_on='UID_BIOSAMPLE',
+            right_index=True,
+            sort=False,
+        )
+
+        # add taxonomy
+        pls = pandas.merge(
+            left=pls,
+            right=tax,
+            how='left',
+            left_on='TaxonID_NUCCORE',
+            right_index=True,
+            sort=False,
+        )
+
+        # save
+        pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
+
+# Plasmid filtering (1)
+# ##################################################
+rule filter1:
+    input:
+        PLASMIDS_ALL_FULL
+    output:
+        PLASMIDS_FILT1
+    message:
+        "Filter plasmids from {input}"
+    params:
+        dfilter=config['filtering']['dfilter']
+    run:
+        setup_logger(logging.INFO)
+        pls = pandas.read_csv(input[0], sep='\t', header=0, dtype=str)
+        logging.info('Read in {} plasmid records'.format(pls.shape[0]))
+
+        # filter by genome tag
+        pls = pls.loc[pls['Genome_NUCCORE'] == 'plasmid',:]
+        logging.info('Filtered: genome tag "plasmid": kept {} records'.format(pls.shape[0]))
+
+        # filter by description
+        keep_rows = pandas.Series([re.search(params.dfilter, d, re.IGNORECASE) is None for d in pls['Description_NUCCORE']], index=pls.index)
+        pls = pls.loc[keep_rows,:]
+        logging.info('Filtered: description "{}": kept {} records'.format(params.dfilter, pls.shape[0]))
+
+        # filter by (assembly) completeness
+        def pls_filter(uid):
+            if pandas.isnull(pls.loc[uid, 'UID_ASSEMBLY']):
+                return pls.loc[uid, 'Completeness_NUCCORE'] == 'complete'
+            else:
+                return pls.loc[uid, 'Status_ASSEMBLY'] == 'Complete Genome'
+
+        pls = pls.loc[pls.index.map(pls_filter),:]
+        logging.info('Filtered: (assembly) completeness: kept {} records'.format(pls.shape[0]))
+
+        # filter by taxonomy
+        pls = pls.loc[pls['taxon_superkingdom_id'] == '2',:]
+        logging.info('Filtered: superkingdom ID is 2 (i.e. Bacteria): kept {} records'.format(pls.shape[0]))
+
+        # save
+        pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
+
+# Identical plasmids
 ##################################################
-# rule filter3:
-#     input:
-#         fasta=PLASMIDS_FILT2_FASTA
-#         sketch=PLASMIDS_FILT2_SKETCH
-#     output:
-#         PLASMIDS_FILT3
-#     message:
-#         "Filtering out identical plasmids from {input}"
-#     run:
-#         setup_logger(logging.INFO)
-#
-#         pls = pandas.read_csv(input[0], sep='\t', header=0)
-#         logging.info('Read in {} records'.format(pls.shape[0]))
+# FASTA
+rule get_fasta:
+    input:
+        "{basename}.txt"
+    output:
+        "{basename}.fna"
+    message:
+        "Downloading sequences for IDs in {input}"
+    params:
+        eutils=config['eutils']['dir']
+    shell:
+        """
+        mkdir -p $(dirname {output}) &&
+        python download_fastas.py -t {input} -i \"UID_NUCCORE\" -o {output} -c 10 -s 100 -e {params.eutils} 2>&1 | tee {output}.log &&
+        cat {output}.tmp.* > {output} && rm {output}.tmp.*
+        """
 
-# # FASTAs
-# ##################################################
-# # Download FASTAs
-# rule download_seqs:
-#     input:
-#         PLASMIDS_FILT2
-#     output:
-#         PLASMIDS_FILT2_FASTA
-#     message:
-#         "Downloading sequences for IDs in {input}"
-#     params:
-#         eutils=config['eutils']['dir']
-#     shell:
-#         """
-#         mkdir -p $(dirname {output}) &&
-#         python download_fastas.py -t {input} -i \"UID_NUCCORE\" -o {output} -c 10 -s 100 -e {params.eutils} 2>&1 | tee {output}.log &&
-#         cat {output}.tmp.* > {output} && rm {output}.tmp.*
-#         """
+# Mash sketch
+rule mash_sketch:
+    input:
+        "{basename}.fna"
+    output:
+        "{basename}.msh"
+    params:
+        params=config['mash']['sketch_params'],
+        mash=BIN_MASH
+    message:
+        "Create Mash signatures from {input}"
+    shell:
+        "{params.mash} sketch {params.params} -o $(dirname {output})/$(basename -s .msh {output}) {input}"
 
-# checkM
+# Mash dist (only if 0)
+rule mash_dist_zero:
+    input:
+        "{basename}.msh"
+    output:
+        "{basename}.dist0"
+    params:
+        params=config['mash']['dist0_params'],
+        mash=BIN_MASH
+    message:
+        "Compare signatures in {input}"
+    shell:
+        "{params.mash} dist {params.params} {input} {input} > {output}"
+
+# Assign I-group IDs (and some other stuff)
+rule identical_plasmids:
+    input:
+        pls=PLASMIDS_FILT1,
+        fna=PLASMIDS_FILT1_FASTA,
+        dist=PLASMIDS_FILT1_DIST0
+    output:
+        PLASMIDS_FILT1_IDENT
+    message:
+        "Group identical plasmids from {input.pls}"
+    run:
+        from Bio import SeqIO
+        from Bio.SeqUtils import GC
+        setup_logger(logging.INFO)
+
+        pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
+        pls.set_index('ACC_NUCCORE', drop=False, inplace=True, verify_integrity=True)
+        logging.info('Read in {} plasmid records'.format(pls.shape[0]))
+
+        # collect seq. stats.s
+        seq = []
+        seq_seq = {}
+        with open(input.fna, 'r') as ifile:
+            for record in tqdm(SeqIO.parse(ifile, 'fasta')):
+                assert re.fullmatch(r'\w+\.\d+', record.id), 'Unexpected ID format in FASTA: {}'.format(record.id)
+                rid = record.id.split('.')[0]
+                seq.append({
+                    'ACC_FASTA': record.id,
+                    'ACC_NUCCORE': rid,
+                    'GC_NUCCORE': GC(record.seq),
+                    'Length': len(record.seq)
+                })
+                seq_seq[record.id] = record.seq
+        seq = pandas.DataFrame(seq)
+        seq.set_index('ACC_NUCCORE', drop=True, inplace=True, verify_integrity=True)
+        # add to table
+        pls = pandas.merge(
+            left=pls,
+            right=seq,
+            how='left',
+            left_index=True,
+            right_index=True,
+            sort=False,
+        )
+        # check seq. length
+        assert pls['Length_NUCCORE'].astype(int).equals(pls['Length']), 'Sequence length is not always identical: nuccore vs. FASTA'
+        # drop 2nd seq. len. col.
+        pls.drop(columns=['Length'], inplace=True)
+        # change index
+        pls.set_index('ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
+
+        # find and assign identity groups
+        pls['UID_IDENTGROUP'] = None
+        groupID = 0
+        with open(input.dist, 'r') as ifile:
+            for line in tqdm(ifile):
+                sID, qID, dist, pv, sh = line.rstrip('\n').split('\t')
+                # same ID -> skip
+                if sID == qID:
+                    continue
+                # group ID already set -> skip
+                if pandas.notnull(pls.loc[sID, 'UID_IDENTGROUP']) and pandas.notnull(pls.loc[qID, 'UID_IDENTGROUP']):
+                    continue
+                # check if really equal
+                if len(seq_seq[sID]) != len(seq_seq[qID]):
+                    continue
+                elif seq_seq[sID] != seq_seq[qID]: # length is equal -> check sequences
+                    continue
+                # sequences are identical
+                # one of the seq.s has already an ID -> set to same value
+                if pandas.notnull(pls.loc[sID, 'UID_IDENTGROUP']):
+                    pls.loc[qID, 'UID_IDENTGROUP'] = pls.loc[sID, 'UID_IDENTGROUP']
+                    continue
+                if pandas.notnull(pls.loc[qID, 'UID_IDENTGROUP']):
+                    pls.loc[sID, 'UID_IDENTGROUP'] = pls.loc[qID, 'UID_IDENTGROUP']
+                    continue
+                # new group -> set both to new value
+                groupID += 1
+                pls.loc[sID, 'UID_IDENTGROUP'] = groupID
+                pls.loc[qID, 'UID_IDENTGROUP'] = groupID
+
+        # save
+        pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
+
+# Plasmid filtering (2)
 ##################################################
-# rule run_checkm:
-#     input:
-#         PLASMIDS_FILT2_FASTA
-#     output:
-#         XX
-#     message:
-#         "Run checkM for sequences in {input}"
-#     params:
-#         XX
-#     shell:
-#         """
-#         XX
-#         """
+# FASTA(s) for checkM
+rule fastas_for_rmlst:
+    input:
+        pls=PLASMIDS_FILT1_IDENT,
+        fna=PLASMIDS_FILT1_FASTA
+    output:
+        PLASMIDS_FILT1_RMLST_FASTA
+    message:
+        'Creating FASTA files for checkM from {input}'
+    run:
+        from utils import mkdir
+        from Bio import SeqIO
 
-# Plasmid filtering (3)
+        setup_logger(logging.INFO)
+        mkdir(os.path.dirname(output[0]), True)
+
+        # plasmids
+        pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
+        pls.set_index('ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
+        logging.info('Read in {} plasmid records'.format(pls.shape[0]))
+
+        # select unique plasmids
+        groups = set()
+        sel = set()
+        for sid in pls.index:
+            if pandas.isnull(pls.loc[sid, 'UID_IDENTGROUP']):
+                sel.add(sid)
+            elif pls.loc[sid, 'UID_IDENTGROUP'] not in groups:
+                sel.add(sid)
+                groups.add(pls.loc[sid, 'UID_IDENTGROUP'])
+        logging.info('Selected {} unique plasmids'.format(len(sel)))
+
+        # collect seq. stats.s
+        with open(input.fna, 'r') as ifile:
+            for record in tqdm(SeqIO.parse(ifile, 'fasta')):
+                if record.id in sel:
+                    SeqIO.write(record, os.path.join(os.path.dirname(output[0]), '%s.fna' % record.id), 'fasta')
+        with open(output[0], 'w') as ofile:
+            ofile.write('Created %d FASTA files' % len(sel))
+
+rule rmlst:
+    input:
+        PLASMIDS_FILT1_RMLST_FASTA
+    output:
+        PLASMIDS_FILT1_RMLST_SUM
+    params:
+        cores=5
+    run:
+        # Reference: https://pubmlst.org/rmlst/api.shtml
+        from multiprocessing import Pool
+        from glob import glob
+        from utils import run_rmlst
+
+        pool = Pool(params.cores)
+        df = pool.map(run_rmlst, glob('%s/*.fna' % os.path.dirname(input[0])))
+        pool.close()
+        pool.join()
+
+        # df = []
+        # for fasta in tqdm(glob('%s/*.fna' % os.path.dirname(input[0]))):
+        #     df.append(run_rmlst(fasta))
+
+        # convert
+        df = pandas.DataFrame(df)
+        # save
+        df.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
+
+rule filter2:
+    input:
+        pls=PLASMIDS_FILT1_IDENT,
+        rmlst=PLASMIDS_FILT1_RMLST_SUM
+    output:
+        PLASMIDS_FILT2
+    message:
+        "Filter based on rMLST results"
+    run:
+        setup_logger(logging.INFO)
+
+        pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
+        pls.set_index('ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
+        logging.info('Read in {} plasmid records\n{}'.format(pls.shape[0], pls.head()))
+
+        rmlst = pandas.read_csv(input.rmlst, sep='\t', header=0, dtype=str)
+        rmlst.set_index('ACC_FASTA', drop=True, inplace=True, verify_integrity=True)
+        logging.info('Read in {} rMLST records\n{}'.format(rmlst.shape[0], rmlst.head()))
+
+        # merge together
+        pls = pandas.merge(
+            left=pls,
+            right=rmlst,
+            how='left',
+            left_index=True,
+            right_index=True,
+            sort=False,
+        )
+        # add values for ident. sequences
+        for sid in pls.index:
+            if pandas.isnull(pls.loc[sid, 'Support_RMLST']):
+                continue
+            if pandas.isnull(pls.loc[sid, 'UID_IDENTGROUP']):
+                continue
+            sid_ident = pls['UID_IDENTGROUP'] == pls.loc[sid, 'UID_IDENTGROUP']
+            for col in rmlst.columns:
+                pls.loc[sid_ident, col] =  pls.loc[sid, col]
+
+        # filter
+        pls = pls.loc[pls['Support_RMLST'].astype(float) >= 0,:]
+        logging.info('Filtered: rMLST support": kept {} records'.format(pls.shape[0]))
+
+        # drop rMLST columns
+        pls.drop(columns=rmlst.columns, inplace=True)
+
+        # save
+        pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
+
+# Locations
 ##################################################
-# rule filter3:
-    # input:
+rule parse_locations:
+    input:
+        PLASMIDS_ALL_FULL
+    output:
+        PLASMIDS_LOC
+    message:
+        "Parsing locations from {input}"
+    params:
+        api_keys=config['data']['api_keys'],
+        locs=config['data']['locs']
+    run:
+        from utils import preproc_loc_str, preproc_loc_coords, parse_location
+        from utils import load_locs, save_locs, update_locs
+        setup_logger(logging.INFO)
 
-# # BioSamples
-# ##################################################
-# rule query_linked_biosamples:
-#     input:
-#         "{dir}/{date}__{db}__filtered.txt"
-#     output:
-#         "{dir}/{date}__{db}__linkbiosamples.txt"
-#     message:
-#         "Query for linked BioSamples from {input}"
-#     params:
-#         cmd=config['eutils']['query']['linked'].format(
-#             path=config['eutils']['dir'],
-#             db_source='nuccore',
-#             db_target='assembly'
-#         ),
-#         header='\t'.join(config['eutils']['header']['link_bios'])
-#     run:
-#         from utils import get_linked2uid
-#         setup_logger(logging.INFO)
-#         get_linked2uid(
-#             df_file=input[0],
-#             ofile=output[0],
-#             header=params.header,
-#             cmd=params.cmd,
-#             df_col='UID_NUCCORE',
-#             split_size=300
-#         )
-#
-# rule query_biosamples:
-#     input:
-#         "{dir}/{date}__{db}__linkbiosamples.txt"
-#     output:
-#         "{dir}/{date}__{db}__biosamples.txt"
-#     message:
-#         "Query for biosamples from {input}"
-#     params:
-#         query_before=config['eutils']['query']['biosample']['before'].format(path=config['eutils']['dir']),
-#         query_after=config['eutils']['query']['biosample']['after'].format(path=config['eutils']['dir']),
-#         header='\t'.join(config['eutils']['header']['biosample'])
-#     run:
-#         from utils import split_list, run_cmd
-#         setup_logger(logging.INFO)
-#
-#         ids = pandas.read_csv(input[0], sep='\t', header=0)['UID_BIOSAMPLE']
-#         ids = set(ids.loc[pandas.notnull(ids)].astype(int).values)
-#         logging.info('There are {} unique IDs'.format(len(ids)))
-#
-#         with open(output[0], 'w') as ofile:
-#             ofile.write(params.header + '\n')
-#             for chunk in tqdm(split_list(ids, 200)):
-#                 cmd = '{} \"{}\" {}'.format(params.query_before, ','.join([str(i) for i in chunk]), params.query_after)
-#                 cmd, cmd_s, cmd_o = run_cmd(cmd)
-#                 assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
-#                 # checks
-#                 found = [int(l.split('\t')[0]) for l in cmd_o.split('\n') if l != '']
-#                 not_found = list(set(chunk).difference(found)) # not found IDs
-#                 une_found = list(set(found).difference(chunk)) # unexpected IDs, i.e. should not be searched
-#                 # assert len(not_found) == 0, 'Not found: {}: {}, ...'.format(len(not_found), ', '.join([str(s) for s in not_found[0:5]]))
-#                 assert len(une_found) == 0, 'Not expected: {}: {}, ...'.format(len(une_found), ', '.join([str(s) for s in une_found[0:5]]))
-#                 if len(not_found) > 0:
-#                     logging.warn('Could not find: %s' % ', '.join([str(s) for s in not_found]))
-#                 # save
-#                 ofile.write(cmd_o)
-#
-# # Taxa
-# ##################################################
-# rule query_taxon:
-#     input:
-#         "{dir}/{date}__{db}__filtered.txt"
-#     output:
-#         "{dir}/{date}__{db}__taxa.txt"
-#     message:
-#         "Query for taxa from {input}"
-#     params:
-#         query_before=config['eutils']['query']['taxon']['before'].format(path=config['eutils']['dir']),
-#         query_after=config['eutils']['query']['taxon']['after'].format(path=config['eutils']['dir']),
-#         col=config['eutils']['header']['plasmid'].index('TaxonID_NUCCORE') + 1
-#     shell:
-#         """
-#         {params.query_before} \"$(tail -n +2 {input} | cut -f{params.col} | grep -v '^NA$' | sort | uniq | tr \'\n\' \' \')\" {params.query_after} > {output}
-#         """
-#
-# rule proc_taxon:
-#     input:
-#         "{dir}/{date}__{db}__taxa.txt"
-#     output:
-#         "{dir}/{date}__{db}__taxaproc.txt"
-#     message:
-#         "Process taxa from {input}"
-#     run:
-#         header  = ["taxon_id", "taxon_name", "taxon_rank", "lineage"]
-#         for rank in config['eutils']['header']['ranks']:
-#             header += ['taxon_%s_id' % rank, 'taxon_%s_name' % rank]
-#         with open(output[0], 'w') as ofile:
-#             ofile.write('\t'.join(header) + '\n')
-#             with open(input[0], 'r') as ifile:
-#                 for line in ifile:
-#                     info = dict.fromkeys(header,'NA')
-#                     line = line.rstrip('\n')
-#                     for field in line.split('\t'):
-#                         if re.search('\|',field):
-#                             tid, tname, trank = field.split('|')
-#                             if trank == 'no rank':
-#                                 trank = 'NA'
-#                             elif "taxon_%s_name" % trank in header:
-#                                 info["taxon_%s_name" % trank] = tname
-#                                 info["taxon_%s_id" % trank] = tid
-#                             if info['taxon_id'] == 'NA':
-#                                 info['taxon_id'] = tid
-#                                 info['taxon_name'] = tname
-#                                 info['taxon_rank'] = trank
-#                         else: # lineage
-#                             info['lineage'] = field
-#                     assert info['taxon_id'] != "NA" and info['taxon_name'] != "NA"
-#                     ofile.write('\t'.join([info[k] for k in header]) + '\n')
-#
-# # Locations
-# ##################################################
-# rule parse_locations:
-#     input:
-#         tab="{dir}/{date}__{db}__biosamples.txt"
-#     output:
-#         "{dir}/{date}__{db}__biosamples_locs.txt"
-#     message:
-#         "Parsing locations from {input}"
-#     params:
-#         api_keys=config['data']['gmaps_api_keys'],
-#         pck=config['data']['locs']
-#     run:
-#         setup_logger(logging.INFO)
-#         # api keys
-#         with open(params.api_keys, 'r') as ifile:
-#             api_key = [k.rstrip('\n').strip() for k in ifile.readlines()]
-#             api_key = api_key.pop()
-#         logging.info('Using API key: %s' % api_key)
-#         # load known locations
-#         locs = dict()
-#         if os.path.exists(params.pck):
-#             with open(params.pck, 'rb') as ifile:
-#                 locs = pickle.load(ifile)
-#         # sample table with locations
-#         df = pandas.read_csv(input.tab, header=0, index_col=0, sep='\t')
-#         df['loc_lat'] = None
-#         df['loc_lng'] = None
-#         # parse
-#         for i in df.index:
-#             # location name and coordinates
-#             l_n = df.loc[i,'Location_BIOSAMPLE']
-#             l_c = df.loc[i,'Coordinates_BIOSAMPLE']
-#
-#             # pre-processing
-#             l_n = preproc_loc_str(l_n)
-#             l_c = preproc_loc_coords(preproc_loc_str(l_c))
-#
-#             # no location data
-#             if l_n is None and l_c is None:
-#                 continue
-#
-#             # at least name or coordinates given
-#             if l_c is not None:
-#                 if l_c not in locs:
-#                     logging.info('Retrieving coordinates for location: \"{}\"'.format(l_c))
-#                     try:
-#                         locs[l_c] = parse_location(loc_str=l_c, api_key=api_key, is_name=False)
-#                         with open(params.pck, "wb") as ofile:
-#                             pickle.dump(locs, ofile)
-#                     except Exception as e:
-#                         logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_c))
-#                         raise(e)
-#                 df.loc[i,'loc_lat'] = locs[l_c]['lat']
-#                 df.loc[i,'loc_lng'] = locs[l_c]['lng']
-#             elif l_n is not None:
-#                 if l_n not in locs:
-#                     logging.info('Retrieving coordinates for location: \"{}\"'.format(l_n))
-#                     try:
-#                         locs[l_n] = parse_location(loc_str=l_n, api_key=api_key, is_name=True)
-#                         with open(params.pck, "wb") as ofile:
-#                             pickle.dump(locs, ofile)
-#                     except Exception as e:
-#                         logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_n))
-#                         raise(e)
-#                 df.loc[i,'loc_lat'] = locs[l_n]['lat']
-#                 df.loc[i,'loc_lng'] = locs[l_n]['lng']
-#         df.to_csv(output[0], sep='\t', header=True, index=True, index_label='UID_BIOSAMPLE')
-#
+        # api key
+        with open(params.api_keys, 'r') as ifile:
+            api_key = [k.rstrip('\n').strip() for k in ifile.readlines()]
+            api_key = api_key.pop()
+        logging.info('Using API key: {}'.format(api_key))
+
+        # load known locations
+        locs = load_locs(params.locs)
+
+        # sample table with locations
+        pls = pandas.read_csv(input[0], header=0, sep='\t')
+        pls['loc_lat'] = None
+        pls['loc_lng'] = None
+
+        # parse
+        for i in pls.index:
+            # location name and coordinates
+            l_n = pls.loc[i,'Location_BIOSAMPLE']
+            l_c = pls.loc[i,'Coordinates_BIOSAMPLE']
+
+            # pre-processing
+            l_n = preproc_loc_str(l_n)
+            l_c = preproc_loc_coords(preproc_loc_str(l_c))
+
+            # no location data
+            if l_n is None and l_c is None:
+                continue
+
+            # at least name or coordinates given
+            if l_c is not None:
+                l_c_str = '{};{}'.format(l_c[0], l_c[1])
+                if locs is None or l_c_str not in locs['location']:
+                    logging.info('Retrieving coordinates for location: \"{}\"'.format(l_c))
+                    try:
+                        parsed = parse_location(loc_str=l_c, api_key=api_key, is_name=False)
+                        locs = update_locs(locs, {'location': l_c_str, 'type': 'coordinates', 'lat': parsed['lat'], 'lng': parsed['lng']})
+                        save_locs(locs, params.locs)
+                    except Exception as e:
+                        logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_c))
+                        raise(e)
+                pls.loc[i,'loc_lat'] = locs.loc[l_c_str,'lat']
+                pls.loc[i,'loc_lng'] = locs.loc[l_c_str,'lng']
+            elif l_n is not None:
+                if locs is None or l_n not in locs['location']:
+                    logging.info('Retrieving coordinates for location: \"{}\"'.format(l_n))
+                    try:
+                        parsed = parse_location(loc_str=l_n, api_key=api_key, is_name=True)
+                        locs = update_locs(locs, {'location': l_n, 'type': 'name', 'lat': parsed['lat'], 'lng': parsed['lng']})
+                        save_locs(locs, params.locs)
+                    except Exception as e:
+                        logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_n))
+                        raise(e)
+                pls.loc[i,'loc_lat'] = locs.loc[l_n,'lat']
+                pls.loc[i,'loc_lng'] = locs.loc[l_n,'lng']
+
+        # save
+        pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
+
 # # FASTAs
 # ##################################################
 # # Download FASTAs
