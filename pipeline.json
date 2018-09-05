@@ -3,7 +3,7 @@
     "data": {
         "odir": {
             "reports": "data/reports",
-            "rmlst": "data/rmlst/fasta",
+            "chrom": "data/chrom",
             "checks": "data/checks",
             "master": "data/master",
         },
@@ -13,6 +13,7 @@
     "filtering": {
         "dfilter": 'contig|\sgene(?!tic|ral|rat|ric)|integron|transposon|scaffold|insertion sequence|insertion element|phage|operon|partial sequence|partial plasmid|region|fragment|locus|complete (?!sequence|genome|plasmid|\.|,)|(?<!complete sequence, )whole genome shotgun|artificial|synthetic|vector'
     },
+    "representative_genomes": "ftp://ftp.ncbi.nlm.nih.gov/genomes/GENOME_REPORTS/prok_representative_genomes.txt",
     "eutils": {
         "dir": "tools/edirect",
         "header": {
@@ -101,10 +102,4 @@
         "url_schemes": "http://rest.pubmlst.org/db/pubmlst_plasmid_isolates/schemes",
         "cmd": "mlst --minid 95 --mincov 10 --minscore 1 --threads 2"
     },
-    "checkm": {
-        "yaml": "checkm.yaml",
-        "markers": "domain Bacteria",
-        "analysis": "-x fna -t 30",
-        "qa": "-x fna -t 20"
-    }
 }

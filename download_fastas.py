@@ -17,14 +17,15 @@ def get_arg_parser():
     parser.add_argument('--ofile', '-o', help="Output file", required=True)
     parser.add_argument('--cores', '-c', help='Number of cores to use', type=int, default=1)
     parser.add_argument('--size', '-s', help='Bulk size', type=int, default=500)
-    parser.add_argument('--eutils', '-e', help='Path to dir. with eutils binaries',  default="tools/edirect")
+    parser.add_argument('--eutils', '-e', help='Path to dir. with eutils binaries', default="tools/edirect")
+    parser.add_argument('--idformat', '-f', help='ID format: uid or acc', default="uid", choices=['uid', 'acc'])
     return parser
 
 ##################################################
 # MAIN
 ##################################################
 ARGS = None
-CMD  = "{epath}/epost -db nuccore -id \"{ids}\" -format uid | {epath}/efetch -format fasta > {ofile}"
+CMD  = "{epath}/epost -db nuccore -id \"{ids}\" -format {IDformat} | {epath}/efetch -format fasta > {ofile}"
 
 def prep_ids(ids):
     """
@@ -40,7 +41,8 @@ def download_sequences(i, ids):
     cmd = CMD.format(
         epath=ARGS.eutils,
         ids=prep_ids(ids),
-        ofile=ofile
+        ofile=ofile,
+        IDformat=ARGS.idformat
     )
     logging.info('CMD: %s' % cmd)
     cmd, cmd_s, cmd_o = run_cmd(cmd)

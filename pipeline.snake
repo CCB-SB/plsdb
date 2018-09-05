@@ -88,15 +88,21 @@ PLASMIDS_FILT1_SKETCH = os.path.join(config['data']['odir']['reports'], '%s__fil
 PLASMIDS_FILT1_DIST0  = os.path.join(config['data']['odir']['reports'], '%s__filtered1.dist0' % today)
 PLASMIDS_FILT1_IDENT  = os.path.join(config['data']['odir']['reports'], '%s__filtered1.ident' % today)
 
-# rMLST
-PLASMIDS_FILT1_RMLST_FASTA     = os.path.join(config['data']['odir']['rmlst'], today, 'fastas.done')
-PLASMIDS_FILT1_RMLST_SUM       = os.path.join(config['data']['odir']['rmlst'], today, 'rmlst.tsv')
+# representative genomes
+REPR_GENOMES = os.path.join(config['data']['odir']['chrom'], today, 'representative_genomes.tsv')
+CHROM_FASTA  = os.path.join(config['data']['odir']['chrom'], today, 'chromosomes.fna')
+CHROM_SKETCH  = os.path.join(config['data']['odir']['chrom'], today, 'chromosomes.msh')
+PLASMIDS_CHROM_DIST = os.path.join(config['data']['odir']['chrom'], today, 'plasmids_chromosomes.dist')
+
+# # rMLST
+# PLASMIDS_FILT1_RMLST_FASTA     = os.path.join(config['data']['odir']['rmlst'], today, 'fastas.done')
+# PLASMIDS_FILT1_RMLST_SUM       = os.path.join(config['data']['odir']['rmlst'], today, 'rmlst.tsv')
 
 # filter 2
 PLASMIDS_FILT2        = os.path.join(config['data']['odir']['reports'], '%s__filtered2.txt' % today)
 
 # process locations
-PLASMIDS_LOC = os.path.join(config['data']['odir']['reports'], '%s__locations.txt' % today)
+# PLASMIDS_LOC = os.path.join(config['data']['odir']['reports'], '%s__locations.txt' % today)
 
 ##################################################
 # Data: "Master" files
@@ -152,10 +158,10 @@ rule all:
         filter_plasmids=PLASMIDS_FILT1,
         # identical plasmids
         identical_plasmids=PLASMIDS_FILT1_IDENT,
-        # rmlst
-        # rmlst=PLASMIDS_FILT1_RMLST_SUM,
+        # representative genomes
+        chrom_dist=PLASMIDS_CHROM_DIST,
         # locations
-        locs=PLASMIDS_LOC,
+        # locs=PLASMIDS_LOC,
 		# # master files
         # # fasta
         # master_fasta=MASTER_GFASTA,
@@ -638,7 +644,7 @@ rule collect_meta:
         pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
 
 # Plasmid filtering (1)
-# ##################################################
+##################################################
 rule filter1:
     input:
         PLASMIDS_ALL_FULL
@@ -810,197 +816,253 @@ rule identical_plasmids:
         # save
         pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
 
+# Chromosomes
+##################################################
+rule get_representative_genomes:
+    output:
+        REPR_GENOMES
+    params:
+        url = config['representative_genomes']
+    message:
+        "Download table of representative genomes from {params.url}"
+    run:
+        cmd = "mkdir -p {} && wget {} -O {}".format(os.path.dirname(output[0]), params.url, output[0])
+        cmd, cmd_s, cmd_o = run_cmd(cmd)
+        assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
+
+        df = pandas.read_csv(output[0], sep='\t', header=0)
+        ids = []
+        for s in df['Chromosome RefSeq']:
+            if pandas.isnull(s) or s == "":
+                continue
+            ids += s.split(',')
+        ids = pandas.Series(ids).to_frame('RefSeqAcc')
+        ids.to_csv(output[0], sep='\t', header=True, index=False)
+
+rule get_chromosome_fasta:
+    input:
+        REPR_GENOMES
+    output:
+        CHROM_FASTA
+    message:
+        "Download FASTAs from {input}"
+    params:
+        scr="download_fastas.py",
+        col="RefSeqAcc",
+        cores=10,
+        eutils=config['eutils']['dir']
+    shell:
+        """
+        mkdir -p $(dirname {output}) &&
+        python {params.scr} -t {input} -i {params.col} -o {output} -s 50 -c {params.cores} -f acc -e {params.eutils} 2>&1 | tee {output}.log &&
+        cat {output}.tmp.* > {output} && rm {output}.tmp.*
+        """
+
+rule pls_chrom_dist:
+    input:
+        msh_pls=PLASMIDS_FILT1_SKETCH,
+        msh_chrom=CHROM_SKETCH
+    output:
+        PLASMIDS_CHROM_DIST
+    params:
+        params=config['mash']['dist_params'],
+        mash=BIN_MASH
+    message:
+        "Compare signatures in {input}"
+    shell:
+        "{params.mash} dist {params.params} {input.msh_chrom} {input.msh_pls} > {output}"
+
 # Plasmid filtering (2)
 ##################################################
-# FASTA(s) for checkM
-rule fastas_for_rmlst:
-    input:
-        pls=PLASMIDS_FILT1_IDENT,
-        fna=PLASMIDS_FILT1_FASTA
-    output:
-        PLASMIDS_FILT1_RMLST_FASTA
-    message:
-        'Creating FASTA files for checkM from {input}'
-    run:
-        from utils import mkdir
-        from Bio import SeqIO
-
-        setup_logger(logging.INFO)
-        mkdir(os.path.dirname(output[0]), True)
-
-        # plasmids
-        pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
-        pls.set_index('ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
-        logging.info('Read in {} plasmid records'.format(pls.shape[0]))
-
-        # select unique plasmids
-        groups = set()
-        sel = set()
-        for sid in pls.index:
-            if pandas.isnull(pls.loc[sid, 'UID_IDENTGROUP']):
-                sel.add(sid)
-            elif pls.loc[sid, 'UID_IDENTGROUP'] not in groups:
-                sel.add(sid)
-                groups.add(pls.loc[sid, 'UID_IDENTGROUP'])
-        logging.info('Selected {} unique plasmids'.format(len(sel)))
-
-        # collect seq. stats.s
-        with open(input.fna, 'r') as ifile:
-            for record in tqdm(SeqIO.parse(ifile, 'fasta')):
-                if record.id in sel:
-                    SeqIO.write(record, os.path.join(os.path.dirname(output[0]), '%s.fna' % record.id), 'fasta')
-        with open(output[0], 'w') as ofile:
-            ofile.write('Created %d FASTA files' % len(sel))
-
-rule rmlst:
-    input:
-        PLASMIDS_FILT1_RMLST_FASTA
-    output:
-        PLASMIDS_FILT1_RMLST_SUM
-    params:
-        cores=5
-    run:
-        # Reference: https://pubmlst.org/rmlst/api.shtml
-        from multiprocessing import Pool
-        from glob import glob
-        from utils import run_rmlst
-
-        pool = Pool(params.cores)
-        df = pool.map(run_rmlst, glob('%s/*.fna' % os.path.dirname(input[0])))
-        pool.close()
-        pool.join()
-
-        # df = []
-        # for fasta in tqdm(glob('%s/*.fna' % os.path.dirname(input[0]))):
-        #     df.append(run_rmlst(fasta))
-
-        # convert
-        df = pandas.DataFrame(df)
-        # save
-        df.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
-
-rule filter2:
-    input:
-        pls=PLASMIDS_FILT1_IDENT,
-        rmlst=PLASMIDS_FILT1_RMLST_SUM
-    output:
-        PLASMIDS_FILT2
-    message:
-        "Filter based on rMLST results"
-    run:
-        setup_logger(logging.INFO)
-
-        pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
-        pls.set_index('ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
-        logging.info('Read in {} plasmid records\n{}'.format(pls.shape[0], pls.head()))
-
-        rmlst = pandas.read_csv(input.rmlst, sep='\t', header=0, dtype=str)
-        rmlst.set_index('ACC_FASTA', drop=True, inplace=True, verify_integrity=True)
-        logging.info('Read in {} rMLST records\n{}'.format(rmlst.shape[0], rmlst.head()))
-
-        # merge together
-        pls = pandas.merge(
-            left=pls,
-            right=rmlst,
-            how='left',
-            left_index=True,
-            right_index=True,
-            sort=False,
-        )
-        # add values for ident. sequences
-        for sid in pls.index:
-            if pandas.isnull(pls.loc[sid, 'Support_RMLST']):
-                continue
-            if pandas.isnull(pls.loc[sid, 'UID_IDENTGROUP']):
-                continue
-            sid_ident = pls['UID_IDENTGROUP'] == pls.loc[sid, 'UID_IDENTGROUP']
-            for col in rmlst.columns:
-                pls.loc[sid_ident, col] =  pls.loc[sid, col]
-
-        # filter
-        pls = pls.loc[pls['Support_RMLST'].astype(float) >= 0,:]
-        logging.info('Filtered: rMLST support": kept {} records'.format(pls.shape[0]))
-
-        # drop rMLST columns
-        pls.drop(columns=rmlst.columns, inplace=True)
-
-        # save
-        pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
+# # FASTA(s) for checkM
+# rule fastas_for_rmlst:
+#     input:
+#         pls=PLASMIDS_FILT1_IDENT,
+#         fna=PLASMIDS_FILT1_FASTA
+#     output:
+#         PLASMIDS_FILT1_RMLST_FASTA
+#     message:
+#         'Creating FASTA files for checkM from {input}'
+#     run:
+#         from utils import mkdir
+#         from Bio import SeqIO
+#
+#         setup_logger(logging.INFO)
+#         mkdir(os.path.dirname(output[0]), True)
+#
+#         # plasmids
+#         pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
+#         pls.set_index('ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
+#         logging.info('Read in {} plasmid records'.format(pls.shape[0]))
+#
+#         # select unique plasmids
+#         groups = set()
+#         sel = set()
+#         for sid in pls.index:
+#             if pandas.isnull(pls.loc[sid, 'UID_IDENTGROUP']):
+#                 sel.add(sid)
+#             elif pls.loc[sid, 'UID_IDENTGROUP'] not in groups:
+#                 sel.add(sid)
+#                 groups.add(pls.loc[sid, 'UID_IDENTGROUP'])
+#         logging.info('Selected {} unique plasmids'.format(len(sel)))
+#
+#         # collect seq. stats.s
+#         with open(input.fna, 'r') as ifile:
+#             for record in tqdm(SeqIO.parse(ifile, 'fasta')):
+#                 if record.id in sel:
+#                     SeqIO.write(record, os.path.join(os.path.dirname(output[0]), '%s.fna' % record.id), 'fasta')
+#         with open(output[0], 'w') as ofile:
+#             ofile.write('Created %d FASTA files' % len(sel))
+#
+# rule rmlst:
+#     input:
+#         PLASMIDS_FILT1_RMLST_FASTA
+#     output:
+#         PLASMIDS_FILT1_RMLST_SUM
+#     params:
+#         cores=5
+#     run:
+#         # Reference: https://pubmlst.org/rmlst/api.shtml
+#         from multiprocessing import Pool
+#         from glob import glob
+#         from utils import run_rmlst
+#
+#         pool = Pool(params.cores)
+#         df = pool.map(run_rmlst, glob('%s/*.fna' % os.path.dirname(input[0])))
+#         pool.close()
+#         pool.join()
+#
+#         # df = []
+#         # for fasta in tqdm(glob('%s/*.fna' % os.path.dirname(input[0]))):
+#         #     df.append(run_rmlst(fasta))
+#
+#         # convert
+#         df = pandas.DataFrame(df)
+#         # save
+#         df.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
+#
+# rule filter2:
+#     input:
+#         pls=PLASMIDS_FILT1_IDENT,
+#         rmlst=PLASMIDS_FILT1_RMLST_SUM
+#     output:
+#         PLASMIDS_FILT2
+#     message:
+#         "Filter based on rMLST results"
+#     run:
+#         setup_logger(logging.INFO)
+#
+#         pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
+#         pls.set_index('ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
+#         logging.info('Read in {} plasmid records\n{}'.format(pls.shape[0], pls.head()))
+#
+#         rmlst = pandas.read_csv(input.rmlst, sep='\t', header=0, dtype=str)
+#         rmlst.set_index('ACC_FASTA', drop=True, inplace=True, verify_integrity=True)
+#         logging.info('Read in {} rMLST records\n{}'.format(rmlst.shape[0], rmlst.head()))
+#
+#         # merge together
+#         pls = pandas.merge(
+#             left=pls,
+#             right=rmlst,
+#             how='left',
+#             left_index=True,
+#             right_index=True,
+#             sort=False,
+#         )
+#         # add values for ident. sequences
+#         for sid in pls.index:
+#             if pandas.isnull(pls.loc[sid, 'Support_RMLST']):
+#                 continue
+#             if pandas.isnull(pls.loc[sid, 'UID_IDENTGROUP']):
+#                 continue
+#             sid_ident = pls['UID_IDENTGROUP'] == pls.loc[sid, 'UID_IDENTGROUP']
+#             for col in rmlst.columns:
+#                 pls.loc[sid_ident, col] =  pls.loc[sid, col]
+#
+#         # filter
+#         pls = pls.loc[pls['Support_RMLST'].astype(float) >= 0,:]
+#         logging.info('Filtered: rMLST support": kept {} records'.format(pls.shape[0]))
+#
+#         # drop rMLST columns
+#         pls.drop(columns=rmlst.columns, inplace=True)
+#
+#         # save
+#         pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
 
 # Locations
 ##################################################
-rule parse_locations:
-    input:
-        PLASMIDS_ALL_FULL
-    output:
-        PLASMIDS_LOC
-    message:
-        "Parsing locations from {input}"
-    params:
-        api_keys=config['data']['api_keys'],
-        locs=config['data']['locs']
-    run:
-        from utils import preproc_loc_str, preproc_loc_coords, parse_location
-        from utils import load_locs, save_locs, update_locs
-        setup_logger(logging.INFO)
-
-        # api key
-        with open(params.api_keys, 'r') as ifile:
-            api_key = [k.rstrip('\n').strip() for k in ifile.readlines()]
-            api_key = api_key.pop()
-        logging.info('Using API key: {}'.format(api_key))
-
-        # load known locations
-        locs = load_locs(params.locs)
-
-        # sample table with locations
-        pls = pandas.read_csv(input[0], header=0, sep='\t')
-        pls['loc_lat'] = None
-        pls['loc_lng'] = None
-
-        # parse
-        for i in pls.index:
-            # location name and coordinates
-            l_n = pls.loc[i,'Location_BIOSAMPLE']
-            l_c = pls.loc[i,'Coordinates_BIOSAMPLE']
-
-            # pre-processing
-            l_n = preproc_loc_str(l_n)
-            l_c = preproc_loc_coords(preproc_loc_str(l_c))
-
-            # no location data
-            if l_n is None and l_c is None:
-                continue
-
-            # at least name or coordinates given
-            if l_c is not None:
-                l_c_str = '{};{}'.format(l_c[0], l_c[1])
-                if locs is None or l_c_str not in locs['location']:
-                    logging.info('Retrieving coordinates for location: \"{}\"'.format(l_c))
-                    try:
-                        parsed = parse_location(loc_str=l_c, api_key=api_key, is_name=False)
-                        locs = update_locs(locs, {'location': l_c_str, 'type': 'coordinates', 'lat': parsed['lat'], 'lng': parsed['lng']})
-                        save_locs(locs, params.locs)
-                    except Exception as e:
-                        logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_c))
-                        raise(e)
-                pls.loc[i,'loc_lat'] = locs.loc[l_c_str,'lat']
-                pls.loc[i,'loc_lng'] = locs.loc[l_c_str,'lng']
-            elif l_n is not None:
-                if locs is None or l_n not in locs['location']:
-                    logging.info('Retrieving coordinates for location: \"{}\"'.format(l_n))
-                    try:
-                        parsed = parse_location(loc_str=l_n, api_key=api_key, is_name=True)
-                        locs = update_locs(locs, {'location': l_n, 'type': 'name', 'lat': parsed['lat'], 'lng': parsed['lng']})
-                        save_locs(locs, params.locs)
-                    except Exception as e:
-                        logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_n))
-                        raise(e)
-                pls.loc[i,'loc_lat'] = locs.loc[l_n,'lat']
-                pls.loc[i,'loc_lng'] = locs.loc[l_n,'lng']
-
-        # save
-        pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
+# rule parse_locations:
+#     input:
+#         PLASMIDS_ALL_FULL
+#     output:
+#         PLASMIDS_LOC
+#     message:
+#         "Parsing locations from {input}"
+#     params:
+#         api_keys=config['data']['api_keys'],
+#         locs=config['data']['locs']
+#     run:
+#         from utils import preproc_loc_str, preproc_loc_coords, parse_location
+#         from utils import load_locs, save_locs, update_locs
+#         setup_logger(logging.INFO)
+#
+#         # api key
+#         with open(params.api_keys, 'r') as ifile:
+#             api_key = [k.rstrip('\n').strip() for k in ifile.readlines()]
+#             api_key = api_key.pop()
+#         logging.info('Using API key: {}'.format(api_key))
+#
+#         # load known locations
+#         locs = load_locs(params.locs)
+#
+#         # sample table with locations
+#         pls = pandas.read_csv(input[0], header=0, sep='\t')
+#         pls['loc_lat'] = None
+#         pls['loc_lng'] = None
+#
+#         # parse
+#         for i in pls.index:
+#             # location name and coordinates
+#             l_n = pls.loc[i,'Location_BIOSAMPLE']
+#             l_c = pls.loc[i,'Coordinates_BIOSAMPLE']
+#
+#             # pre-processing
+#             l_n = preproc_loc_str(l_n)
+#             l_c = preproc_loc_coords(preproc_loc_str(l_c))
+#
+#             # no location data
+#             if l_n is None and l_c is None:
+#                 continue
+#
+#             # at least name or coordinates given
+#             if l_c is not None:
+#                 l_c_str = '{};{}'.format(l_c[0], l_c[1])
+#                 if locs is None or l_c_str not in locs['location']:
+#                     logging.info('Retrieving coordinates for location: \"{}\"'.format(l_c))
+#                     try:
+#                         parsed = parse_location(loc_str=l_c, api_key=api_key, is_name=False)
+#                         locs = update_locs(locs, {'location': l_c_str, 'type': 'coordinates', 'lat': parsed['lat'], 'lng': parsed['lng']})
+#                         save_locs(locs, params.locs)
+#                     except Exception as e:
+#                         logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_c))
+#                         raise(e)
+#                 pls.loc[i,'loc_lat'] = locs.loc[l_c_str,'lat']
+#                 pls.loc[i,'loc_lng'] = locs.loc[l_c_str,'lng']
+#             elif l_n is not None:
+#                 if locs is None or l_n not in locs['location']:
+#                     logging.info('Retrieving coordinates for location: \"{}\"'.format(l_n))
+#                     try:
+#                         parsed = parse_location(loc_str=l_n, api_key=api_key, is_name=True)
+#                         locs = update_locs(locs, {'location': l_n, 'type': 'name', 'lat': parsed['lat'], 'lng': parsed['lng']})
+#                         save_locs(locs, params.locs)
+#                     except Exception as e:
+#                         logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_n))
+#                         raise(e)
+#                 pls.loc[i,'loc_lat'] = locs.loc[l_n,'lat']
+#                 pls.loc[i,'loc_lng'] = locs.loc[l_n,'lng']
+#
+#         # save
+#         pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
 
 # # FASTAs
 # ##################################################
