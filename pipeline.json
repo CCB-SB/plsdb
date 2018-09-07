@@ -3,7 +3,7 @@
     "data": {
         "odir": {
             "reports": "data/reports",
-            "chrom": "data/chrom",
+            "rmlst": "data/rmlst",
             "checks": "data/checks",
             "master": "data/master",
         },
@@ -13,7 +13,7 @@
     "filtering": {
         "dfilter": 'contig|\sgene(?!tic|ral|rat|ric)|integron|transposon|scaffold|insertion sequence|insertion element|phage|operon|partial sequence|partial plasmid|region|fragment|locus|complete (?!sequence|genome|plasmid|\.|,)|(?<!complete sequence, )whole genome shotgun|artificial|synthetic|vector'
     },
-    "representative_genomes": "ftp://ftp.ncbi.nlm.nih.gov/genomes/GENOME_REPORTS/prok_representative_genomes.txt",
+    "ncbi_ref_genomes": "ftp://ftp.ncbi.nlm.nih.gov/genomes/GENOME_REPORTS/prok_reference_genomes.txt",
     "eutils": {
         "dir": "tools/edirect",
         "header": {
@@ -48,6 +48,7 @@
         "dir": "tools/mash-Linux64-v2.0",
         "sketch_params": "-i -S 42 -p 20 -k 21 -s 1000",
         "dist0_params": "-d 0 -p 20",
+        "distc_params": "-p 20",
         "dist_params": "-t -p 20"
     },
     "krona": {
@@ -102,4 +103,12 @@
         "url_schemes": "http://rest.pubmlst.org/db/pubmlst_plasmid_isolates/schemes",
         "cmd": "mlst --minid 95 --mincov 10 --minscore 1 --threads 2"
     },
+    "rmlst": {
+        "fas": "data/rmlst/rmlst.fas",
+        "ident": 100,
+        "cov": 100,
+        "cmd": "{blastn} -query {input} -db {db} -task blastn -perc_identity {ident} -out {output} -outfmt '6 {header}' -num_threads {cores} -evalue 1E-20 -culling_limit 1",
+        "header": ["qseqid", "qstart", "qend", "qlen", "sseqid", "sstart", "send", "slen", "stitle", "evalue", "pident", "length", "gaps"],
+        "max_loci": 5
+    }
 }

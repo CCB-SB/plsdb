@@ -2,11 +2,11 @@
 
 ## Requirements
 
-### Python modules
-*Requires Python 2 and 3*
+### Python
 
 #### Miniconda
 ```bash
+cd ~
 # get miniconda (for linux)
 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
 # install
@@ -26,29 +26,27 @@ conda install --name plsdb -c anaconda -c bioconda -c conda-forge --file require
 source activate plsdb
 ```
 
-#### checkM conda environment
-A separate environment is needed for checkM as it requires Python 2.
-The environment is automatically created by the pipeline-snakemake file from `checkm.yaml` for the rule running checkM.
-
 ### R packages
 Only the R-packages imported in `create_plots.R` are quired.
 Use `install.packages()` to install missing packages.
 
-### Other software
-Tools/data installed by the pipeline:
+### Other tools
+Other tools installed by the pipeline:
 - Binaries of [edirect/eutils](https://www.ncbi.nlm.nih.gov/books/NBK179288/)
 - Binaries of [Mash](https://github.com/marbl/Mash)
 - Binaries of [BLAST+](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+)
 
-### Databases
+### Datasets
 The pipeline will automatically update the following databases/datasets:
 - pMLST data is downloaded from [PubMLST](https://pubmlst.org/plasmid/)
 - ABRicate data is updated using the built-in function
-- checkM data is downloaded from [XX](XX)
 
-### API key for parsing location data
-To map locations of associated BioSamples the [OpenCageData](https://opencagedata.com/) API is used which requires an API key (you can register for a free trial account).
-The key should be stored in a local file specified in the pipeline config (`pipeline.json`, see `api_keys`).
+**IMPORTANT**: The rMLST sequences from PubMLST are **NOT** downloaded by the pipeline as the access to the sequences requires a login.
+The pipeline expects a single FASTA file with all sequences (its path should be set in the config file `pipeline.json`, see `rmlst/fas`).
+
+### API key for location queries
+To map location names to coordinates the [OpenCageData](https://opencagedata.com/) API is used which requires an API key (you can register for a free trial account).
+The key should be stored in a local file specified in the pipeline config (`pipeline.json`, see `data/api_keys`).
 Also, a file with some of the already retrieved locations is included (`locs.tsv`) and will be updated with newly retrieved locations if you run the pipeline.
 
 ## Pipeline
@@ -68,85 +66,85 @@ snakemake -s pipeline.snake
     - INSDC (DDBJ, EMBL/ENA, GenBank): [International Nucleotide Sequence Database Collaboration](https://www.ncbi.nlm.nih.gov/genbank/collab/)
     - RefSeq
 - Tools:
-    - Install [Mash](https://github.com/marbl/Mash)
-    - Install [BLAST+](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+)
-    - Install [edirect/eutils](https://www.ncbi.nlm.nih.gov/books/NBK179288/)
-    - Get and process [pMLST data from PubMLST DB](https://pubmlst.org/plasmid/)
-    - Get data for [checkM](https://github.com/Ecogenomics/CheckM) and set its path
+    - Install Mash
+    - Install BLAST+
+    - Install edirect/eutils
+    - Get and process pMLST data from PubMLST DB
+    - Update data for ABRicate
 - Plasmid records:
     - Query for plasmids in the NCBI nucleotide database
-    - `esearch` query from Orlek *et al.*
+        - `esearch` query from Orlek *et al.*
 - Plasmid meta data
     - Retrieve linked assemblies and relevant meta data
     - Retrieve linked BioSamples and relevant meta data
     - Retrieve taxonomic information
         - Process: extract queried taxon (ID, name, rank), complete lineage, and taxa/IDs for relevant ranks (from species to superkingdom)
     - Add all new meta data to the table
-- Filtering (1): Filter by:
-    - Genome tag (must be `plasmid`): TODO: need?
-    - Description (regular expression from Orlek *et al.*)
-    - (Assembly) completeness ([NCBI assembly help page](https://www.ncbi.nlm.nih.gov/assembly/help/))
+    - Process location information of the BioSamples and add it to the table
+        - Use coordinates if available, otherwise location
+        - Use OpenCageData API
+- Filtering (1): Filter by
+    - Record description (regular expression from Orlek *et al.*)
+    - (Assembly) completeness
         - If no assembly: Completeness status of the nuccore record has to be `complete`
         - Has assembly: assembly status of the latest version has to be `Complete genome`
+            - [NCBI assembly help page](https://www.ncbi.nlm.nih.gov/assembly/help/)
     - By taxonomy: superkingdom taxon ID should be `2` (i.e. Bacteria)
-- Finding identical plasmids
-    - Download nucl. sequences
+- Filtering (2): Remove identical plasmids
+    - Download nucl. sequences of plasmid records
     - Compute the sketches using Mash
     - Get pairs of plasmids with distance of 0 using Mash
     - Group plasmids with identical sequences
-        - Consider only pairs with Mash distances of 0
-- Filtering (2): Find putative chromosomal sequences
-    - Create FASTA file for each unique plasmid sequence
-    - Run checkM
-    - XX
-    - Remove all plasmids classified as putative chromosomes
-- Process BioSample locations
-    - Use coordinates if available, otherwise location
-    - Use OpenCageData API
+    - Among these groups select one record
+        - Prefer RefSeq records and those with more information
+- Filtering (3): Find and remove putative chromosomal sequences
+    - Create the BlastDB of rMLST allele sequences
+        - The FASTAs are **NOT** downloaded by the pipeline (see the "Requirements" section above)
+    - The plasmid sequences are aligned against the rMLST allele sequences
+    - Remove plasmids having more than 5 unique rMLST loci
 - Plasmid nucleotide sequences:
     - Create a new FASTA with nucl. sequences of remained plasmids
-    - Create BLAST database file from plasmid FASTA
-    - Create sketches from plasmid FASTA using Mash
-    - Embedding:
-        - Compute pairwise distances between plasmids using Mash
-        - Compute embedding using UMAP
-            - Requires ca. XXGb for ca. XXK sequences
     - Annotate using ABRicate:
         - BLASTn search in DBs provided by ABRicate
         - Hits are processed and filtered, and collected in one file
     - Annotate using pMLST:
         - Use `mlst` to run BLAST search on downloaded pMLST profiles
         - Process the results
-
-<!--
+    - Create BLAST database file from plasmid FASTA
+    - Create sketches from plasmid FASTA using Mash
+- Embedding:
+    - Compute pairwise distances between plasmids using Mash
+    - Compute embedding using UMAP
+        - Requires ca. XXGb for ca. XXK sequences
 - Create info table:
     - Record information
-        - Sequence length and GC content
-        - Taxonomic information
-        - Other
-    - BioSample information
-        - Location (as given in DB) and coordinates retrieved with GoogleMaps
-        - Isolation source
     - Embedding coordinates
     - PlasmidFinder hits
-    - pMLST hits -->
+    - pMLST hits
 
-#### Remarks
+#### Notes
 
-**pMLST**
+##### rMLST
 
+[XX](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3353972/): "Distribution of ribosomal protein genes across bacterial genome partitions"
+
+    In 68 of the 995 analyzed bacterial genomes, r-protein genes are
+    distributed across two or more genome partitions. In some cases,
+    paralogous proteins are encoded in different chromosomes or plasmids.
+    [...]
+    In other cases, r-protein genes are present in a single copy
+    but are spread across genome partitions.
+
+##### pMLST
 As pMLST is not yet supported by `mlst` the data needs to be dowloaded and pre-processed before it can be used by the tool.
 However, some things need to be considered:
-- Scheme name/ID:
-    - `http://rest.pubmlst.org/db/pubmlst_plasmid_seqdef/classification_schemes` gives an empty list (2018.08.03), i.e. available IDs are unknown
-    - `pipeline.json` contains a mapping for scheme names and IDs and it should be checked before running the pipeline
 - No profiles:
     - A scheme may have no profiles (e.g. IncF) but `pmlst` requires a non-empty file
-    - Thus, a dummy profile needs to be created and the hits to this profile need to be processed accordingly (i.e. rm the dummy ST)
-- Problematic profile file formatting
-    - `mlst` requires to have an ST column with numeric values and one column per locus
+    - Thus, a dummy profile needs to be created and the hits to this profile need to be processed accordingly (i.e. by removing the dummy ST)
+- Problematic profile file formatting:
+    - `mlst` requires an ST column with numeric values and one column per locus
     - E.g. IncA/C cgMLST has "cgST" instead of "ST" and STs in the format "number.number"
-    - In such cases the column is renamed and STs are mapped to 1..N (the original values are saved in a diff. column)
+    - In such cases the column is renamed and STs are mapped to 1..N (the original values are saved in a different file)
     - Here, the results need to be processed to map the ST back to the original ST value
 
 # References

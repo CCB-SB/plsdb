@@ -49,6 +49,10 @@ def reproc_mlst_scheme_name(scheme_name):
     import re
     return re.sub('_', '/', re.sub('__', ' ', scheme_name))
 
+def str2timestamp(ts, ts_format='%Y-%m-%d %H:%M:%S'):
+    import datetime
+    return datetime.datetime.strptime(ts, ts_format)
+
 ##################################################
 # Edirect/eutils
 ##################################################
@@ -101,68 +105,61 @@ def run_epost_split(df_file, ofile, header, cmd, df_col, split_size, split_str, 
 ##################################################
 # rMLST
 ##################################################
-def run_rmlst(sfasta):
-    """
-    Run rMLST analysis
-    Reference: https://pubmlst.org/rmlst/api.shtml
-    Ribosomal Multilocus Sequence Typing (rMLST) is an approach that indexes
-    variation of the 53 genes encoding the bacterial ribosome protein subunits
-    (rps genes) as a means of integrating microbial taxonomy and typing.
-    The rps gene variation catalogued in this database permits rapid and
-    computationally non-intensive identification of the phylogenetic position
-    of any bacterial sequence at the domain, phylum, class, order, family, genus,
-    species and strain levels.
-    Reference: https://www.ncbi.nlm.nih.gov/pubmed/22282518
-    The rps loci are [...]
-    (i)   present in all bacteria;
-    (ii)  distributed around the chromosome;
-    (iii) encode proteins which are under stabilizing selection for functional conservation
-
-    :param sfasta: FASTA file <path>/<seqID>.<ext>
-    :return dictionary with accession ID, and rMLST support/rank/taxon/lineage (best hit w.r.t. support)
-    """
-    import os, sys, requests, base64
-    from random import randint
-    from time import sleep
-
-    # check that FASTA file exists
-    assert os.path.exists(sfasta), 'File {} does not exist'.format(sfasta)
-
-    # derive sequence ID/accession
-    sid = os.path.splitext(os.path.basename(sfasta))[0]
-
-    # read in sequence data
-    with open(sfasta, 'r') as ifile:
-        payload = '{"base64":true,"details":true,"sequence":"' + base64.b64encode(ifile.read().encode()).decode() + '"}'
-    # submit for analysis
-    response = requests.post(
-        'http://rest.pubmlst.org/db/pubmlst_rmlst_seqdef_kiosk/schemes/1/sequence',
-        data=payload
-    )
-    sleep(1 + 1/randint(2, 10)) # to avoid too many queries per second
-    # get best match
-    best_match = {
-        'ACC_FASTA': sid,
-        'Rank_RMLST': None,
-        'Taxon_RMLST': None,
-        'Support_RMLST': None,
-        'Taxonomy_RMLST': None,
-    }
-    assert response.status_code == requests.codes.ok, 'Response status not OKAY for {}: {}'.format(sid, response.status_code)
-    try:
-        for match in response.json()['taxon_prediction']:
-            match = {
-                'ACC_FASTA': sid,
-                'Rank_RMLST': match['rank'],
-                'Taxon_RMLST': match['taxon'],
-                'Support_RMLST': match['support'],
-                'Taxonomy_RMLST': match['taxonomy'],
-            }
-            if best_match['Support_RMLST'] is None or match['Support_RMLST'] > best_match['Support_RMLST']:
-                best_match = match
-        return best_match
-    except KeyError:
-        return best_match
+# def run_rmlst(record):
+#     """
+#     Run rMLST analysis
+#     Reference: https://pubmlst.org/rmlst/api.shtml
+#     Ribosomal Multilocus Sequence Typing (rMLST) is an approach that indexes
+#     variation of the 53 genes encoding the bacterial ribosome protein subunits
+#     (rps genes) as a means of integrating microbial taxonomy and typing.
+#     The rps gene variation catalogued in this database permits rapid and
+#     computationally non-intensive identification of the phylogenetic position
+#     of any bacterial sequence at the domain, phylum, class, order, family, genus,
+#     species and strain levels.
+#     Reference: https://www.ncbi.nlm.nih.gov/pubmed/22282518
+#     The rps loci are [...]
+#     (i)   present in all bacteria;
+#     (ii)  distributed around the chromosome;
+#     (iii) encode proteins which are under stabilizing selection for functional conservation
+#
+#     :param sfasta: FASTA file <path>/<seqID>.<ext>
+#     :return dictionary with accession ID, and rMLST support/rank/taxon/lineage (best hit w.r.t. support)
+#     """
+#     import os, sys, requests, base64
+#     from time import sleep
+#
+#     # check that FASTA file exists
+#     assert str(record.seq) != "", 'FASTA record {} is empty'.format(record.id)
+#
+#     # submit for analysis
+#     response = requests.post(
+#         'http://rest.pubmlst.org/db/pubmlst_rmlst_seqdef_kiosk/schemes/1/sequence',
+#         data='{"base64":true,"details":true,"sequence":"' + base64.b64encode('>{}\n{}'.format(record.id, record.seq).encode()).decode() + '"}'
+#     )
+#     sleep(1) # to avoid too many queries per second
+#     # get best match
+#     best_match = {
+#         'ACC_FASTA': record.id,
+#         'Rank_RMLST': None,
+#         'Taxon_RMLST': None,
+#         'Support_RMLST': None,
+#         'Taxonomy_RMLST': None,
+#     }
+#     assert response.status_code == requests.codes.ok, 'Response status not OKAY for {}: {}'.format(record.id, response.status_code)
+#     try:
+#         for match in response.json()['taxon_prediction']:
+#             match = {
+#                 'ACC_FASTA': record.id,
+#                 'Rank_RMLST': match['rank'],
+#                 'Taxon_RMLST': match['taxon'],
+#                 'Support_RMLST': match['support'],
+#                 'Taxonomy_RMLST': match['taxonomy'],
+#             }
+#             if best_match['Support_RMLST'] is None or match['Support_RMLST'] > best_match['Support_RMLST']:
+#                 best_match = match
+#         return best_match
+#     except KeyError:
+#         return best_match
 
 ##################################################
 # LOCATIONS
@@ -217,9 +214,85 @@ location_missing = [
 
 def loc_is_missing(loc_str):
     for na_str in location_missing:
-        if re.fullmatch(na_str, loc_str, re.IGNORECASE):
+        if re.fullmatch(na_str, loc_str, flags=re.IGNORECASE):
             return True
     return False
+
+def handle_loc_exceptions(loc_str):
+    import re
+    if re.search(r'BIFSCo\s+Region\s+\d?', loc_str, flags=re.IGNORECASE) and re.search(r'US|USA|United States', loc_str, flags=re.IGNORECASE):
+        loc_str = 'USA'
+    elif re.search(r'Australia', loc_str, flags=re.IGNORECASE) and re.search(r'sealake', loc_str, flags=re.IGNORECASE):
+        loc_str = re.sub('sealake', 'Sea Lake', loc_str)
+    elif re.search(r'South Korea', loc_str, flags=re.IGNORECASE) and re.search(r'Yeo-?su.+sediment', loc_str, flags=re.IGNORECASE):
+        loc_str = 'South Korea, Yeosu'
+    elif re.search(r'South Korea', loc_str, flags=re.IGNORECASE) and re.search(r'Shnan-gun', loc_str, flags=re.IGNORECASE):
+        loc_str = 'South Korea'
+    elif re.search(r'South Korea', loc_str, flags=re.IGNORECASE) and re.search(r'Geoje\s+Island', loc_str, flags=re.IGNORECASE):
+        loc_str = 'South Korea,Geoje'
+    elif re.search(r'China', loc_str, flags=re.IGNORECASE) and re.search(r'Harbin\s+Veterinary\s+Research\s+Institute', loc_str, flags=re.IGNORECASE):
+        loc_str = 'China,Harbin'
+    elif re.search(r'Germany', loc_str, flags=re.IGNORECASE) and re.search(r'Black\s+Forest', loc_str, flags=re.IGNORECASE):
+        loc_str = 'Germany,Black Forest'
+    elif re.search(r'Sweden', loc_str, flags=re.IGNORECASE) and re.search(r'Kosterfjord', loc_str, flags=re.IGNORECASE):
+        loc_str = 'Sweden,Kosterfjorden'
+    elif re.search(r'China', loc_str, flags=re.IGNORECASE) and re.search(r'Bo\s*Hai.+Panjin', loc_str, flags=re.IGNORECASE):
+        loc_str = 'China,Panjin'
+    elif re.search(r'China', loc_str, flags=re.IGNORECASE) and re.search(r'Sunitezuoqi', loc_str, flags=re.IGNORECASE):
+        loc_str = 'China' # location unknown even in Google Maps
+    elif re.search(r'Brazil', loc_str, flags=re.IGNORECASE) and re.search(r'Rondonia', loc_str, flags=re.IGNORECASE):
+        loc_str = 'Brazil,Rondonia'
+    elif re.search(r'South\s+Korea', loc_str, flags=re.IGNORECASE) and re.search(r'Tae-an', loc_str, flags=re.IGNORECASE):
+        loc_str = 'South Korea,Taean'
+    elif re.search(r'South\s+Africa', loc_str, flags=re.IGNORECASE) and re.search(r'Kruger\s+National\s+Park', loc_str, flags=re.IGNORECASE):
+        loc_str = 'South Africa,Kruger National Park'
+    elif re.search(r'Japan', loc_str, flags=re.IGNORECASE) and re.search(r'Himeji.*Univrersity\s+of\s+Hyogo', loc_str, flags=re.IGNORECASE):
+        loc_str = 'Japan,Himeji'
+    elif re.search(r'USA', loc_str, flags=re.IGNORECASE) and re.search(r'Baytown.*Burnet\s+Shores', loc_str, flags=re.IGNORECASE):
+        loc_str = 'USA,Baytown'
+    elif re.search(r'Thailand', loc_str, flags=re.IGNORECASE) and re.search(r'Nakhornrachisma', loc_str, flags=re.IGNORECASE):
+        loc_str = re.sub('Nakhornrachisma', 'Nakhon Ratchasima', loc_str, flags=re.IGNORECASE)
+    elif re.search(r'China', loc_str, flags=re.IGNORECASE) and re.search(r'Xinjiang\s+Province.*desert', loc_str, flags=re.IGNORECASE):
+        loc_str = 'China,Xinjiang'
+    elif re.search(r'China', loc_str, flags=re.IGNORECASE) and re.search(r'Eastern\s+Hubei\s+Province', loc_str, flags=re.IGNORECASE):
+        loc_str = 'China,Hubei'
+    elif re.search(r'China', loc_str, flags=re.IGNORECASE) and re.search(r'Chenmai\s+qiaotou', loc_str, flags=re.IGNORECASE):
+        loc_str = 'China,Qiaotouzhen'
+    elif re.search(r'China', loc_str, flags=re.IGNORECASE) and re.search(r'Hongyuan\s+Prairie', loc_str, flags=re.IGNORECASE):
+        loc_str = 'China,Hongyuan'
+    elif re.search(r'Brazil', loc_str, flags=re.IGNORECASE) and re.search(r'Tupasi', loc_str, flags=re.IGNORECASE):
+        loc_str = 'Brazil'
+    elif re.search(r'China', loc_str, flags=re.IGNORECASE) and re.search(r'Xinjiang\s+Province', loc_str, flags=re.IGNORECASE):
+        loc_str = 'China,Xinjiang'
+    elif re.search(r'USA', loc_str, flags=re.IGNORECASE) and re.search(r'Bear\s+River\s+Refuge', loc_str, flags=re.IGNORECASE):
+        loc_str = 'USA,Bear River Migratory Bird Refuge' # the only matching refuge location
+    elif re.search(r'USA', loc_str, flags=re.IGNORECASE) and re.search(r'Ogden\s+Bay\s+Refuge', loc_str, flags=re.IGNORECASE):
+        loc_str = 'USA,Ogden'
+    elif re.search(r'Vietnam', loc_str, flags=re.IGNORECASE) and re.search(r'Do Xongpha', loc_str, flags=re.IGNORECASE):
+        loc_str = 'Vietnam' # could not find the associated location
+    elif re.search(r'India', loc_str, flags=re.IGNORECASE) and re.search(r'Haiderabad/Hindustan', loc_str, flags=re.IGNORECASE):
+        loc_str = re.sub('Haiderabad/Hindustan', 'Haiderabad', loc_str, flags=re.IGNORECASE)
+    elif re.search(r'Democratic\s+Republic\s+of\s+the\s+Congo', loc_str, flags=re.IGNORECASE) and re.search(r'Iturie\s+province', loc_str, flags=re.IGNORECASE):
+        loc_str = 'Democratic Republic of the Congo,Ituri'
+    elif re.search(r'Germany', loc_str, flags=re.IGNORECASE) and re.search(r'Bruschal', loc_str, flags=re.IGNORECASE):
+        loc_str = 'Germany,Bruchsal'
+    elif re.search(r'Antarctica', loc_str, flags=re.IGNORECASE) and re.search(r'Mount\s+Rittmann', loc_str, flags=re.IGNORECASE):
+        loc_str = 'Antarctica'
+    elif re.search(r'Canada', loc_str, flags=re.IGNORECASE) and re.search(r'University\s+of\s+British\s+Columbia', loc_str, flags=re.IGNORECASE):
+        loc_str = 'Canada,Vancouver'
+    elif re.search(r'Brazil', loc_str, flags=re.IGNORECASE) and re.search(r'Ribeirao\s+Preto.*Sao\s+Paulo\s+State', loc_str, flags=re.IGNORECASE):
+        loc_str = 'Brazil,Ribeirao Preto'
+    elif re.search(r'Japan', loc_str, flags=re.IGNORECASE) and re.search(r'Niigata.*Nagakura', loc_str, flags=re.IGNORECASE):
+        loc_str = 'Japan,Nagakura'
+    elif re.search(r'China', loc_str, flags=re.IGNORECASE) and re.search(r'Xinjiang\s+Uighur\s+Autonomous\s+Region', loc_str, flags=re.IGNORECASE):
+        loc_str = 'China,Xinjiang'
+    elif re.search(r'Argentina', loc_str, flags=re.IGNORECASE) and re.search(r'Diamante.*Catamarca\s+Province', loc_str, flags=re.IGNORECASE):
+        loc_str = 'Argentina,Catamarca'
+    elif re.search(r'Chile', loc_str, flags=re.IGNORECASE) and re.search(r'South\s+America.*Lago\s+Ranco-Valdivia\s+Agricola\s+Quillin\s+Va\.\s+Region', loc_str, flags=re.IGNORECASE):
+        loc_str = 'Chile' # not sure which location this should be
+    elif re.search(r'Mexico', loc_str, flags=re.IGNORECASE) and re.search(r'Monarch\s+Butterfly\s+Biosphere\s+Reserve', loc_str, flags=re.IGNORECASE):
+        loc_str = 'Mexico, Monarch Butterfly Biosphere Reserve'
+    return loc_str
 
 def preproc_loc_str(loc_str):
     """
@@ -236,9 +309,12 @@ def preproc_loc_str(loc_str):
     # strings known to encode "empty" entries
     if loc_is_missing(loc_str):
         return None
+    # replace ":" by "," - helps in some cases to get coordinates
+    loc_str = re.sub(':', ',', loc_str)
+    # rm whitespaces after comma - helps in some cases to get coordinates
+    loc_str = re.sub(',\s+', ',', loc_str)
     # exceptions
-    if loc_str in location_exceptions:
-        loc_str = location_exceptions[loc_str]
+    loc_str = handle_loc_exceptions(loc_str)
     return loc_str
 
 def add_dotzero(loc_str):

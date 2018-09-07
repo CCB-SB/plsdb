@@ -46,6 +46,7 @@ ENV_PATH = os.path.join(CONDA_PATH, 'envs', config['env_name'])
 # BLAST
 BIN_MAKEBLASTDB = os.path.join(config["blast"]["dir"], "bin/makeblastdb")
 BIN_BLASTN = os.path.join(config["blast"]["dir"], "bin/blastn")
+BLAST_DB_EXT = ['nin', 'nhr', 'nsq']
 
 # Mash
 BIN_MASH = os.path.join(config["mash"]["dir"], "mash")
@@ -79,30 +80,41 @@ PLASMIDS_BIOS = os.path.join(config['data']['odir']['reports'], '%s__biosample.t
 PLASMIDS_TAX = os.path.join(config['data']['odir']['reports'], '%s__taxa.txt' % today)
 PLASMIDS_TAXP = os.path.join(config['data']['odir']['reports'], '%s__taxaproc.txt' % today)
 # all info together
-PLASMIDS_ALL_FULL = os.path.join(config['data']['odir']['reports'], '%s__full.txt' % today)
+PLASMIDS_FULL1 = os.path.join(config['data']['odir']['reports'], '%s__full1.txt' % today)
+PLASMIDS_FULL2 = os.path.join(config['data']['odir']['reports'], '%s__full2.txt' % today)
 
 # filter1
 PLASMIDS_FILT1        = os.path.join(config['data']['odir']['reports'], '%s__filtered1.txt' % today)
+
+# to find identical plasmids
 PLASMIDS_FILT1_FASTA  = os.path.join(config['data']['odir']['reports'], '%s__filtered1.fna' % today)
 PLASMIDS_FILT1_SKETCH = os.path.join(config['data']['odir']['reports'], '%s__filtered1.msh' % today)
 PLASMIDS_FILT1_DIST0  = os.path.join(config['data']['odir']['reports'], '%s__filtered1.dist0' % today)
-PLASMIDS_FILT1_IDENT  = os.path.join(config['data']['odir']['reports'], '%s__filtered1.ident' % today)
-
-# representative genomes
-REPR_GENOMES = os.path.join(config['data']['odir']['chrom'], today, 'representative_genomes.tsv')
-CHROM_FASTA  = os.path.join(config['data']['odir']['chrom'], today, 'chromosomes.fna')
-CHROM_SKETCH  = os.path.join(config['data']['odir']['chrom'], today, 'chromosomes.msh')
-PLASMIDS_CHROM_DIST = os.path.join(config['data']['odir']['chrom'], today, 'plasmids_chromosomes.dist')
-
-# # rMLST
-# PLASMIDS_FILT1_RMLST_FASTA     = os.path.join(config['data']['odir']['rmlst'], today, 'fastas.done')
-# PLASMIDS_FILT1_RMLST_SUM       = os.path.join(config['data']['odir']['rmlst'], today, 'rmlst.tsv')
 
 # filter 2
 PLASMIDS_FILT2        = os.path.join(config['data']['odir']['reports'], '%s__filtered2.txt' % today)
 
-# process locations
-# PLASMIDS_LOC = os.path.join(config['data']['odir']['reports'], '%s__locations.txt' % today)
+# to find putative chromosomes
+PLASMIDS_FILT2_FASTA  = os.path.join(config['data']['odir']['reports'], '%s__filtered2.fna' % today)
+# rMLST
+PLASMIDS_FILT2_RMLST  = os.path.join(config['data']['odir']['reports'], '%s__filtered2.rmlst' % today)
+RMLST_FASTA = config['rmlst']['fas']
+RMLST_DB = ['{}.{}'.format(RMLST_FASTA, ext) for ext in BLAST_DB_EXT]
+
+# filter 3
+PLASMIDS_FILT3        = os.path.join(config['data']['odir']['reports'], '%s__filtered3.txt' % today)
+
+# # rMLST
+# PLASMIDS_FILT1_RMLST_FASTA  = os.path.join(config['data']['odir']['reports'], '%s__filtered1.rmlst.fna' % today)
+# RMLST_FASTA = config['rmlst']['fas']
+# RMLST_DB = ['{}.{}'.format(RMLST_FASTA, ext) for ext in BLAST_DB_EXT]
+# PLASMIDS_FILT1_RMLST = os.path.join(config['data']['odir']['reports'], '%s__filtered1.rmlst' % today)
+#
+# # filter 2
+# PLASMIDS_FILT2 = os.path.join(config['data']['odir']['reports'], '%s__filtered2.txt' % today)
+#
+# # process locations
+# PLASMIDS_FILT2_LOC = os.path.join(config['data']['odir']['reports'], '%s__filtered2_locs.txt' % today)
 
 ##################################################
 # Data: "Master" files
@@ -153,15 +165,21 @@ rule all:
         krona=BIN_KRONA_XML,
         pmlstdb=[PMLST_CLEAN, PMLST_ALLELES, PMLST_DB],
         # plasmids
-        query_plasmids=PLASMIDS_ALL_FULL,
+        query_plasmids=PLASMIDS_FULL2,
         # plasmid filtering (1)
-        filter_plasmids=PLASMIDS_FILT1,
+        filter_plasmids1=PLASMIDS_FILT1,
+        # plasmid filtering (2)
+        filter_plasmids2=PLASMIDS_FILT2,
+        # rmlst
+        rmlst=PLASMIDS_FILT2_RMLST,
         # identical plasmids
-        identical_plasmids=PLASMIDS_FILT1_IDENT,
-        # representative genomes
-        chrom_dist=PLASMIDS_CHROM_DIST,
+        # identical_plasmids=PLASMIDS_FILT1_ADD,
+        # rmlst
+        # rmlst=PLASMIDS_FILT1_RMLST,
+        # plasmid filtering (2)
+        # filter_plasmids2=PLASMIDS_FILT2,
         # locations
-        # locs=PLASMIDS_LOC,
+        # locs=PLASMIDS_FILT2_LOC,
 		# # master files
         # # fasta
         # master_fasta=MASTER_GFASTA,
@@ -543,7 +561,7 @@ rule collect_meta:
         pls_asm=PLASMIDS_ALL_ASM,
         pls_bios=PLASMIDS_ALL_BIOS,
     output:
-        PLASMIDS_ALL_FULL
+        PLASMIDS_FULL1
     message:
         "Adding meta info to {input.pls}"
     run:
@@ -643,11 +661,95 @@ rule collect_meta:
         # save
         pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
 
+# Locations
+rule parse_locations:
+    input:
+        PLASMIDS_FULL1
+    output:
+        PLASMIDS_FULL2
+    message:
+        "Parsing locations from {input}"
+    params:
+        api_keys=config['data']['api_keys'],
+        locs=config['data']['locs']
+    run:
+        from utils import preproc_loc_str, preproc_loc_coords, parse_location
+        from utils import load_locs, save_locs, update_locs
+        setup_logger(logging.INFO)
+
+        # api key
+        with open(params.api_keys, 'r') as ifile:
+            api_key = [k.rstrip('\n').strip() for k in ifile.readlines()]
+            api_key = api_key.pop()
+        logging.info('Using API key: {}'.format(api_key))
+
+        # load known locations
+        locs = load_locs(params.locs)
+
+        # sample table with locations
+        pls = pandas.read_csv(input[0], header=0, sep='\t', dtype=str)
+        pls.set_index('ACC_NUCCORE', drop=False, inplace=True, verify_integrity=True)
+
+        # parse
+        coords = []
+        for i in tqdm(pls.index):
+            # location name and coordinates
+            l_n = pls.loc[i,'Location_BIOSAMPLE']
+            l_c = pls.loc[i,'Coordinates_BIOSAMPLE']
+
+            # no location data
+            if l_n is None and l_c is None:
+                continue
+
+            # pre-processing
+            l_n = preproc_loc_str(l_n)
+            l_c = preproc_loc_coords(preproc_loc_str(l_c))
+            if l_n is None and l_c is None:
+                continue
+
+            # at least name or coordinates given
+            if l_c is not None: # location coordinates
+                l_c_str = '{};{}'.format(l_c[0], l_c[1])
+                if locs is None or l_c_str not in locs['location']:
+                    logging.info('Retrieving coordinates for location: \"{}\"'.format(l_c))
+                    try:
+                        parsed = parse_location(loc_str=l_c, api_key=api_key, is_name=False)
+                        locs = update_locs(locs, {'location': l_c_str, 'type': 'coordinates', 'lat': parsed['lat'], 'lng': parsed['lng']})
+                        save_locs(locs, params.locs)
+                    except Exception as e:
+                        logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_c))
+                        raise(e)
+                coords.append({'ID': i, 'loc_lat': locs.loc[l_c_str,'lat'], 'loc_lng': locs.loc[l_c_str,'lng']})
+            elif l_n is not None: # location name
+                if locs is None or l_n not in locs['location']:
+                    logging.info('Retrieving coordinates for location: \"{}\"'.format(l_n))
+                    try:
+                        parsed = parse_location(loc_str=l_n, api_key=api_key, is_name=True)
+                        locs = update_locs(locs, {'location': l_n, 'type': 'name', 'lat': parsed['lat'], 'lng': parsed['lng']})
+                        save_locs(locs, params.locs)
+                    except Exception as e:
+                        logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_n))
+                        raise(e)
+                coords.append({'ID': i, 'loc_lat': locs.loc[l_n,'lat'], 'loc_lng': locs.loc[l_n,'lng'], 'loc_parsed': l_n})
+        coords = pandas.DataFrame(coords)
+        coords.set_index('ID', drop=True, verify_integrity=True, inplace=True)
+        pls = pandas.merge(
+            left=pls,
+            right=coords,
+            how='left',
+            left_index=True,
+            right_index=True,
+            sort=False,
+        )
+
+        # save
+        pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
+
 # Plasmid filtering (1)
 ##################################################
 rule filter1:
     input:
-        PLASMIDS_ALL_FULL
+        PLASMIDS_FULL2
     output:
         PLASMIDS_FILT1
     message:
@@ -659,12 +761,8 @@ rule filter1:
         pls = pandas.read_csv(input[0], sep='\t', header=0, dtype=str)
         logging.info('Read in {} plasmid records'.format(pls.shape[0]))
 
-        # filter by genome tag
-        pls = pls.loc[pls['Genome_NUCCORE'] == 'plasmid',:]
-        logging.info('Filtered: genome tag "plasmid": kept {} records'.format(pls.shape[0]))
-
         # filter by description
-        keep_rows = pandas.Series([re.search(params.dfilter, d, re.IGNORECASE) is None for d in pls['Description_NUCCORE']], index=pls.index)
+        keep_rows = pandas.Series([re.search(params.dfilter, d, flags=re.IGNORECASE) is None for d in pls['Description_NUCCORE']], index=pls.index)
         pls = pls.loc[keep_rows,:]
         logging.info('Filtered: description "{}": kept {} records'.format(params.dfilter, pls.shape[0]))
 
@@ -685,9 +783,249 @@ rule filter1:
         # save
         pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
 
-# Identical plasmids
+# Plasmid filtering (2)
 ##################################################
+rule filter2:
+    input:
+        pls=PLASMIDS_FILT1,
+        fna=PLASMIDS_FILT1_FASTA,
+        dist=PLASMIDS_FILT1_DIST0
+    output:
+        PLASMIDS_FILT2
+    message:
+        "Filter out identical plasmids {input.pls}"
+    run:
+        from Bio import SeqIO
+        from Bio.SeqUtils import GC
+        from utils import str2timestamp
+
+        setup_logger(logging.INFO)
+
+        pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
+        pls.set_index('ACC_NUCCORE', drop=False, inplace=True, verify_integrity=True)
+        logging.info('Read in {} plasmid records'.format(pls.shape[0]))
+
+        # collect seq. stats.s
+        logging.info('Collecting sequences and their data ...')
+        seq = []
+        seqs = {}
+        with open(input.fna, 'r') as ifile:
+            for record in tqdm(SeqIO.parse(ifile, 'fasta')):
+                assert re.fullmatch(r'\w+\.\d+', record.id), 'Unexpected ID format in FASTA: {}'.format(record.id)
+                rid = record.id.split('.')[0]
+                seq.append({
+                    'ACC_FASTA': record.id,
+                    'ACC_NUCCORE': rid,
+                    'GC_NUCCORE': GC(record.seq),
+                    'Length': len(record.seq)
+                })
+                seqs[record.id] = record.seq
+        seq = pandas.DataFrame(seq)
+        seq.set_index('ACC_NUCCORE', drop=True, inplace=True, verify_integrity=True)
+        # add to table
+        pls = pandas.merge(
+            left=pls,
+            right=seq,
+            how='left',
+            left_index=True,
+            right_index=True,
+            sort=False,
+        )
+        pls.set_index('ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
+        # check seq. length
+        assert pls['Length_NUCCORE'].astype(int).equals(pls['Length']), 'Sequence length is not always identical: nuccore vs. FASTA'
+        # drop 2nd seq. len. col.
+        pls.drop(columns=['Length'], inplace=True)
+
+        # find and assign identity groups
+        logging.info('Grouping identical sequences ...')
+        pls['UID_IDENTGROUP'] = None
+        groupID = 0
+        with open(input.dist, 'r') as ifile:
+            for line in tqdm(ifile):
+                sID, qID, dist, pv, sh = line.rstrip('\n').split('\t')
+                # same ID -> skip
+                if sID == qID:
+                    continue
+                # group ID already set -> skip
+                if pandas.notnull(pls.loc[sID, 'UID_IDENTGROUP']) and pandas.notnull(pls.loc[qID, 'UID_IDENTGROUP']):
+                    continue
+                # check if really equal
+                if len(seqs[sID]) != len(seqs[qID]):
+                    continue
+                elif seqs[sID] != seqs[qID]: # length is equal -> check sequences
+                    continue
+                # sequences are identical
+                # one of the seq.s has already an ID -> set to same value
+                if pandas.notnull(pls.loc[sID, 'UID_IDENTGROUP']):
+                    pls.loc[qID, 'UID_IDENTGROUP'] = pls.loc[sID, 'UID_IDENTGROUP']
+                    continue
+                if pandas.notnull(pls.loc[qID, 'UID_IDENTGROUP']):
+                    pls.loc[sID, 'UID_IDENTGROUP'] = pls.loc[qID, 'UID_IDENTGROUP']
+                    continue
+                # new group -> set both to new value
+                groupID += 1
+                pls.loc[sID, 'UID_IDENTGROUP'] = groupID
+                pls.loc[qID, 'UID_IDENTGROUP'] = groupID
+        # save
+        pls.to_csv(output[0] + '.backup', sep='\t', header=True, index=False, index_label=False)
+
+        # filter
+        def compare_records(rec1, rec2):
+            """
+            Compare two plasmid records:
+            1) Prefer the one from RefSeq
+            2) Prefer the one with location information
+            3) Prefer the one with an assembly
+            N) Prefer the older one
+            """
+            if rec1['Source_NUCCORE'] == "refseq" and rec2['Source_NUCCORE'] != "refseq":
+                return rec1
+            elif rec1['Source_NUCCORE'] != "refseq" and rec2['Source_NUCCORE'] == "refseq":
+                return rec2
+            elif pandas.notnull(rec1['loc_lat']) and pandas.isnull(rec2['loc_lat']):
+                return rec1
+            elif pandas.isnull(rec1['loc_lat']) and pandas.notnull(rec2['loc_lat']):
+                return rec2
+            elif pandas.notnull(rec1['UID_ASSEMBLY']) and pandas.isnull(rec2['UID_ASSEMBLY']):
+                return rec1
+            elif pandas.isnull(rec1['UID_ASSEMBLY']) and pandas.notnull(rec2['UID_ASSEMBLY']):
+                return rec2
+            else:
+                if str2timestamp(rec1['CreateDate_NUCCORE'], '%Y/%m/%d') < str2timestamp(rec2['CreateDate_NUCCORE'], '%Y/%m/%d'):
+                    return rec1
+                else:
+                    return rec2
+
+        logging.info('Filter by identity ...')
+        keep = pandas.Series(True, index=pls['ACC_FASTA'])
+        for gr, gr_df in tqdm(pls.loc[pandas.notnull(pls['UID_IDENTGROUP']),:].groupby(by=['UID_IDENTGROUP'])):
+            assert pandas.notnull(gr)
+            best = None
+            for acc in gr_df.index:
+                if best is None:
+                    best = acc
+                else:
+                    best = compare_records(gr_df.loc[best,:], gr_df.loc[acc,:])['ACC_FASTA']
+            keep.loc[gr_df.loc[gr_df['ACC_FASTA'] != best,'ACC_FASTA']] = False
+        pls = pls.loc[keep.index[keep]]
+        pls.drop(columns=['UID_IDENTGROUP'], inplace=True)
+        logging.info('Filtered: indentical sequences: kept {} records'.format(pls.shape[0]))
+
+        # save
+        pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
+
+# rMLST
+##################################################
+# rMLST BLAST DB
+rule rmlst_blastdb:
+    input:
+        RMLST_FASTA
+    output:
+        RMLST_DB
+    params:
+        bin=BIN_MAKEBLASTDB
+    message:
+        "Create BLASTDB from {input}"
+    shell:
+        "{params.bin} -in {input} -input_type fasta -dbtype nucl -title \"rmlst\""
+
+# run rMLST
+rule rmlst_blastn:
+    input:
+        fasta="{basename}.fna",
+        db=RMLST_FASTA,
+        dbs=RMLST_DB
+    output:
+        "{basename}.rmlst"
+    params:
+        bin=BIN_BLASTN,
+        cores=30
+    run:
+        setup_logger()
+
+        header = config['rmlst']['header']
+        ident = config['rmlst']['ident']
+        cov = config['rmlst']['cov']
+
+        # blastn search
+        cmd = config['rmlst']['cmd'].format(
+            blastn=params.bin,
+            input=input.fasta,
+            db=input.db,
+            output=output[0],
+            ident=ident,
+            header=' '.join(header),
+            cores=params.cores
+        )
+        logging.info(cmd)
+        cmd, cmd_s, cmd_o = run_cmd(cmd)
+        assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
+
+        # read in results
+        df = pandas.read_csv(output[0], sep='\t', header=None, names=header)
+
+        # compute coverage
+        df['cov'] =  100 * (df['length'] - df['gaps']) / df['slen']
+        # filter by coverage
+        df = df.loc[df['cov'] >= cov,:]
+
+        # rMLST locus
+        df['slocus'] = df['sseqid'].map(lambda x: x.split('_')[0])
+
+        # save
+        df.to_csv(
+            path_or_buf=output[0],
+            sep='\t',
+            header=True,
+            index=False,
+            index_label=False
+        )
+
+# Plasmid filtering (3)
+##################################################
+rule filter3:
+    input:
+        pls=PLASMIDS_FILT2,
+        rmlst=PLASMIDS_FILT2_RMLST
+    output:
+        PLASMIDS_FILT3
+    message:
+        "Filter based on rMLST results"
+    params:
+        cutoff=config['rmlst']['max_loci']
+    run:
+        setup_logger(logging.INFO)
+
+        pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
+        pls.set_index('ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
+        logging.info('Read in {} plasmid records\n{}'.format(pls.shape[0], pls.head()))
+
+        rmlst = pandas.read_csv(input.rmlst, sep='\t', header=0, dtype=str)
+        logging.info('Read in {} rMLST hits\n{}'.format(rmlst.shape[0], rmlst.head()))
+
+        # count unique loci per query
+        pls['hits_rMLST'] = ''
+        pls['hitscount_rMLST'] = 0
+        for qseqid, df in rmlst[['qseqid', 'slocus']].groupby(['qseqid']):
+            hits = sorted(list(set(df['slocus'])))
+            gr = pls.loc[qseqid, 'UID_IDENTGROUP']
+            if pandas.isnull(gr):
+                pls.loc[qseqid, 'hits_rMLST'] = ';'.join(hits)
+                pls.loc[qseqid, 'hitscount_rMLST'] = len(hits)
+            else:
+                pls.loc[pls['UID_IDENTGROUP'] == gr, 'hits_rMLST'] = ';'.join(hits)
+                pls.loc[pls['UID_IDENTGROUP'] == gr, 'hitscount_rMLST'] = len(hits)
+
+        # filter by number of loci
+        pls = pls.loc[pls['hitscount_rMLST'] <= params.cutoff,:]
+        logging.info('Filtered: by numner of rMLST hits: kept {} records'.format(pls.shape[0]))
+
+        # save
+        pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
+
 # FASTA
+##################################################
 rule get_fasta:
     input:
         "{basename}.txt"
@@ -704,6 +1042,8 @@ rule get_fasta:
         cat {output}.tmp.* > {output} && rm {output}.tmp.*
         """
 
+# Mash
+##################################################
 # Mash sketch
 rule mash_sketch:
     input:
@@ -732,357 +1072,6 @@ rule mash_dist_zero:
     shell:
         "{params.mash} dist {params.params} {input} {input} > {output}"
 
-# Assign I-group IDs (and some other stuff)
-rule identical_plasmids:
-    input:
-        pls=PLASMIDS_FILT1,
-        fna=PLASMIDS_FILT1_FASTA,
-        dist=PLASMIDS_FILT1_DIST0
-    output:
-        PLASMIDS_FILT1_IDENT
-    message:
-        "Group identical plasmids from {input.pls}"
-    run:
-        from Bio import SeqIO
-        from Bio.SeqUtils import GC
-        setup_logger(logging.INFO)
-
-        pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
-        pls.set_index('ACC_NUCCORE', drop=False, inplace=True, verify_integrity=True)
-        logging.info('Read in {} plasmid records'.format(pls.shape[0]))
-
-        # collect seq. stats.s
-        seq = []
-        seq_seq = {}
-        with open(input.fna, 'r') as ifile:
-            for record in tqdm(SeqIO.parse(ifile, 'fasta')):
-                assert re.fullmatch(r'\w+\.\d+', record.id), 'Unexpected ID format in FASTA: {}'.format(record.id)
-                rid = record.id.split('.')[0]
-                seq.append({
-                    'ACC_FASTA': record.id,
-                    'ACC_NUCCORE': rid,
-                    'GC_NUCCORE': GC(record.seq),
-                    'Length': len(record.seq)
-                })
-                seq_seq[record.id] = record.seq
-        seq = pandas.DataFrame(seq)
-        seq.set_index('ACC_NUCCORE', drop=True, inplace=True, verify_integrity=True)
-        # add to table
-        pls = pandas.merge(
-            left=pls,
-            right=seq,
-            how='left',
-            left_index=True,
-            right_index=True,
-            sort=False,
-        )
-        # check seq. length
-        assert pls['Length_NUCCORE'].astype(int).equals(pls['Length']), 'Sequence length is not always identical: nuccore vs. FASTA'
-        # drop 2nd seq. len. col.
-        pls.drop(columns=['Length'], inplace=True)
-        # change index
-        pls.set_index('ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
-
-        # find and assign identity groups
-        pls['UID_IDENTGROUP'] = None
-        groupID = 0
-        with open(input.dist, 'r') as ifile:
-            for line in tqdm(ifile):
-                sID, qID, dist, pv, sh = line.rstrip('\n').split('\t')
-                # same ID -> skip
-                if sID == qID:
-                    continue
-                # group ID already set -> skip
-                if pandas.notnull(pls.loc[sID, 'UID_IDENTGROUP']) and pandas.notnull(pls.loc[qID, 'UID_IDENTGROUP']):
-                    continue
-                # check if really equal
-                if len(seq_seq[sID]) != len(seq_seq[qID]):
-                    continue
-                elif seq_seq[sID] != seq_seq[qID]: # length is equal -> check sequences
-                    continue
-                # sequences are identical
-                # one of the seq.s has already an ID -> set to same value
-                if pandas.notnull(pls.loc[sID, 'UID_IDENTGROUP']):
-                    pls.loc[qID, 'UID_IDENTGROUP'] = pls.loc[sID, 'UID_IDENTGROUP']
-                    continue
-                if pandas.notnull(pls.loc[qID, 'UID_IDENTGROUP']):
-                    pls.loc[sID, 'UID_IDENTGROUP'] = pls.loc[qID, 'UID_IDENTGROUP']
-                    continue
-                # new group -> set both to new value
-                groupID += 1
-                pls.loc[sID, 'UID_IDENTGROUP'] = groupID
-                pls.loc[qID, 'UID_IDENTGROUP'] = groupID
-
-        # save
-        pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
-
-# Chromosomes
-##################################################
-rule get_representative_genomes:
-    output:
-        REPR_GENOMES
-    params:
-        url = config['representative_genomes']
-    message:
-        "Download table of representative genomes from {params.url}"
-    run:
-        cmd = "mkdir -p {} && wget {} -O {}".format(os.path.dirname(output[0]), params.url, output[0])
-        cmd, cmd_s, cmd_o = run_cmd(cmd)
-        assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
-
-        df = pandas.read_csv(output[0], sep='\t', header=0)
-        ids = []
-        for s in df['Chromosome RefSeq']:
-            if pandas.isnull(s) or s == "":
-                continue
-            ids += s.split(',')
-        ids = pandas.Series(ids).to_frame('RefSeqAcc')
-        ids.to_csv(output[0], sep='\t', header=True, index=False)
-
-rule get_chromosome_fasta:
-    input:
-        REPR_GENOMES
-    output:
-        CHROM_FASTA
-    message:
-        "Download FASTAs from {input}"
-    params:
-        scr="download_fastas.py",
-        col="RefSeqAcc",
-        cores=10,
-        eutils=config['eutils']['dir']
-    shell:
-        """
-        mkdir -p $(dirname {output}) &&
-        python {params.scr} -t {input} -i {params.col} -o {output} -s 50 -c {params.cores} -f acc -e {params.eutils} 2>&1 | tee {output}.log &&
-        cat {output}.tmp.* > {output} && rm {output}.tmp.*
-        """
-
-rule pls_chrom_dist:
-    input:
-        msh_pls=PLASMIDS_FILT1_SKETCH,
-        msh_chrom=CHROM_SKETCH
-    output:
-        PLASMIDS_CHROM_DIST
-    params:
-        params=config['mash']['dist_params'],
-        mash=BIN_MASH
-    message:
-        "Compare signatures in {input}"
-    shell:
-        "{params.mash} dist {params.params} {input.msh_chrom} {input.msh_pls} > {output}"
-
-# Plasmid filtering (2)
-##################################################
-# # FASTA(s) for checkM
-# rule fastas_for_rmlst:
-#     input:
-#         pls=PLASMIDS_FILT1_IDENT,
-#         fna=PLASMIDS_FILT1_FASTA
-#     output:
-#         PLASMIDS_FILT1_RMLST_FASTA
-#     message:
-#         'Creating FASTA files for checkM from {input}'
-#     run:
-#         from utils import mkdir
-#         from Bio import SeqIO
-#
-#         setup_logger(logging.INFO)
-#         mkdir(os.path.dirname(output[0]), True)
-#
-#         # plasmids
-#         pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
-#         pls.set_index('ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
-#         logging.info('Read in {} plasmid records'.format(pls.shape[0]))
-#
-#         # select unique plasmids
-#         groups = set()
-#         sel = set()
-#         for sid in pls.index:
-#             if pandas.isnull(pls.loc[sid, 'UID_IDENTGROUP']):
-#                 sel.add(sid)
-#             elif pls.loc[sid, 'UID_IDENTGROUP'] not in groups:
-#                 sel.add(sid)
-#                 groups.add(pls.loc[sid, 'UID_IDENTGROUP'])
-#         logging.info('Selected {} unique plasmids'.format(len(sel)))
-#
-#         # collect seq. stats.s
-#         with open(input.fna, 'r') as ifile:
-#             for record in tqdm(SeqIO.parse(ifile, 'fasta')):
-#                 if record.id in sel:
-#                     SeqIO.write(record, os.path.join(os.path.dirname(output[0]), '%s.fna' % record.id), 'fasta')
-#         with open(output[0], 'w') as ofile:
-#             ofile.write('Created %d FASTA files' % len(sel))
-#
-# rule rmlst:
-#     input:
-#         PLASMIDS_FILT1_RMLST_FASTA
-#     output:
-#         PLASMIDS_FILT1_RMLST_SUM
-#     params:
-#         cores=5
-#     run:
-#         # Reference: https://pubmlst.org/rmlst/api.shtml
-#         from multiprocessing import Pool
-#         from glob import glob
-#         from utils import run_rmlst
-#
-#         pool = Pool(params.cores)
-#         df = pool.map(run_rmlst, glob('%s/*.fna' % os.path.dirname(input[0])))
-#         pool.close()
-#         pool.join()
-#
-#         # df = []
-#         # for fasta in tqdm(glob('%s/*.fna' % os.path.dirname(input[0]))):
-#         #     df.append(run_rmlst(fasta))
-#
-#         # convert
-#         df = pandas.DataFrame(df)
-#         # save
-#         df.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
-#
-# rule filter2:
-#     input:
-#         pls=PLASMIDS_FILT1_IDENT,
-#         rmlst=PLASMIDS_FILT1_RMLST_SUM
-#     output:
-#         PLASMIDS_FILT2
-#     message:
-#         "Filter based on rMLST results"
-#     run:
-#         setup_logger(logging.INFO)
-#
-#         pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
-#         pls.set_index('ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
-#         logging.info('Read in {} plasmid records\n{}'.format(pls.shape[0], pls.head()))
-#
-#         rmlst = pandas.read_csv(input.rmlst, sep='\t', header=0, dtype=str)
-#         rmlst.set_index('ACC_FASTA', drop=True, inplace=True, verify_integrity=True)
-#         logging.info('Read in {} rMLST records\n{}'.format(rmlst.shape[0], rmlst.head()))
-#
-#         # merge together
-#         pls = pandas.merge(
-#             left=pls,
-#             right=rmlst,
-#             how='left',
-#             left_index=True,
-#             right_index=True,
-#             sort=False,
-#         )
-#         # add values for ident. sequences
-#         for sid in pls.index:
-#             if pandas.isnull(pls.loc[sid, 'Support_RMLST']):
-#                 continue
-#             if pandas.isnull(pls.loc[sid, 'UID_IDENTGROUP']):
-#                 continue
-#             sid_ident = pls['UID_IDENTGROUP'] == pls.loc[sid, 'UID_IDENTGROUP']
-#             for col in rmlst.columns:
-#                 pls.loc[sid_ident, col] =  pls.loc[sid, col]
-#
-#         # filter
-#         pls = pls.loc[pls['Support_RMLST'].astype(float) >= 0,:]
-#         logging.info('Filtered: rMLST support": kept {} records'.format(pls.shape[0]))
-#
-#         # drop rMLST columns
-#         pls.drop(columns=rmlst.columns, inplace=True)
-#
-#         # save
-#         pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
-
-# Locations
-##################################################
-# rule parse_locations:
-#     input:
-#         PLASMIDS_ALL_FULL
-#     output:
-#         PLASMIDS_LOC
-#     message:
-#         "Parsing locations from {input}"
-#     params:
-#         api_keys=config['data']['api_keys'],
-#         locs=config['data']['locs']
-#     run:
-#         from utils import preproc_loc_str, preproc_loc_coords, parse_location
-#         from utils import load_locs, save_locs, update_locs
-#         setup_logger(logging.INFO)
-#
-#         # api key
-#         with open(params.api_keys, 'r') as ifile:
-#             api_key = [k.rstrip('\n').strip() for k in ifile.readlines()]
-#             api_key = api_key.pop()
-#         logging.info('Using API key: {}'.format(api_key))
-#
-#         # load known locations
-#         locs = load_locs(params.locs)
-#
-#         # sample table with locations
-#         pls = pandas.read_csv(input[0], header=0, sep='\t')
-#         pls['loc_lat'] = None
-#         pls['loc_lng'] = None
-#
-#         # parse
-#         for i in pls.index:
-#             # location name and coordinates
-#             l_n = pls.loc[i,'Location_BIOSAMPLE']
-#             l_c = pls.loc[i,'Coordinates_BIOSAMPLE']
-#
-#             # pre-processing
-#             l_n = preproc_loc_str(l_n)
-#             l_c = preproc_loc_coords(preproc_loc_str(l_c))
-#
-#             # no location data
-#             if l_n is None and l_c is None:
-#                 continue
-#
-#             # at least name or coordinates given
-#             if l_c is not None:
-#                 l_c_str = '{};{}'.format(l_c[0], l_c[1])
-#                 if locs is None or l_c_str not in locs['location']:
-#                     logging.info('Retrieving coordinates for location: \"{}\"'.format(l_c))
-#                     try:
-#                         parsed = parse_location(loc_str=l_c, api_key=api_key, is_name=False)
-#                         locs = update_locs(locs, {'location': l_c_str, 'type': 'coordinates', 'lat': parsed['lat'], 'lng': parsed['lng']})
-#                         save_locs(locs, params.locs)
-#                     except Exception as e:
-#                         logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_c))
-#                         raise(e)
-#                 pls.loc[i,'loc_lat'] = locs.loc[l_c_str,'lat']
-#                 pls.loc[i,'loc_lng'] = locs.loc[l_c_str,'lng']
-#             elif l_n is not None:
-#                 if locs is None or l_n not in locs['location']:
-#                     logging.info('Retrieving coordinates for location: \"{}\"'.format(l_n))
-#                     try:
-#                         parsed = parse_location(loc_str=l_n, api_key=api_key, is_name=True)
-#                         locs = update_locs(locs, {'location': l_n, 'type': 'name', 'lat': parsed['lat'], 'lng': parsed['lng']})
-#                         save_locs(locs, params.locs)
-#                     except Exception as e:
-#                         logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_n))
-#                         raise(e)
-#                 pls.loc[i,'loc_lat'] = locs.loc[l_n,'lat']
-#                 pls.loc[i,'loc_lng'] = locs.loc[l_n,'lng']
-#
-#         # save
-#         pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
-
-# # FASTAs
-# ##################################################
-# # Download FASTAs
-# rule download_seqs:
-#     input:
-#         "%s/{date}__{db}__filtered.txt" % config['data']['odir']['reports']
-#     output:
-#         "%s/{date}__{db}.fna" % config["data"]["odir"]["master"]
-#     message:
-#         "Downloading sequences for IDs in {input}"
-#     params:
-#         eutils=config['eutils']['dir']
-#     shell:
-#         """
-#         mkdir -p $(dirname {output}) &&
-#         python download_fastas.py -t {input} -i \"UID_NUCCORE\" -o {output} -c 10 -s 100 -e {params.eutils} 2>&1 | tee {output}.log &&
-#         cat {output}.tmp.* > {output} && rm {output}.tmp.*
-#         """
-#
 # # ABRicate annot
 # ##################################################
 # # NOTE: To have more control over the BLAST search and filtering ABRicate is not used directly.
