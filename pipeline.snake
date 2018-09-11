@@ -46,7 +46,6 @@ ENV_PATH = os.path.join(CONDA_PATH, 'envs', config['env_name'])
 # BLAST
 BIN_MAKEBLASTDB = os.path.join(config["blast"]["dir"], "bin/makeblastdb")
 BIN_BLASTN = os.path.join(config["blast"]["dir"], "bin/blastn")
-BLAST_DB_EXT = ['nin', 'nhr', 'nsq']
 
 # Mash
 BIN_MASH = os.path.join(config["mash"]["dir"], "mash")
@@ -57,98 +56,90 @@ EUTILS_INSTALL = os.path.join(config["eutils"]["dir"], "install.done")
 # Krona
 BIN_KRONA_XML = os.path.join(config["krona"]["dir"], "bin/ktImportXML")
 
-# pmlst
-PMLST_CLEAN = os.path.join(ENV_PATH, 'db/pubmlst/cleanup.done')
+# data for rMLST
+RMLST_FASTA = config['rmlst']['rmlst_fas']
+RMLST_DB = ['{}.{}'.format(RMLST_FASTA, ext) for ext in config['blast']['ext']]
+
+# data for ABRicate
+ABRICATE_UPDATE = 'data/abricate_update_%s.done' % today
+
+# data for pMLST
+PMLST_UPDATE  = 'data/pmlst_update_%s.done' % today
+PMLST_CLEAN   = os.path.join(ENV_PATH, 'db/pubmlst/cleanup.done')
 PMLST_ALLELES = os.path.join(ENV_PATH, 'db/pubmlst/download.done')
-PMLST_DB = os.path.join(ENV_PATH, 'db/blast/mlst.fa')
+PMLST_DB      = os.path.join(ENV_PATH, 'db/blast/mlst.fa')
 
 ##################################################
 # Data
 ##################################################
 # Table with plasmid records
-PLASMIDS = [os.path.join(config['data']['odir']['reports'], '%s__%s__nuccore.txt' % (today, db)) for db in dbs.keys()]
-PLASMIDS_ALL = os.path.join(config['data']['odir']['reports'], '%s__nuccore.txt' % today)
+PLASMIDS                = [os.path.join(config['data']['odir']['reports'], '%s__%s__nuccore.txt' % (today, db)) for db in dbs.keys()]
+PLASMIDS_ALL            = os.path.join(config['data']['odir']['reports'], '%s__nuccore.txt' % today)
 # linked assemblies
-PLASMIDS_ALL_ASM = os.path.join(config['data']['odir']['reports'], '%s__nuccore_assembly.txt' % today)
+PLASMIDS_ALL_ASM        = os.path.join(config['data']['odir']['reports'], '%s__nuccore_assembly.txt' % today)
 # linked biosamples
-PLASMIDS_ALL_BIOS = os.path.join(config['data']['odir']['reports'], '%s__nuccore_biosample.txt' % today)
+PLASMIDS_ALL_BIOS       = os.path.join(config['data']['odir']['reports'], '%s__nuccore_biosample.txt' % today)
 # assembly info
-PLASMIDS_ASM = os.path.join(config['data']['odir']['reports'], '%s__assembly.txt' % today)
+PLASMIDS_ASM            = os.path.join(config['data']['odir']['reports'], '%s__assembly.txt' % today)
 # biosample info
-PLASMIDS_BIOS = os.path.join(config['data']['odir']['reports'], '%s__biosample.txt' % today)
+PLASMIDS_BIOS           = os.path.join(config['data']['odir']['reports'], '%s__biosample.txt' % today)
 # taxonomy info (processed)
-PLASMIDS_TAX = os.path.join(config['data']['odir']['reports'], '%s__taxa.txt' % today)
-PLASMIDS_TAXP = os.path.join(config['data']['odir']['reports'], '%s__taxaproc.txt' % today)
+PLASMIDS_TAX            = os.path.join(config['data']['odir']['reports'], '%s__taxa.txt' % today)
+PLASMIDS_TAXP           = os.path.join(config['data']['odir']['reports'], '%s__taxaproc.txt' % today)
 # all info together
-PLASMIDS_FULL1 = os.path.join(config['data']['odir']['reports'], '%s__full1.txt' % today)
-PLASMIDS_FULL2 = os.path.join(config['data']['odir']['reports'], '%s__full2.txt' % today)
+PLASMIDS_FULL1          = os.path.join(config['data']['odir']['reports'], '%s__full1.txt' % today)
+PLASMIDS_FULL2          = os.path.join(config['data']['odir']['reports'], '%s__full2.txt' % today)
 
 # filter1
-PLASMIDS_FILT1        = os.path.join(config['data']['odir']['reports'], '%s__filtered1.txt' % today)
+PLASMIDS_FILT1          = os.path.join(config['data']['odir']['reports'], '%s__filtered1.txt' % today)
 
 # to find identical plasmids
-PLASMIDS_FILT1_FASTA  = os.path.join(config['data']['odir']['reports'], '%s__filtered1.fna' % today)
-PLASMIDS_FILT1_SKETCH = os.path.join(config['data']['odir']['reports'], '%s__filtered1.msh' % today)
-PLASMIDS_FILT1_DIST0  = os.path.join(config['data']['odir']['reports'], '%s__filtered1.dist0' % today)
+PLASMIDS_FILT1_FASTA    = os.path.join(config['data']['odir']['reports'], '%s__filtered1.fna' % today)
+PLASMIDS_FILT1_SKETCH   = os.path.join(config['data']['odir']['reports'], '%s__filtered1.msh' % today)
+PLASMIDS_FILT1_DIST0    = os.path.join(config['data']['odir']['reports'], '%s__filtered1.dist0' % today)
 
 # filter 2
-PLASMIDS_FILT2        = os.path.join(config['data']['odir']['reports'], '%s__filtered2.txt' % today)
+PLASMIDS_FILT2          = os.path.join(config['data']['odir']['reports'], '%s__filtered2.txt' % today)
 
 # to find putative chromosomes
-PLASMIDS_FILT2_FASTA  = os.path.join(config['data']['odir']['reports'], '%s__filtered2.fna' % today)
-# rMLST
-PLASMIDS_FILT2_RMLST  = os.path.join(config['data']['odir']['reports'], '%s__filtered2.rmlst' % today)
-RMLST_FASTA = config['rmlst']['fas']
-RMLST_DB = ['{}.{}'.format(RMLST_FASTA, ext) for ext in BLAST_DB_EXT]
+PLASMIDS_FILT2_FASTA    = os.path.join(config['data']['odir']['reports'], '%s__filtered2.fna' % today)
+PLASMIDS_FILT2_RMLST    = os.path.join(config['data']['odir']['reports'], '%s__filtered2.rmlst' % today)
 
 # filter 3
-PLASMIDS_FILT3        = os.path.join(config['data']['odir']['reports'], '%s__filtered3.txt' % today)
-
-# # rMLST
-# PLASMIDS_FILT1_RMLST_FASTA  = os.path.join(config['data']['odir']['reports'], '%s__filtered1.rmlst.fna' % today)
-# RMLST_FASTA = config['rmlst']['fas']
-# RMLST_DB = ['{}.{}'.format(RMLST_FASTA, ext) for ext in BLAST_DB_EXT]
-# PLASMIDS_FILT1_RMLST = os.path.join(config['data']['odir']['reports'], '%s__filtered1.rmlst' % today)
-#
-# # filter 2
-# PLASMIDS_FILT2 = os.path.join(config['data']['odir']['reports'], '%s__filtered2.txt' % today)
-#
-# # process locations
-# PLASMIDS_FILT2_LOC = os.path.join(config['data']['odir']['reports'], '%s__filtered2_locs.txt' % today)
+PLASMIDS_FILT3          = os.path.join(config['data']['odir']['reports'], '%s__filtered3.txt' % today)
 
 ##################################################
 # Data: "Master" files
 ##################################################
-# # Plasmid sequences
-# MASTER_GFASTA = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.fna" % today), db=dbs.keys())
-#
-# # ABRicate
-# MASTER_ABRICATE_DBS = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.abr.{rdb}" % today), db=dbs.keys(), rdb=config['abricate']['dbs'])
-# MASTER_ABRICATE = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.abr" % today), db=dbs.keys())
-#
-# # pMLST
-# MASTER_PMLST = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.pmlst" % today), db=dbs.keys())
-#
-# # BLASTdb from master FASTA
-# MASTER_BLASTDB = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.fna.{ext}" % today), db=dbs.keys(), ext=config['blast']['ext'])
-#
-# # Mash
-# MASTER_MASH_SIG  = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.msh" % today), db=dbs.keys())
-# MASTER_MASH_DIST = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.dist" % today), db=dbs.keys())
-#
-# # UMAP
-# MASTER_MASH_UMAP = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.umap" % today), db=dbs.keys())
-# MASTER_MASH_DIST = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.dist" % today), db=dbs.keys())
-#
-# # Master info table
-# MASTER_TAB = expand(os.path.join(config["data"]["odir"]["master"], "%s__{db}.tsv" % today), db=dbs.keys())
-#
-# # Krona plot
-# MASTER_KRONA_XML = os.path.join(config["data"]["odir"]["master"], "%s.xml" % today)
-# MASTER_KRONA_HTML = os.path.join(config["data"]["odir"]["master"], "%s.html" % today)
-#
-# # Other plots
-# MASTER_PLOTS = os.path.join(config["data"]["odir"]["master"], "%s.pdf" % today)
+# Plasmid sequences
+MASTER_FASTA        = os.path.join(config["data"]["odir"]["master"], "%s.fna" % today)
+
+# ABRicate
+MASTER_ABRICATE_DBS = expand(os.path.join(config["data"]["odir"]["master"], "%s.abr.{rdb}" % today), rdb=config['abricate']['dbs'])
+MASTER_ABRICATE     = os.path.join(config["data"]["odir"]["master"], "%s.abr" % today)
+
+# pMLST
+MASTER_PMLST        = os.path.join(config["data"]["odir"]["master"], "%s.pmlst" % today)
+
+# BLASTdb from master FASTA
+MASTER_BLASTDB      = expand(os.path.join(config["data"]["odir"]["master"], "%s.fna.{ext}" % today), ext=config['blast']['ext'])
+
+# Mash
+MASTER_MASH_SIG     = os.path.join(config["data"]["odir"]["master"], "%s.msh"  % today)
+MASTER_MASH_DIST    = os.path.join(config["data"]["odir"]["master"], "%s.dist" % today)
+
+# UMAP
+MASTER_MASH_UMAP    = os.path.join(config["data"]["odir"]["master"], "%s.umap" % today)
+
+# Master info table
+MASTER_TAB          = os.path.join(config["data"]["odir"]["master"], "%s.tsv" % today)
+
+# Krona plot
+MASTER_KRONA_XML    = os.path.join(config["data"]["odir"]["master"], "%s.xml" % today)
+MASTER_KRONA_HTML   = os.path.join(config["data"]["odir"]["master"], "%s.html" % today)
+
+# Other plots
+MASTER_PLOTS        = os.path.join(config["data"]["odir"]["master"], "%s.pdf" % today)
 
 ##################################################
 # Rules
@@ -163,7 +154,8 @@ rule all:
         mash=BIN_MASH,
         eutils=EUTILS_INSTALL,
         krona=BIN_KRONA_XML,
-        pmlstdb=[PMLST_CLEAN, PMLST_ALLELES, PMLST_DB],
+        pmlstdb=[PMLST_UPDATE, PMLST_DB],
+        abricate=ABRICATE_UPDATE,
         # plasmids
         query_plasmids=PLASMIDS_FULL2,
         # plasmid filtering (1)
@@ -172,32 +164,26 @@ rule all:
         filter_plasmids2=PLASMIDS_FILT2,
         # rmlst
         rmlst=PLASMIDS_FILT2_RMLST,
-        # identical plasmids
-        # identical_plasmids=PLASMIDS_FILT1_ADD,
-        # rmlst
-        # rmlst=PLASMIDS_FILT1_RMLST,
-        # plasmid filtering (2)
-        # filter_plasmids2=PLASMIDS_FILT2,
-        # locations
-        # locs=PLASMIDS_FILT2_LOC,
-		# # master files
-        # # fasta
-        # master_fasta=MASTER_GFASTA,
-        # # abricate
-        # abricate=MASTER_ABRICATE_DBS + [MASTER_ABRICATE],
-        # # pmlst
-        # pmlst=MASTER_PMLST,
-        # # blastdb
-		# master_blastdb=MASTER_BLASTDB,
-		# # mash
-        # master_sig=MASTER_MASH_SIG,
-        # master_dist=MASTER_MASH_DIST,
-        # # umap
-        # master_umap=MASTER_MASH_UMAP,
-        # # table
-        # master_tab=MASTER_TAB,
-        # # krona plot
-        # master_krona=[MASTER_KRONA_XML, MASTER_KRONA_HTML],
+        # plasmid filtering (3)
+        filter_plasmids3=PLASMIDS_FILT3,
+		# master files
+        # fasta
+        master_fasta=MASTER_FASTA,
+        # abricate
+        master_abricate=MASTER_ABRICATE_DBS + [MASTER_ABRICATE],
+        # pmlst
+        pmlst=MASTER_PMLST,
+        # blastdb
+		master_blastdb=MASTER_BLASTDB,
+		# mash
+        master_sig=MASTER_MASH_SIG,
+        master_dist=MASTER_MASH_DIST,
+        # umap
+        master_umap=MASTER_MASH_UMAP,
+        # table
+        master_tab=MASTER_TAB,
+        # krona plot
+        master_krona=[MASTER_KRONA_XML, MASTER_KRONA_HTML],
         # # other plots
         # master_plots=MASTER_PLOTS,
 
@@ -261,8 +247,28 @@ rule install_krona:
         rsync -av Krona-xl2.5/KronaTools . && rm -r Krona-xl2.5/ && cd KronaTools && ./install.pl --prefix .
         """
 
-# pmlst
+# abricate: data
+rule update_abricate:
+    output:
+        ABRICATE_UPDATE
+    params:
+        dbs=' '.join(config['abricate']['dbs'])
+    message:
+        "Update ABRicate databases: {params.dbs}"
+    shell:
+        "for db in {params.dbs}; do abricate-get_db --db ${{db}} --force; done 2> {output}"
+
+# mlst
+# pmlst: data
+rule update_pmlst:
+    output:
+        PMLST_UPDATE
+    shell:
+        "touch {output}"
+
 rule clean_pmlst:
+    input:
+        PMLST_UPDATE
     output:
         PMLST_CLEAN
     message:
@@ -272,7 +278,8 @@ rule clean_pmlst:
     shell:
         """
         find {params.dir}/db/pubmlst/ -maxdepth 1 -mindepth 1 -type d -exec rm -r {{}} \; && \
-        find {params.dir}/db/blast/ -type f -name 'mlst.*' -exec rm {{}} \; && touch {output}
+        find {params.dir}/db/blast/ -type f -name 'mlst.*' -exec rm {{}} \; && \
+        touch {output}
         """
 
 rule get_pmlst_data:
@@ -284,67 +291,43 @@ rule get_pmlst_data:
         "Download pMLST allele FASTA files"
     params:
         db=config['pmlst']['db'],
-        url=config['pmlst']['url']
+        url=config['pmlst']['url'],
+        url_schemes=config['pmlst']['url_schemes'],
     run:
         # reference: https://github.com/kjolley/BIGSdb.git: scripts/rest_examples/python/download_alleles.py
         import requests
         from glob import glob
-        from utils import proc_mlst_scheme_name
-        setup_logger()
+        from utils import proc_mlst_scheme_name, download_pmlst_scheme_alleles, download_pmlst_scheme_profiles
 
-        url = params.url + '/db/' + params.db
-        r = requests.get(url)
-        if r.status_code == 404:
-            print('Database ' + params.db + ' does not exist.')
-            os._exit(1)
+        setup_logger(logging.INFO)
+
+        # get schemes
+        schemes = requests.get(params.url_schemes)
+        assert schemes.status_code != 404, 'Invalid URL {}'.format(params.url_schemes)
+        schemes = schemes.json()['schemes']
+        logging.info('There are {} pMLST schemes'.format(len(schemes)))
 
         # get loci
-        for scheme_name, scheme_id in config['pmlst']['ids'].items():
+        for scheme in schemes:
+            # scheme name and URL
+            scheme_name = scheme['description']
+            scheme_url  = scheme['scheme']
             scheme_name2 = proc_mlst_scheme_name(scheme_name)
-            print(scheme_name, scheme_name2, scheme_id)
+            logging.info('Scheme {} ({}): {}'.format(scheme_name, scheme_name2, scheme_url))
 
             # where to save files
             scheme_dir = os.path.join(os.path.dirname(output[0]), scheme_name2)
             mkdir(scheme_dir, True)
+
             # where to save profiles
             scheme_profiles = os.path.join(scheme_dir, scheme_name2 + '.txt')
 
             # alleles
-            r = requests.get(params.url +  '/db/' + params.db + '/schemes/' + str(scheme_id))
-            assert r.status_code != 404, 'Scheme {} ({}) does not exist.'.format(scheme_name, scheme_id)
-            loci = r.json()['loci']
-            for locus_path in loci:
-                r = requests.get(locus_path)
-                locus = r.json()['id']
-                if r.json()['alleles_fasta']:
-                    r = requests.get(r.json()['alleles_fasta'])
-                    fasta_file = open(scheme_dir + '/' + locus + '.tfa', 'w')
-                    fasta_file.write(r.text)
-                    fasta_file.close()
+            download_pmlst_scheme_alleles(scheme_name, scheme_url, scheme_dir)
 
             # profiles
-            r = requests.get(params.url +  '/db/' + params.db + '/schemes/' + str(scheme_id) + '/profiles_csv')
-            if r.status_code == 404: # no profiles, create file with header and one dummy profile
-                with open(scheme_profiles, 'w') as ofile:
-                    locus = [ re.sub('\.tfa', '', os.path.basename(tfa)) for tfa in glob('%s/*.tfa' % scheme_dir) ]
-                    ofile.write('ST\t{}\n{}\n'.format(
-                        '\t'.join(locus),
-                        '\t'.join(['1']*(len(locus)+1))
-                    ))
-                with open(scheme_profiles + '.dummy', 'w') as ofile:
-                    ofile.write('dummy')
-            else: # save profiles
-                with open(scheme_profiles, 'w') as ofile:
-                    ofile.write(re.sub('\t\n', '\n', r.text))
-            # check formatting
-            df = pandas.read_csv(scheme_profiles, sep='\t', header=0)
-            if df.columns[0] != "ST":
-                df.columns = ['ST'] + list(df.columns)[1:]
-            if any([not re.fullmatch(r'\d+', str(st)) for st in list(df['ST'])]):
-                df['oldST'] = df['ST'].copy()
-                df['ST'] = list(range(1, df.shape[0]+1))
-                df[[col for col in list(df.columns) if col != 'oldST']].to_csv(scheme_profiles, sep='\t', index=False, index_label=False)
-                df.to_csv(scheme_profiles + '.old', sep='\t', index=False, index_label=False)
+            profiles_url = params.url +  '/db/' + params.db + '/schemes/' + scheme_url.split('/')[-1]
+            download_pmlst_scheme_profiles(scheme_name, profiles_url, scheme_dir, scheme_profiles)
 
         with open(output[0], 'w') as ofile:
             ofile.write('done')
@@ -898,6 +881,7 @@ rule filter2:
                     return rec2
 
         logging.info('Filter by identity ...')
+        pls['Identical'] = None
         keep = pandas.Series(True, index=pls['ACC_FASTA'])
         for gr, gr_df in tqdm(pls.loc[pandas.notnull(pls['UID_IDENTGROUP']),:].groupby(by=['UID_IDENTGROUP'])):
             assert pandas.notnull(gr)
@@ -908,6 +892,7 @@ rule filter2:
                 else:
                     best = compare_records(gr_df.loc[best,:], gr_df.loc[acc,:])['ACC_FASTA']
             keep.loc[gr_df.loc[gr_df['ACC_FASTA'] != best,'ACC_FASTA']] = False
+            pls.loc[best,'Identical'] = ';'.join(sorted([acc for acc in gr_df['ACC_FASTA'] if acc != best]))
         pls = pls.loc[keep.index[keep]]
         pls.drop(columns=['UID_IDENTGROUP'], inplace=True)
         logging.info('Filtered: indentical sequences: kept {} records'.format(pls.shape[0]))
@@ -944,12 +929,12 @@ rule rmlst_blastn:
     run:
         setup_logger()
 
-        header = config['rmlst']['header']
-        ident = config['rmlst']['ident']
-        cov = config['rmlst']['cov']
+        header = config['rmlst']['rmlst_header']
+        ident = config['rmlst']['rmlst_ident']
+        cov = config['rmlst']['rmlst_cov']
 
         # blastn search
-        cmd = config['rmlst']['cmd'].format(
+        cmd = config['rmlst']['rmlst_cmd'].format(
             blastn=params.bin,
             input=input.fasta,
             db=input.db,
@@ -987,14 +972,21 @@ rule rmlst_blastn:
 rule filter3:
     input:
         pls=PLASMIDS_FILT2,
+        fna=PLASMIDS_FILT2_FASTA,
         rmlst=PLASMIDS_FILT2_RMLST
     output:
         PLASMIDS_FILT3
     message:
         "Filter based on rMLST results"
     params:
-        cutoff=config['rmlst']['max_loci']
+        cores=30,
+        cutoff=config['rmlst']['rmlst_max_loci'],
+        blastn_bin=BIN_BLASTN,
+        blastn_header=config['rmlst']['blastn_header'],
+        blastn_pident=config['rmlst']['blastn_pident'],
+        blastn_qcovs=config['rmlst']['blastn_qcovs']
     run:
+        from multiprocessing import Pool
         setup_logger(logging.INFO)
 
         pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
@@ -1009,23 +1001,384 @@ rule filter3:
         pls['hitscount_rMLST'] = 0
         for qseqid, df in rmlst[['qseqid', 'slocus']].groupby(['qseqid']):
             hits = sorted(list(set(df['slocus'])))
-            gr = pls.loc[qseqid, 'UID_IDENTGROUP']
-            if pandas.isnull(gr):
-                pls.loc[qseqid, 'hits_rMLST'] = ';'.join(hits)
-                pls.loc[qseqid, 'hitscount_rMLST'] = len(hits)
-            else:
-                pls.loc[pls['UID_IDENTGROUP'] == gr, 'hits_rMLST'] = ';'.join(hits)
-                pls.loc[pls['UID_IDENTGROUP'] == gr, 'hitscount_rMLST'] = len(hits)
+            pls.loc[qseqid, 'hits_rMLST'] = ';'.join(hits)
+            pls.loc[qseqid, 'hitscount_rMLST'] = len(hits)
+        pls.to_csv('%s.backup' % output[0], sep='\t', header=True, index=False, index_label=False)
 
-        # filter by number of loci
-        pls = pls.loc[pls['hitscount_rMLST'] <= params.cutoff,:]
-        logging.info('Filtered: by numner of rMLST hits: kept {} records'.format(pls.shape[0]))
+        # check those above given cutoff
+        check_ids = pls.loc[pls['hitscount_rMLST'] > params.cutoff,'ACC_FASTA']
+        # run BLASTn
+        from utils import run_blastn_check
+        pool = Pool(params.cores)
+        tmp = pool.starmap(
+            run_blastn_check,
+            [(acc, output[0], input.fna, config['rmlst']['blastn'], params.blastn_bin, params.blastn_header, params.blastn_pident) for acc in check_ids]
+        )
+        pool.close()
+        pool.join()
+        # check results
+        for acc in check_ids:
+            # clean up: rm FASTA
+            acc_fasta = '%s.%s.fna' % (output[0], acc)
+            if os.path.exists(acc_fasta):
+                os.remove(acc_fasta)
+            # load hits
+            acc_ofile = '%s.%s.tsv' % (output[0], acc)
+            try:
+                acc_df = pandas.read_csv(acc_ofile, sep='\t', header=None, names=params.blastn_header)
+            except pandas.errors.EmptyDataError:
+                logging.info('KEEP {}: no blastn hits'.format(acc))
+                continue
+            # filter hits
+            acc_df = acc_df.loc[(acc_df['pident'] >= params.blastn_pident) & (acc_df['qcovs'] >= params.blastn_qcovs),:]
+            # no hits left
+            if acc_df.shape[0] == 0:
+                logging.info('KEEP {}: no blastn hits left after filtering (pident {}, qcovs {})'.format(acc, params.blastn_pident, params.blastn_qcovs))
+                continue
+            else:
+                top1 = acc_df.iloc[0,:]
+                logging.info('RM {}: 1st hit: {} [{}] (evalue {}, pident {}, qcovs {})'.format(acc, top1['sseqid'], top1['stitle'], top1['evalue'], top1['pident'], top1['qcovs']))
+                pls.drop(index=[acc], inplace=True)
+        logging.info('Filtered: by number of rMLST and blastn hits: kept {} records'.format(pls.shape[0]))
 
         # save
         pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
 
-# FASTA
+######################################################################
+# MASTER FILES
+######################################################################
+rule master_fasta:
+    input:
+        pls=PLASMIDS_FILT3,
+        fna=PLASMIDS_FILT2_FASTA
+    output:
+        MASTER_FASTA
+    message:
+        "Create FASTA file for records in {input.pls}"
+    run:
+        from Bio import SeqIO
+        setup_logger(logging.INFO)
+        mkdir(os.path.dirname(output[0]), True)
+
+        ids = list(pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)['ACC_FASTA'])
+        n   = len(ids)
+        ids = set(ids)
+        assert len(ids) == n, 'FASTA IDs in {} are not unique'.format(input.pls)
+        logging.info('Read in {} plasmid records'.format(len(ids)))
+
+        with open(input.fna, 'r') as ifile, open(output[0], 'w') as ofile:
+            for record in tqdm(SeqIO.parse(ifile, 'fasta')):
+                if record.id in ids:
+                    SeqIO.write(record, ofile, 'fasta')
+                    ids.remove(record.id)
+        assert len(ids) == 0, 'Not all IDs found in FASTA {}: {}'.format(input.fna, ';'.join(ids))
+
+# ABRicate annot
 ##################################################
+# NOTE: To have more control over the BLAST search and filtering ABRicate is not used directly.
+#       BLASTn is run using ABRicate DBs and the results are filtered by indentity and coverage
+#       analogous to the ABRicate implementation.
+rule abricate:
+    input:
+        fna="{basename}.fna",
+        abr=ABRICATE_UPDATE
+    output:
+        "{basename}.abr.{rdb}"
+    message:
+        "ABRicate on fasta: {input.fna}"
+    params:
+        blastn=BIN_BLASTN,
+        header=config['abricate']['blastn']['header'],
+        cov=lambda wildcards: config['abricate']['params'][wildcards.rdb]['cov'],
+        ident=lambda wildcards: config['abricate']['params'][wildcards.rdb]['ident'],
+        cores=10
+    run:
+        setup_logger(logging.INFO)
+
+        # blastn search
+        cmd = config['abricate']['blastn']['cmd'].format(
+            blastn=params.blastn,
+            input=input.fna,
+            rdb=wildcards.rdb,
+            ident=params.ident,
+            output=output[0],
+            header=' '.join(params.header),
+            cores=params.cores
+        )
+        logging.info(cmd)
+        cmd, cmd_s, cmd_o = run_cmd(cmd)
+        assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
+
+        # read in results
+        df = pandas.read_csv(output[0], sep='\t', header=None, names=params.header)
+
+        # compute coverage
+        # https://github.com/tseemann/abricate/blob/f38e303611291336a7dbb01e94c22fd894e51016/bin/abricate#L135
+        df['cov'] =  100 * (df['length'] - df['gaps']) / df['slen']
+        # filter by coverage
+        df = df.loc[df['cov'] >= params.cov,:]
+
+        # sseqid -> DB + ID
+        df['sseqdb'] = df['sseqid'].map(lambda x: x.split('~~~')[0])
+        df['sseqid'] = df['sseqid'].map(lambda x: ', '.join(x.split('~~~')[1:]))
+
+        # save
+        df.to_csv(
+            path_or_buf=output[0],
+            sep='\t',
+            header=True,
+            index=False,
+            index_label=False
+        )
+
+rule cat_abricate:
+    input:
+        ["{basename}.abr.%s" % db for db in config['abricate']['dbs']]
+    output:
+        "{basename}.abr"
+    message:
+        "Concat ABRicate hits: {input}"
+    params:
+        blastn=BIN_BLASTN,
+        cores=10
+    run:
+        dfs = []
+        for ifile in input:
+            dfs.append(
+                pandas.read_csv(ifile, sep='\t', header=0)
+            )
+        dfs = pandas.concat(dfs, axis=0)
+        dfs.to_csv(
+            path_or_buf=output[0],
+            sep='\t',
+            header=True,
+            index=False,
+            index_label=False
+        )
+
+# pMLST
+#################################################
+rule pmlst:
+    input:
+        db=PMLST_DB,
+        fasta="{basename}.fna"
+    output:
+        "{basename}.pmlst"
+    message:
+        "pmlst on fasta: {input}"
+    params:
+        cmd=config['pmlst']['cmd']
+    run:
+        import shutil
+        from Bio import SeqIO
+        from utils import reproc_mlst_scheme_name
+        setup_logger()
+
+        # split multi FASTA to sep. files
+        tmp_dir = 'tmp_fasta'
+        tmp_file = os.path.join(tmp_dir, 'pmlst.tsv')
+        assert not os.path.exists(tmp_dir)
+        assert not os.path.exists(tmp_file)
+        os.makedirs(tmp_dir)
+        logging.info('Splitting %s into %s/' % (input.fasta, tmp_dir))
+        with open(input.fasta, 'r') as ifile:
+            for record in SeqIO.parse(ifile, 'fasta'):
+                SeqIO.write(record, open(os.path.join(tmp_dir, record.id + '.fasta'), 'w'), 'fasta')
+
+        # run pmlst
+        cmd = params.cmd + " {idir}/*.fasta > {ofile}".format(idir=tmp_dir, ofile=tmp_file)
+        logging.info('Running pmlst: %s' % cmd)
+        cmd, cmd_s, cmd_o = run_cmd(cmd)
+        assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
+
+        # profiles
+        profiles = {}
+
+        # process
+        logging.info('Processing')
+        with open(output[0], 'w') as ofile, open(tmp_file, 'r') as ifile:
+            for line in ifile:
+                line = line.rstrip('\n').split('\t')
+                # no hit
+                if line[1] == "-":
+                    continue
+                # process hit
+                line[0] = re.sub('\.fasta', '', os.path.basename(line[0])) # ID
+                if line[2] != "-":
+                    pfile = os.path.join(ENV_PATH, 'db/pubmlst', line[1], line[1] + '.txt')
+                    if line[1] not in profiles:
+                        if os.path.exists(pfile + '.dummy'):
+                            profiles[line[1]] = 'dummy'
+                        elif os.path.exists(pfile + '.old'):
+                            profiles[line[1]] = pandas.read_csv(pfile + '.old', sep='\t', header=0)
+                        else:
+                            profiles[line[1]] = None
+                    if profiles[line[1]] is None:
+                        continue
+                    elif isinstance(profiles[line[1]], str) and profiles[line[1]] == 'dummy': # dummy STs
+                        logging.info('Dummy ST: %s' % line[0])
+                        line[2] = '-'
+                    elif 'oldST' in list(profiles[line[1]]): # ST mapping
+                        logging.info('Mapped ST: %s' % line[0])
+                        line[2] = (profiles[line[1]].loc[profiles[line[1]]['ST'] == int(line[2]),'oldST'].tolist())[0]
+                line[1] = reproc_mlst_scheme_name(line[1])
+                # save
+                ofile.write("{}\t{}({}): {}\n".format(
+                    line[0],
+                    line[1],
+                    line[2],
+                    ';'.join(line[3:])
+                ))
+
+        # rm tmp dir
+        shutil.rmtree(tmp_dir)
+
+# BLASTn DBs
+##################################################
+# See "general" rules
+
+# Mash
+##################################################
+# See "general" rules
+
+# Embedding
+##################################################
+# See "general" rules
+
+# Info table
+##################################################
+rule infotable:
+    input:
+        pls=PLASMIDS_FILT3,
+        emb="%s/{date}.umap" % config["data"]["odir"]["master"],
+        pf="%s/{date}.abr.plasmidfinder" % config["data"]["odir"]["master"],
+        pmlst="%s/{date}.pmlst" % config["data"]["odir"]["master"]
+    output:
+        "%s/{date}.tsv" % config["data"]["odir"]["master"]
+    message:
+        "Create info table for records in {input.pls}"
+    run:
+        setup_logger(logging.INFO)
+
+        # plasmids
+        pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
+        pls.set_index(keys='ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
+        logging.info('Read in {} plasmid records\n{}'.format(pls.shape[0], pls.head()))
+
+        # embedding
+        emb = pandas.read_csv(input.emb, sep='\t', header=0, index_col='ID', dtype=str)
+        logging.info('Read in embedding for {} records\n{}'.format(emb.shape[0], emb.head()))
+
+        # PlasmidFinder
+        pf  = pandas.read_csv(input.pf, sep='\t', header=0)
+        logging.info('Read in {} PlasmidFinder hits\n{}'.format(pf.shape[0], pf.head()))
+        # aggregate results - all hits per record
+        pfs = []
+        for aggr_id, aggr_df in pf.groupby(['qseqid']):
+            pfs.append({
+                'qseqid': aggr_id,
+                'plasmidfinder': '|'.join(aggr_df['sseqid'].values)
+            })
+        pfs = pandas.DataFrame(pfs)
+        pfs.set_index(keys='qseqid', drop=True, inplace=True, verify_integrity=True)
+        logging.info('There are {} aggregated PlasmidFinder hits\n{}'.format(pfs.shape[0], pfs.head()))
+
+        # pMLST
+        pmlst = pandas.read_csv(input.pmlst, sep='\t', header=None, index_col=0, names=['ID', 'pmlst'])
+        logging.info('Read in {} pMLST records\n{}'.format(pmlst.shape[0], pmlst.head()))
+
+        # process source strings
+        source_map = {
+            'insd': 'INSDC',
+            'refseq': 'RefSeq'
+        }
+        pls['Source_NUCCORE'] = pls['Source_NUCCORE'].map(lambda x: source_map[x])
+
+        # add data
+        pls = pandas.merge(
+            left=pls,
+            right=emb,
+            how='left',
+            left_index=True,
+            right_index=True,
+            sort=False,
+        )
+        logging.info('Added embedding')
+
+        pls = pandas.merge(
+            left=pls,
+            right=pfs,
+            how='left',
+            left_index=True,
+            right_index=True,
+            sort=False,
+        )
+        logging.info('Added PlasmidFinder hits')
+
+        pls = pandas.merge(
+            left=pls,
+            right=pmlst,
+            how='left',
+            left_index=True,
+            right_index=True,
+            sort=False,
+        )
+        logging.info('Added pMLST hits')
+
+        # save
+        pls.to_csv(
+            path_or_buf=output[0],
+            sep='\t',
+            header=True,
+            index=False,
+            index_label=False
+        )
+
+# Krona plot
+##################################################
+rule krona_xml:
+    input:
+        MASTER_TAB
+    output:
+        MASTER_KRONA_XML
+    message:
+        "Create XML file for Krona plot from {input}"
+    shell:
+        "python create_krona_xml.py -t {input} -o {output}"
+
+rule krona_html:
+    input:
+        MASTER_KRONA_XML
+    output:
+        MASTER_KRONA_HTML
+    message:
+        "Create Krona plot from {input}"
+    params:
+        bin=BIN_KRONA_XML
+    shell:
+        "{params.bin} {input} -o {output}"
+
+# # Other plots
+# ##################################################
+# rule other_plots:
+#     input:
+#         MASTER_TAB
+#     output:
+#         MASTER_PLOTS
+#     message:
+#         "Plotting stat.s from collected data"
+#     params:
+#         width=10,
+#         height=6,
+#         pattern=today
+#     shell:
+#         "Rscript create_plots.R --path $(dirname {input[0]}) --pattern {params.pattern} --pdf {output} --width {params.width} --height {params.height}"
+
+######################################################################
+# GENERAL RULES
+######################################################################
+
+# FASTA for nuccore UIDs in table
 rule get_fasta:
     input:
         "{basename}.txt"
@@ -1042,8 +1395,22 @@ rule get_fasta:
         cat {output}.tmp.* > {output} && rm {output}.tmp.*
         """
 
-# Mash
-##################################################
+# BLAST DBs from FASTA
+rule blastndb:
+    input:
+        "{basename}.fna"
+    output:
+        ["{basename}.fna.%s" % ext for ext in config['blast']['ext']]
+    log:
+        "{basename}.makeblastdb.log"
+    params:
+        bin=BIN_MAKEBLASTDB,
+        date=today
+    message:
+        "Create BLASTDB from {input}"
+    shell:
+        "{params.bin} -in {input} -input_type fasta -dbtype nucl -title \"plsdb_{params.date}\" -logfile {log}"
+
 # Mash sketch
 rule mash_sketch:
     input:
@@ -1072,444 +1439,71 @@ rule mash_dist_zero:
     shell:
         "{params.mash} dist {params.params} {input} {input} > {output}"
 
-# # ABRicate annot
-# ##################################################
-# # NOTE: To have more control over the BLAST search and filtering ABRicate is not used directly.
-# #       BLASTn is run using ABRicate DBs and the results are filtered by indentity and coverage
-# #       analogous to the ABRicate implementation.
-# rule abricate:
-#     input:
-#         "%s/{date}__{db}.fna" % config["data"]["odir"]["master"]
-#     output:
-#         "%s/{date}__{db}.abr.{rdb}" % config["data"]["odir"]["master"]
-#     message:
-#         "ABRicate on fasta: {input}"
-#     params:
-#         blastn=BIN_BLASTN,
-#         cores=10
-#     run:
-#         setup_logger()
-#         header = config['abricate']['blastn']['header']
-#         cov = config['abricate']['params'][wildcards.rdb]['cov']
-#         ident = config['abricate']['params'][wildcards.rdb]['ident']
-#
-#         # blastn search
-#         cmd = config['abricate']['blastn']['cmd'].format(
-#             blastn=params.blastn,
-#             input=input[0],
-#             rdb=wildcards.rdb,
-#             ident=ident,
-#             output=output[0],
-#             header=' '.join(header),
-#             cores=params.cores
-#         )
-#         logging.info(cmd)
-#         cmd, cmd_s, cmd_o = run_cmd(cmd)
-#         assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
-#
-#         # read in results
-#         df = pandas.read_csv(output[0], sep='\t', header=None, names=header)
-#
-#         # compute coverage
-#         # https://github.com/tseemann/abricate/blob/f38e303611291336a7dbb01e94c22fd894e51016/bin/abricate#L135
-#         df['cov'] =  100 * (df['length'] - df['gaps']) / df['slen']
-#         # filter by coverage
-#         df = df.loc[df['cov'] >= cov,:]
-#
-#         # sseqid -> DB + ID
-#         df['sseqdb'] = df['sseqid'].map(lambda x: x.split('~~~')[0])
-#         df['sseqid'] = df['sseqid'].map(lambda x: ', '.join(x.split('~~~')[1:]))
-#
-#         # save
-#         df.to_csv(
-#             path_or_buf=output[0],
-#             sep='\t',
-#             header=True,
-#             index=False,
-#             index_label=False
-#         )
-#
-# rule cat_abricate:
-#     input:
-#         ["%s/{date}__{db}.abr.%s" % (config["data"]["odir"]["master"], db) for db in config['abricate']['dbs']]
-#     output:
-#         "%s/{date}__{db}.abr" % config["data"]["odir"]["master"]
-#     message:
-#         "Concat ABRicate hits: {input}"
-#     params:
-#         blastn=BIN_BLASTN,
-#         cores=10
-#     run:
-#         dfs = []
-#         for ifile in input:
-#             dfs.append(
-#                 pandas.read_csv(ifile, sep='\t', header=0)
-#             )
-#         dfs = pandas.concat(dfs, axis=0)
-#         dfs.to_csv(
-#             path_or_buf=output[0],
-#             sep='\t',
-#             header=True,
-#             index=False,
-#             index_label=False
-#         )
-#
-# # pMLST
-# #################################################
-# rule pmlst:
-#     input:
-#         db=PMLST_DB,
-#         fasta="%s/{date}__{db}.fna" % config["data"]["odir"]["master"]
-#     output:
-#         "%s/{date}__{db}.pmlst" % config["data"]["odir"]["master"]
-#     message:
-#         "pmlst on fasta: {input}"
-#     params:
-#         cmd=config['pmlst']['cmd']
-#     run:
-#         import shutil
-#         from Bio import SeqIO
-#         from utils import reproc_mlst_scheme_name
-#         setup_logger()
-#
-#         # split multi FASTA to sep. files
-#         tmp_dir = 'tmp_fasta_%s' % wildcards.db
-#         tmp_file = os.path.join(tmp_dir, 'pmlst.tsv')
-#         assert not os.path.exists(tmp_dir)
-#         assert not os.path.exists(tmp_file)
-#         os.makedirs(tmp_dir)
-#         logging.info('Splitting %s into %s/' % (input.fasta, tmp_dir))
-#         with open(input.fasta, 'r') as ifile:
-#             for record in SeqIO.parse(ifile, 'fasta'):
-#                 SeqIO.write(record, open(os.path.join(tmp_dir, record.id + '.fasta'), 'w'), 'fasta')
-#
-#         # run pmlst
-#         cmd = params.cmd + " {idir}/*.fasta > {ofile}".format(idir=tmp_dir, ofile=tmp_file)
-#         logging.info('Running pmlst: %s' % cmd)
-#         cmd, cmd_s, cmd_o = run_cmd(cmd)
-#         assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
-#
-#         # profiles
-#         profiles = {}
-#
-#         # process
-#         logging.info('Processing')
-#         with open(output[0], 'w') as ofile, open(tmp_file, 'r') as ifile:
-#             for line in ifile:
-#                 line = line.rstrip('\n').split('\t')
-#                 # no hit
-#                 if line[1] == "-":
-#                     continue
-#                 # process hit
-#                 line[0] = re.sub('\.fasta', '', os.path.basename(line[0])) # ID
-#                 if line[2] != "-":
-#                     pfile = os.path.join(ENV_PATH, 'db/pubmlst', line[1], line[1] + '.txt')
-#                     if line[1] not in profiles:
-#                         if os.path.exists(pfile + '.dummy'):
-#                             profiles[line[1]] = 'dummy'
-#                         elif os.path.exists(pfile + '.old'):
-#                             profiles[line[1]] = pandas.read_csv(pfile + '.old', sep='\t', header=0)
-#                         else:
-#                             profiles[line[1]] = None
-#                     if profiles[line[1]] is None:
-#                         continue
-#                     elif isinstance(profiles[line[1]], str) and profiles[line[1]] == 'dummy': # dummy STs
-#                         logging.info('Dummy ST: %s' % line[0])
-#                         line[2] = '-'
-#                     elif 'oldST' in list(profiles[line[1]]): # ST mapping
-#                         logging.info('Mapped ST: %s' % line[0])
-#                         line[2] = (profiles[line[1]].loc[profiles[line[1]]['ST'] == int(line[2]),'oldST'].tolist())[0]
-#                 line[1] = reproc_mlst_scheme_name(line[1])
-#                 # save
-#                 ofile.write("{}\t{}({}): {}\n".format(
-#                     line[0],
-#                     line[1],
-#                     line[2],
-#                     ';'.join(line[3:])
-#                 ))
-#
-#         # rm tmp dir
-#         shutil.rmtree(tmp_dir)
-#
-# # BLASTn DBs
-# ##################################################
-# rule blastndb:
-#     input:
-#         "%s/{date}__{db}.fna" % config["data"]["odir"]["master"]
-#     output:
-#         ["%s/{date}__{db}.fna.%s" % (config["data"]["odir"]["master"], ext) for ext in config['blast']['ext']]
-#     log:
-#         "%s/{date}__{db}.makeblastdb.log" % config["data"]["odir"]["master"]
-#     params:
-#         bin=BIN_MAKEBLASTDB
-#     message:
-#         "Create BLASTDB from {input}"
-#     shell:
-#         "{params.bin} -in {input} -input_type fasta -dbtype nucl -title \"ncbi__{wildcards.db}__{wildcards.date}\" -logfile {log}"
-#
-# # Mash
-# ##################################################
-# # signatures
-# rule mash_sig:
-#     input:
-#         "%s/{date}__{db}.fna" % config["data"]["odir"]["master"]
-#     output:
-#         "%s/{date}__{db}.msh" % config["data"]["odir"]["master"]
-#     log:
-#         "%s/{date}__{db}.msh.log" % config["data"]["odir"]["master"]
-#     params:
-#         params=config['mash']['sketch_params'],
-#         mash=BIN_MASH
-#     message:
-#         "Create signatures using Mash on {input}"
-#     shell:
-#         "{params.mash} sketch {params.params} -o $(dirname {output})/$(basename -s .msh {output}) {input} 2>&1 | tee {log}"
-#
-# # distance matrix
-# rule mash_dist:
-#     input:
-#         "%s/{date}__{db}.msh" % config["data"]["odir"]["master"]
-#     output:
-#         "%s/{date}__{db}.dist" % config["data"]["odir"]["master"]
-#     log:
-#         "%s/{date}__{db}.dist.log" % config["data"]["odir"]["master"]
-#     params:
-#         params=config['mash']['dist_params'],
-#         mash=BIN_MASH
-#     message:
-#         "Compare signatures in {input}"
-#     shell:
-#         "{params.mash} dist {params.params} {input} {input} > {output} 2> {log}"
-#
-# # Embedding
-# ##################################################
-# rule umap:
-#     input:
-#         "%s/{date}__{db}.dist" % config["data"]["odir"]["master"]
-#     output:
-#         "%s/{date}__{db}.umap" % config["data"]["odir"]["master"]
-#     log:
-#         "%s/{date}__{db}.umap.log" % config["data"]["odir"]["master"]
-#     params:
-#         neighbors=config['umap']['neighbors'],
-#         components=config['umap']['components']
-#     message:
-#         "UMAP on {input}"
-#     run:
-#         import umap
-#         import numpy
-#         setup_logger(logging.INFO)
-#         # IDs
-#         ids = None
-#         with open(input[0], 'r') as ifile:
-#             ids = ifile.readline().rstrip('\n').split('\t')[1:]
-#             logging.info('Distance matrix: {num} x {num}'.format(num=len(ids)))
-#         # distance matrix
-#         logging.info('Start loading distances...')
-#         dist = numpy.loadtxt(
-#             fname=input[0],
-#             skiprows=1,
-#             usecols=range(1,len(ids) + 1) # skip 1st (contains IDs)
-#         )
-#         logging.info('Done.')
-#         # embedding
-#         logging.info('Start embedding...')
-#         embedding = umap.UMAP(
-#             n_neighbors=params.neighbors,
-#             n_components=params.components,
-#             init='random',
-#             metric='precomputed'
-#         ).fit_transform(dist)
-#         logging.info('Done.')
-#         # save to file
-#         embedding = pandas.DataFrame(
-#             embedding,
-#             columns=['D1', 'D2'],
-#             index=ids
-#         )
-#         embedding.to_csv(
-#             path_or_buf=output[0],
-#             sep='\t',
-#             header=True,
-#             index=True,
-#             index_label='ID'
-#         )
-#
-# # Info table
-# ##################################################
-# rule infotable:
-#     input:
-#         plasmids="%s/{date}__{db}__filtered.txt" % config["data"]["odir"]["reports"],
-#         linked_samples="%s/{date}__{db}__linkbiosamples.txt" % config["data"]["odir"]["reports"],
-#         samples="%s/{date}__{db}__biosamples_locs.txt" % config["data"]["odir"]["reports"],
-#         taxa="%s/{date}__{db}__taxaproc.txt" % config["data"]["odir"]["reports"],
-#         embedding="%s/{date}__{db}.umap" % config["data"]["odir"]["master"],
-#         plasmidfinder="%s/{date}__{db}.abr.plasmidfinder" % config["data"]["odir"]["master"],
-#         pmlst="%s/{date}__{db}.pmlst" % config["data"]["odir"]["master"],
-#         fasta="%s/{date}__{db}.fna" % config["data"]["odir"]["master"]
-#     output:
-#         "%s/{date}__{db}.tsv" % config["data"]["odir"]["master"]
-#     message:
-#         "Create info table for records in {input.plasmids}"
-#     run:
-#         from Bio import SeqIO
-#         from Bio.SeqUtils import GC
-#         setup_logger(logging.INFO)
-#
-#         # read in data
-#         # plasmids
-#         pls = pandas.read_csv(input.plasmids, sep='\t', header=0, index_col=None, dtype=str)
-#         pls[['Length_NUCCORE']] = pls[['Length_NUCCORE']].apply(pandas.to_numeric)
-#         pls.set_index(keys='ACC_NUCCORE', drop=False, inplace=True, verify_integrity=True)
-#         # linked samples
-#         lsmp = pandas.read_csv(input.linked_samples, sep='\t', header=None, names=['UID_NUCCORE', 'UID_BIOSAMPLE'], dtype=str)
-#         lsmp.set_index(keys='UID_NUCCORE', drop=True, inplace=True, verify_integrity=True)
-#         # samples
-#         smp = pandas.read_csv(input.samples, sep='\t', header=0, index_col=None, dtype=str)
-#         smp.set_index(keys='UID_BIOSAMPLE', drop=True, inplace=True, verify_integrity=True)
-#         # taxonomy
-#         tax = pandas.read_csv(input.taxa, sep='\t', header=0, index_col=None, dtype=str)
-#         # embedding
-#         emb = pandas.read_csv(input.embedding, sep='\t', header=0, index_col='ID', dtype=str)
-#         # PlasmidFinder
-#         pf  = pandas.read_csv(input.plasmidfinder, sep='\t', header=0)
-#         pfs = []
-#         for aggr_id, aggr_df in pf.groupby(['qseqid']):
-#             pfs.append({
-#                 'qseqid': aggr_id,
-#                 'plasmidfinder': '|'.join(aggr_df['sseqid'].values)
-#             })
-#         pfs = pandas.DataFrame(pfs)
-#         pfs.set_index(keys='qseqid', drop=True, inplace=True, verify_integrity=True)
-#         # pMLST
-#         pmlst = pandas.read_csv(input.pmlst, sep='\t', header=None, index_col=0, names=['ID', 'pmlst'])
-#
-#         # add info from FASTA
-#         logging.info('Adding info from FASTA {}'.format(input.fasta))
-#         pls['ACC_FASTA'] = None
-#         pls['GC_NUCCORE'] = None
-#         with open(input.fasta, 'r') as ifile:
-#             for record in tqdm(SeqIO.parse(ifile, 'fasta')):
-#                 assert len(record.seq) > 0, 'Emptye sequence for record {}'.format(record.id)
-#                 assert re.fullmatch(r'\w+\.\d+', record.id), 'Unexpected ID format in FASTA: {}'.format(record.id)
-#                 rid = record.id.split('.')[0]
-#                 assert rid in pls.index.values, 'FASTA record ID {}: not in plasmid table'.format(rid)
-#                 assert pls.loc[rid,'GC_NUCCORE'] is None, 'FASTA record ID {}: GC value already set'.format(rid)
-#                 assert len(record.seq) == pls.loc[rid,'Length_NUCCORE'], 'FASTA record ID {}: {} vs {} as length'.format(rid, len(record.seq), pls.loc[rid,'Length_NUCCORE'])
-#                 pls.loc[rid,'ACC_FASTA'] = record.id
-#                 pls.loc[rid,'GC_NUCCORE'] = GC(str(record.seq))
-#
-#         # add info from other tables
-#         logging.info('Adding info from {}'.format(input.linked_samples))
-#         pls = pandas.merge(
-#             left=pls,
-#             right=lsmp,
-#             how='left',
-#             left_on='UID_NUCCORE',
-#             right_index=True,
-#             sort=False,
-#         )
-#         logging.info('Adding info from {}'.format(input.samples))
-#         pls = pandas.merge(
-#             left=pls,
-#             right=smp,
-#             how='left',
-#             left_on='UID_BIOSAMPLE',
-#             right_index=True,
-#             sort=False,
-#         )
-#         logging.info('Adding info from {}'.format(input.taxa))
-#         pls = pandas.merge(
-#             left=pls,
-#             right=tax,
-#             how='left',
-#             left_on='TaxonID_NUCCORE',
-#             right_on='taxon_id',
-#             sort=False,
-#         )
-#         logging.info('Adding info from {}'.format(input.embedding))
-#         pls = pandas.merge(
-#             left=pls,
-#             right=emb,
-#             how='left',
-#             left_on='ACC_FASTA',
-#             right_index=True,
-#             sort=False,
-#         )
-#         logging.info('Adding info from {}'.format(input.plasmidfinder))
-#         pls = pandas.merge(
-#             left=pls,
-#             right=pfs,
-#             how='left',
-#             left_on='ACC_FASTA',
-#             right_index=True,
-#             sort=False,
-#         )
-#         logging.info('Adding info from {}'.format(input.pmlst))
-#         pls = pandas.merge(
-#             left=pls,
-#             right=pmlst,
-#             how='left',
-#             left_on='ACC_FASTA',
-#             right_index=True,
-#             sort=False,
-#         )
-#
-#         # drop not needed columns
-#         pls.drop(columns=['TaxonID_NUCCORE'], inplace=True)
-#
-#         # checks
-#         assert all(pandas.notnull(pls['ACC_FASTA']))
-#         assert all(pandas.notnull(pls['Length_NUCCORE']))
-#         assert all(pandas.notnull(pls['GC_NUCCORE']))
-#
-#         # save
-#         pls.to_csv(
-#             path_or_buf=output[0],
-#             sep='\t',
-#             header=True,
-#             index=False,
-#             index_label=False
-#         )
-#
-# # Krona plot
-# ##################################################
-# rule krona_xml:
-#     input:
-#         MASTER_TAB
-#     output:
-#         MASTER_KRONA_XML
-#     message:
-#         "Create XML file for Krona plot from {input}"
-#     params:
-#         labels=' '.join(dbs.values())
-#     shell:
-#         "python create_krona_xml.py -t {input} -o {output} -l {params.labels}"
-#
-# rule krona_html:
-#     input:
-#         MASTER_KRONA_XML
-#     output:
-#         MASTER_KRONA_HTML
-#     message:
-#         "Create Krona plot from {input}"
-#     params:
-#         bin=BIN_KRONA_XML
-#     shell:
-#         "{params.bin} {input} -o {output}"
-#
-# # Other plots
-# ##################################################
-# rule other_plots:
-#     input:
-#         MASTER_TAB
-#     output:
-#         MASTER_PLOTS
-#     message:
-#         "Plotting stat.s from collected data"
-#     params:
-#         width=10,
-#         height=6,
-#         pattern=today
-#     shell:
-#         "Rscript create_plots.R --path $(dirname {input[0]}) --pattern {params.pattern} --pdf {output} --width {params.width} --height {params.height}"
+# Mash dist (all, tab format)
+rule mash_dist:
+    input:
+        "{basename}.msh"
+    output:
+        "{basename}.dist"
+    params:
+        params=config['mash']['dist_params'],
+        mash=BIN_MASH
+    message:
+        "Compare signatures in {input}"
+    shell:
+        "{params.mash} dist {params.params} {input} {input} > {output}"
+
+# Embedding using UMAP on Mash distances
+rule umap:
+    input:
+        "{basename}.dist"
+    output:
+        "{basename}.umap"
+    log:
+        "{basename}.umap.log"
+    params:
+        neighbors=config['umap']['neighbors'],
+        components=config['umap']['components']
+    message:
+        "UMAP on {input}"
+    run:
+        import umap, numpy
+        setup_logger(logging.INFO)
+
+        # IDs
+        ids = None
+        with open(input[0], 'r') as ifile:
+            ids = ifile.readline().rstrip('\n').split('\t')[1:]
+            logging.info('Distance matrix: {num} x {num}'.format(num=len(ids)))
+
+        # distance matrix
+        logging.info('Start loading distances...')
+        dist = numpy.loadtxt(
+            fname=input[0],
+            skiprows=1,
+            usecols=range(1,len(ids) + 1) # skip 1st (contains IDs)
+        )
+
+        # embedding
+        logging.info('Start embedding...')
+        embedding = umap.UMAP(
+            n_neighbors=params.neighbors,
+            n_components=params.components,
+            init='random',
+            metric='precomputed'
+        ).fit_transform(dist)
+        logging.info('Done.')
+
+        # save to file
+        embedding = pandas.DataFrame(
+            embedding,
+            columns=['D1', 'D2'],
+            index=ids
+        )
+        embedding.to_csv(
+            path_or_buf=output[0],
+            sep='\t',
+            header=True,
+            index=True,
+            index_label='ID'
+        )

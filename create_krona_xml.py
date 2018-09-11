@@ -44,8 +44,7 @@ from utils import setup_logger
 ##################################################
 def get_arg_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--tabs', '-t', help="Plasmid info tables", required=True, nargs="+")
-    parser.add_argument('--labels', '-l', help="Table labels", required=True, nargs="+")
+    parser.add_argument('--tab', '-t', help="Plasmid info table", required=True)
     parser.add_argument('--ofile', '-o', help="Output file (*.xml)", required=True)
     return parser
 
@@ -65,11 +64,11 @@ def aggr_taxa(node, df, rank):
         taxon_node = ET.SubElement(node, 'node')
         taxon_node.attrib['name'] = taxon
         taxon_count = ET.SubElement(taxon_node, 'count')
-        for db in args.labels:
-            if db in set(taxon_df.index.get_level_values(0)):
-                db_count = ET.SubElement(taxon_count, 'val').text = str(taxon_df.loc[db,:].shape[0])
+        for db in labels:
+            if db == 'All':
+                ET.SubElement(taxon_count, 'val').text = str(taxon_df.shape[0])
             else:
-                db_count = ET.SubElement(taxon_count, 'val').text = '0'
+                ET.SubElement(taxon_count, 'val').text = str(taxon_df.loc[taxon_df['Source_NUCCORE'] == db,:].shape[0])
         if ranks.index(rank) < len(ranks) - 1:
             taxon_node = aggr_taxa(taxon_node, taxon_df, ranks[ranks.index(rank) + 1])
     return node
@@ -83,25 +82,19 @@ if __name__ == "__main__":
 
     # Args
     args = get_arg_parser().parse_args()
-    # checks
-    assert len(args.tabs) == len(args.labels), 'Number of tables and labels is not equal: {} vs {}'.format(len(args.tabs), len(args.labels))
 
     # taxonomy ranks
     ranks = ['superkingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
 
-    # read in tables
-    dfs = dict.fromkeys(args.labels, None)
-    for i, db in enumerate(args.labels):
-        dfs[db] = pandas.read_csv(args.tabs[i], sep='\t', header=0)
-        logging.info('Table {}: {} rows, from {}'.format(db, dfs[db].shape[0], args.tabs[i]))
+    # read in data
+    tab = pandas.read_csv(args.tab, sep='\t', header=0)
 
-    # concat tabs together into one
-    dfs = pandas.concat(dfs, axis=0)
-    dfs.index.set_names(['db', 'id'], inplace=True)
+    # labels
+    labels = ['All'] + sorted(set(tab['Source_NUCCORE']))
 
     # create new taxon names: "taxon <name> (<taxon ID>)"
     for rank in ranks:
-        dfs['new_%s' % rank] = dfs[['taxon_%s_name' % rank, 'taxon_%s_id' % rank]].apply(new_taxon_name, axis=1)
+        tab['new_%s' % rank] = tab[['taxon_%s_name' % rank, 'taxon_%s_id' % rank]].apply(new_taxon_name, axis=1)
         logging.info('Processed {} taxa'.format(rank))
 
     ##############################
@@ -120,7 +113,7 @@ if __name__ == "__main__":
 
     # datasets
     datasets = ET.SubElement(krona, 'datasets')
-    for db in args.labels:
+    for db in labels:
         ET.SubElement(datasets, 'dataset').text = db
 
     # taxonomy (nodes)
@@ -128,13 +121,13 @@ if __name__ == "__main__":
     root_node = ET.SubElement(krona, 'node')
     root_node.attrib['name'] = "cellular organisms"
     root_count = ET.SubElement(root_node, 'count')
-    for db in args.labels:
-        if db in set(dfs.index.get_level_values(0)):
-            db_count = ET.SubElement(root_count, 'val').text = str(dfs.loc[db,:].shape[0])
+    for db in labels:
+        if db == 'All':
+            ET.SubElement(root_count, 'val').text = str(tab.shape[0])
         else:
-            db_count = ET.SubElement(root_count, 'val').text = '0'
+            ET.SubElement(root_count, 'val').text = str(tab.loc[tab['Source_NUCCORE'] == db,:].shape[0])
     # nodes for ranks
-    nodes = aggr_taxa(root_node, dfs, 'superkingdom')
+    nodes = aggr_taxa(root_node, tab, 'superkingdom')
 
     # XML END
     ##############################

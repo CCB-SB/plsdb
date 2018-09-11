@@ -101,14 +101,18 @@
         "db": "pubmlst_plasmid_seqdef",
         "url": "http://rest.pubmlst.org",
         "url_schemes": "http://rest.pubmlst.org/db/pubmlst_plasmid_isolates/schemes",
-        "cmd": "mlst --minid 95 --mincov 10 --minscore 1 --threads 2"
+        "cmd": "mlst --minid 85 --mincov 66 --minscore 1 --threads 2"
     },
     "rmlst": {
-        "fas": "data/rmlst/rmlst.fas",
-        "ident": 100,
-        "cov": 100,
-        "cmd": "{blastn} -query {input} -db {db} -task blastn -perc_identity {ident} -out {output} -outfmt '6 {header}' -num_threads {cores} -evalue 1E-20 -culling_limit 1",
-        "header": ["qseqid", "qstart", "qend", "qlen", "sseqid", "sstart", "send", "slen", "stitle", "evalue", "pident", "length", "gaps"],
-        "max_loci": 5
-    }
+        "rmlst_fas": "data/rmlst/rmlst.fas",
+        "rmlst_ident": 100,
+        "rmlst_cov": 100,
+        "rmlst_cmd": "{blastn} -query {input} -db {db} -task blastn -perc_identity {ident} -out {output} -outfmt '6 {header}' -num_threads {cores} -evalue 1E-20 -culling_limit 1",
+        "rmlst_header": ["qseqid", "qstart", "qend", "qlen", "sseqid", "sstart", "send", "slen", "stitle", "evalue", "pident", "length", "gaps"],
+        "rmlst_max_loci": 5,
+        "blastn": "{bin} -task megablast -query {fasta} -db 'nt' -out {output} -outfmt '6 {header}' -entrez_query 'Bacteria[Organism] NOT plasmid [FILT] NOT complete cds[TITL] NOT gene[TITL] NOT genes[TITL] NOT contig[TITL] NOT scaffold[TITL] NOT whole genome map[TITL] NOT partial sequence[TITL] NOT locus[TITL] NOT region[TITL] NOT fragment[TITL] NOT integron[TITL] NOT transposon[TITL] NOT insertion sequence[TITL] NOT insertion element[TITL] NOT phage[TITL] NOT operon[TITL] NOT whole genome shotgun[TITL] NOT assembly[TITL]' -remote -perc_identity {pident} -max_target_seqs 10 -max_hsps 10",
+        "blastn_header": ["qseqid", "qlen", "sseqid", "stitle", "slen", "evalue", "bitscore", "length", "gaps", "pident", "qcovs", "qcovhsp"],
+        "blastn_pident": 99,
+        "blastn_qcovs": 80
+    },
 }

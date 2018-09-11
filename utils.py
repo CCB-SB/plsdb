@@ -16,6 +16,9 @@ def setup_logger(log_level=logging.DEBUG):
     )
 
 def split_list(values, size):
+    """
+    Split given list into chunks of given size
+    """
     values = list(values)
     for i in range(0, len(values), size):
         yield values[i:(i + size)]
@@ -34,6 +37,9 @@ def run_cmd(cmd):
     return cmd, p_status, p_stdout
 
 def mkdir(dpath, p=True):
+    """
+    Mimick "mkdir -p"
+    """
     import os
     if p:
         if not os.path.exists(dpath):
@@ -41,22 +47,29 @@ def mkdir(dpath, p=True):
     else:
         os.makedirs(dpath)
 
-def proc_mlst_scheme_name(scheme_name):
-    import re
-    return re.sub('/', '_', re.sub('\s+', '__', scheme_name))
-
-def reproc_mlst_scheme_name(scheme_name):
-    import re
-    return re.sub('_', '/', re.sub('__', ' ', scheme_name))
-
 def str2timestamp(ts, ts_format='%Y-%m-%d %H:%M:%S'):
+    """
+    Time stamp string to time stamp object
+    """
     import datetime
     return datetime.datetime.strptime(ts, ts_format)
 
 ##################################################
-# Edirect/eutils
+# TOOLS
 ##################################################
 def run_epost_split(df_file, ofile, header, cmd, df_col, split_size, split_str, **kwargs):
+    """
+    To run epost queries by splitting the input IDs into chunks (as the max. number of IDs is limited).
+    Checks for unexpected IDs
+    :param df_file: Data table containing needed IDs
+    :param ofile: Output file
+    :param header: Output file header
+    :param cmd: epost CMD (con contain subsequent calls of other tools, e.g. efilter, xtract etc.)
+    :param df_col: column name containing the IDs in the given table
+    :param split_size: How large the ID chunks should be
+    :param split_str: If ID-column values should be split by given string to get IDs, i.e. a row could containg a list of IDs
+    :param **kwargs: key-word parameters for the CMD
+    """
     import pandas, tqdm
 
     logging.info('CMD: {}'.format(cmd))
@@ -102,64 +115,123 @@ def run_epost_split(df_file, ofile, header, cmd, df_col, split_size, split_str, 
             # save
             ohandle.write(cmd_o)
 
-##################################################
-# rMLST
-##################################################
-# def run_rmlst(record):
-#     """
-#     Run rMLST analysis
-#     Reference: https://pubmlst.org/rmlst/api.shtml
-#     Ribosomal Multilocus Sequence Typing (rMLST) is an approach that indexes
-#     variation of the 53 genes encoding the bacterial ribosome protein subunits
-#     (rps genes) as a means of integrating microbial taxonomy and typing.
-#     The rps gene variation catalogued in this database permits rapid and
-#     computationally non-intensive identification of the phylogenetic position
-#     of any bacterial sequence at the domain, phylum, class, order, family, genus,
-#     species and strain levels.
-#     Reference: https://www.ncbi.nlm.nih.gov/pubmed/22282518
-#     The rps loci are [...]
-#     (i)   present in all bacteria;
-#     (ii)  distributed around the chromosome;
-#     (iii) encode proteins which are under stabilizing selection for functional conservation
-#
-#     :param sfasta: FASTA file <path>/<seqID>.<ext>
-#     :return dictionary with accession ID, and rMLST support/rank/taxon/lineage (best hit w.r.t. support)
-#     """
-#     import os, sys, requests, base64
-#     from time import sleep
-#
-#     # check that FASTA file exists
-#     assert str(record.seq) != "", 'FASTA record {} is empty'.format(record.id)
-#
-#     # submit for analysis
-#     response = requests.post(
-#         'http://rest.pubmlst.org/db/pubmlst_rmlst_seqdef_kiosk/schemes/1/sequence',
-#         data='{"base64":true,"details":true,"sequence":"' + base64.b64encode('>{}\n{}'.format(record.id, record.seq).encode()).decode() + '"}'
-#     )
-#     sleep(1) # to avoid too many queries per second
-#     # get best match
-#     best_match = {
-#         'ACC_FASTA': record.id,
-#         'Rank_RMLST': None,
-#         'Taxon_RMLST': None,
-#         'Support_RMLST': None,
-#         'Taxonomy_RMLST': None,
-#     }
-#     assert response.status_code == requests.codes.ok, 'Response status not OKAY for {}: {}'.format(record.id, response.status_code)
-#     try:
-#         for match in response.json()['taxon_prediction']:
-#             match = {
-#                 'ACC_FASTA': record.id,
-#                 'Rank_RMLST': match['rank'],
-#                 'Taxon_RMLST': match['taxon'],
-#                 'Support_RMLST': match['support'],
-#                 'Taxonomy_RMLST': match['taxonomy'],
-#             }
-#             if best_match['Support_RMLST'] is None or match['Support_RMLST'] > best_match['Support_RMLST']:
-#                 best_match = match
-#         return best_match
-#     except KeyError:
-#         return best_match
+def run_blastn_check(acc, obname, main_fasta, blastn_cmd, blastn_bin, blastn_header, blastn_pident):
+    """
+    Used to run multiple jobs of remote BLASTn searches for chromosome candidates (identified by rMLST analysis).
+    The function is called by the pipeline rule "filter3".
+    :param acc: Sequence (FASTA) accession
+    :param obname: Output (base)name, will be used to create a FASTA and output file for the given accession
+    :param main_fasta: FASTA file containing all sequences, will be used to generate a FASTA file containing only the given accession
+    :param blastn_cmd: BLASTn CMD (defined in the config file)
+    :param blastn_cmd: BLASTn binary (for CMD)
+    :param blastn_cmd: BLASTn output header (for CMD, defined in the config file)
+    :param blastn_cmd: BLASTn pct. identity (for CMD, defined in the config file)
+    """
+    import os
+    from Bio import SeqIO
+    acc_fasta = '%s.%s.fna' % (obname, acc)
+    acc_ofile = '%s.%s.tsv' % (obname, acc)
+    with open(main_fasta, 'r') as ifile:
+        for record in SeqIO.parse(ifile, 'fasta'):
+            if record.id == acc:
+                SeqIO.write(record, acc_fasta, 'fasta')
+                break
+    assert os.path.exists(acc_fasta), 'No file {}'.format(acc_fasta)
+    cmd = blastn_cmd.format(
+        bin=blastn_bin,
+        fasta=acc_fasta,
+        output=acc_ofile,
+        header=blastn_header,
+        pident=blastn_pident
+    )
+    logging.info('START {}'.format(acc))
+    cmd, cmd_s, cmd_o = run_cmd(cmd)
+    assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
+    logging.info('END {}'.format(acc))
+    return
+
+def proc_mlst_scheme_name(scheme_name):
+    import re
+    return re.sub('/', '_', re.sub('\s+', '__', scheme_name))
+
+def reproc_mlst_scheme_name(scheme_name):
+    import re
+    return re.sub('_', '/', re.sub('__', ' ', scheme_name))
+
+def download_pmlst_scheme_alleles(scheme_name, scheme_url, scheme_dir):
+    """
+    TODO
+    """
+    import os
+    import requests
+
+    # get loci
+    loci = requests.get(scheme_url.replace('isolates', 'seqdef')).json()['loci']
+    # download alleles for each locus
+    for locus_path in loci:
+        locus_info = requests.get(locus_path)
+        locus_info = locus_info.json()
+        locus = locus_info['id']
+        if locus_info['alleles_fasta']:
+            seqs = requests.get(locus_info['alleles_fasta'])
+            with open(os.path.join(scheme_dir, '%s.tfa' % locus), 'w') as ofile:
+                ofile.write(seqs.text)
+        else:
+            logging.warning('Scheme {}, locus {}: no alleles'.format(scheme_name, locus))
+    return
+
+def download_pmlst_scheme_profiles(scheme_name, scheme_url, scheme_dir, scheme_profiles):
+    """
+    TODO:
+    """
+    import os
+    import re
+    import requests
+    from glob import glob
+
+    # r = requests.get(params.url +  '/db/' + params.db + '/schemes/' + str(scheme_id) + '/profiles_csv')
+    profiles = requests.get(scheme_url + '/profiles_csv')
+
+    # save profiles
+    if profiles.status_code == 404: # no profiles
+        allele_files = sorted(glob('%s/*.tfa' % scheme_dir))
+        loci = [ re.sub('\.tfa$', '', os.path.basename(tfa)) for tfa in allele_files ]
+        # profiles file with a dummy entry
+        with open(scheme_profiles, 'w') as ofile:
+            # header
+            ofile.write('ST\t{}\n'.format('\t'.join(loci)))
+            # dummy entry: ST + loci
+            ofile.write('\t'.join( ['1']*( len(loci)+1 ) ))
+        # empty file saying that the profiles file contains dummy data
+        with open(scheme_profiles + '.dummy', 'w') as ofile:
+            ofile.write('dummy')
+    else: # save profiles
+        with open(scheme_profiles, 'w') as ofile:
+            ofile.write(re.sub('\t\n', '\n', profiles.text))
+    assert os.path.exists(scheme_profiles), 'No profiles file for scheme {}'.format(scheme_name)
+
+    # check formatting
+    df = pandas.read_csv(scheme_profiles, sep='\t', header=0)
+    assert df.shape[0] > 0, 'Empty profiles file for scheme {}'.format(scheme_name)
+
+    # 1st column must be "ST"
+    if df.columns[0] != "ST":
+        df.columns = ['ST'] + list(df.columns)[1:]
+
+    # all STs must be integers
+    if any([not re.fullmatch(r'\d+', str(st)) for st in list(df['ST'])]):
+        logging.warning('Scheme {}: not all ST values are integers'.format(scheme_name))
+        # copy of original values
+        df['oldST'] = df['ST'].copy()
+        # number STs from 1 to N
+        df['ST'] = list(range(1, df.shape[0]+1))
+        # save old values
+        df.to_csv(scheme_profiles + '.old', sep='\t', index=False, index_label=False)
+
+    # save
+    cols = [col for col in list(df.columns) if col != 'oldST']
+    df[cols].to_csv(scheme_profiles, sep='\t', index=False, index_label=False)
+    return
 
 ##################################################
 # LOCATIONS
@@ -190,17 +262,6 @@ def save_locs(locs, ofile):
     assert locs is not None
     locs.to_csv(ofile, sep='\t', header=True, index=False, index_label=False)
     return
-
-# Exceptions: need to change string to get result from GMaps
-location_exceptions = {
-    # 'Jigalong, Australia': 'Australia, Jigalong', # ordering matters
-    # 'China: Jilin Pesticide Plant': 'China: Jilin', # non-loc. info.
-    # 'Korea: Gwangyang Province': 'Korea: Gwangyang', #
-    # 'China:Pearl Spring': 'China', # unknown location
-    # 'China: the China South Sea': 'South China Sea', # otherwise maps to US
-    # 'China: Changji city, Xinjiang Uygur Autonomous Region': 'China: Changji', # maps to loc. in China near border to S: Korea
-    # 'China: Southern China': 'China', # otherwise maps to US
-}
 
 # Strings used for missing locations (to avoid unneccessary queries)
 location_missing = [
@@ -377,35 +438,3 @@ def parse_location(loc_str, api_key, is_name=True):
         if re.search('S', lat):
             lat_ *= -1
         return {'lat': lat_, 'lng': lng_}
-
-# def parse_location(loc_str, api_key, is_name=True):
-#     """
-#     Input: Location name or coordinates as string
-#     Returns {'lat': <float>, 'lng': <float>} if successful otherwise None
-#     Uses https://github.com/googlemaps/google-maps-services-python
-#     """
-#     import time
-#     import googlemaps
-#
-#     if pandas.isnull(loc_str):
-#         return None
-#
-#     input = loc_str
-#     gmaps = googlemaps.Client(key=api_key)
-#     loc = None
-#     # query
-#     loc = None
-#     if is_name or re.search(r'N|W|E|S', loc_str[0]) or re.search(r'N|W|E|S', loc_str[1]):
-#         loc = gmaps.geocode(loc_str)
-#         time.sleep(1)
-#     else:
-#         loc = gmaps.reverse_geocode(loc_str)
-#         time.sleep(1)
-#     # no hit
-#     if len(loc) == 0:
-#         logging.info('Location: no hit: %s' % input)
-#         return None
-#     # got location
-#     assert 'geometry' in loc[0], 'Location: hit w/o geometry: %s' % input
-#     assert 'location' in loc[0]['geometry'], 'Location: hit w/o coordinates: %s' % input
-#     return loc[0]['geometry']['location']

@@ -49,6 +49,8 @@ To map location names to coordinates the [OpenCageData](https://opencagedata.com
 The key should be stored in a local file specified in the pipeline config (`pipeline.json`, see `data/api_keys`).
 Also, a file with some of the already retrieved locations is included (`locs.tsv`) and will be updated with newly retrieved locations if you run the pipeline.
 
+--------------------------------------------------
+
 ## Pipeline
 To print all rules to be executed run:
 
@@ -61,11 +63,11 @@ Call the pipeline using
 snakemake -s pipeline.snake
 ```
 
-### Pipeline steps
-- NCBI nucleotide database sources:
+### Steps
+- Used NCBI nucleotide database sources:
     - INSDC (DDBJ, EMBL/ENA, GenBank): [International Nucleotide Sequence Database Collaboration](https://www.ncbi.nlm.nih.gov/genbank/collab/)
     - RefSeq
-- Tools:
+- Tools/data:
     - Install Mash
     - Install BLAST+
     - Install edirect/eutils
@@ -73,7 +75,7 @@ snakemake -s pipeline.snake
     - Update data for ABRicate
 - Plasmid records:
     - Query for plasmids in the NCBI nucleotide database
-        - `esearch` query from Orlek *et al.*
+        - `esearch` query from **Orlek et al.**
 - Plasmid meta data
     - Retrieve linked assemblies and relevant meta data
     - Retrieve linked BioSamples and relevant meta data
@@ -83,25 +85,26 @@ snakemake -s pipeline.snake
     - Process location information of the BioSamples and add it to the table
         - Use coordinates if available, otherwise location
         - Use OpenCageData API
-- Filtering (1): Filter by
-    - Record description (regular expression from Orlek *et al.*)
+- Filtering (1): To remove incomplete or nonbacterial records these are filtered by
+    - Record description (regular expression from **Orlek et al.**)
     - (Assembly) completeness
         - If no assembly: Completeness status of the nuccore record has to be `complete`
         - Has assembly: assembly status of the latest version has to be `Complete genome`
             - [NCBI assembly help page](https://www.ncbi.nlm.nih.gov/assembly/help/)
     - By taxonomy: superkingdom taxon ID should be `2` (i.e. Bacteria)
-- Filtering (2): Remove identical plasmids
+- Filtering (2): To remove identical records
     - Download nucl. sequences of plasmid records
     - Compute the sketches using Mash
     - Get pairs of plasmids with distance of 0 using Mash
     - Group plasmids with identical sequences
     - Among these groups select one record
         - Prefer RefSeq records and those with more information
-- Filtering (3): Find and remove putative chromosomal sequences
+- Filtering (3): To remove putative chromosomal sequences
     - Create the BlastDB of rMLST allele sequences
         - The FASTAs are **NOT** downloaded by the pipeline (see the "Requirements" section above)
     - The plasmid sequences are aligned against the rMLST allele sequences
-    - Remove plasmids having more than 5 unique rMLST loci
+    - Records having more than 5 unique rMLST loci are searched in NCBI chromosomal sequences using BLASTn
+    - Records with hits are removed
 - Plasmid nucleotide sequences:
     - Create a new FASTA with nucl. sequences of remained plasmids
     - Annotate using ABRicate:
@@ -115,7 +118,6 @@ snakemake -s pipeline.snake
 - Embedding:
     - Compute pairwise distances between plasmids using Mash
     - Compute embedding using UMAP
-        - Requires ca. XXGb for ca. XXK sequences
 - Create info table:
     - Record information
     - Embedding coordinates
@@ -124,18 +126,25 @@ snakemake -s pipeline.snake
 
 #### Notes
 
-##### rMLST
+##### Finding putative chromosomal sequences
 
-[XX](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3353972/): "Distribution of ribosomal protein genes across bacterial genome partitions"
+The candidates for putative chromosomal sequences are determined by searching for the rps genes - ribosome protein subunits which are used in the rMLST scheme (containing 53 rps genes) introduced by **Jolley et al.**:
+
+    "The rps loci are ideal targets for a universal characterization scheme as they are:
+      (i) present in all bacteria;
+     (ii) distributed around the chromosome; and
+    (iii) encode proteins which are under stabilizing selection for functional conservation."
+
+However, some of the rps genes can also be found on plasmids as described by **Yutin et al.**:
 
     In 68 of the 995 analyzed bacterial genomes, r-protein genes are
     distributed across two or more genome partitions. In some cases,
     paralogous proteins are encoded in different chromosomes or plasmids.
-    [...]
-    In other cases, r-protein genes are present in a single copy
-    but are spread across genome partitions.
 
-##### pMLST
+Thus, the presence of (some) rps genes alone cannot be always used as an indicator for chromosomal sequences.
+Therefore, the records containing more than 5 rps genes are searched in the NCBI sequences using BLAST.
+
+##### Performing pMLST with the tool "mlst"
 As pMLST is not yet supported by `mlst` the data needs to be dowloaded and pre-processed before it can be used by the tool.
 However, some things need to be considered:
 - No profiles:
@@ -168,5 +177,7 @@ of the comprehensive antibiotic resistance database.", B. Jia, A. R. Raphenya, B
 - **mlst**: Tool implemented by Thorsten Seemann, [repository link](https://github.com/tseemann/mlst)
 - **checkM**: CheckM: assessing the quality of microbial genomes recovered from isolates, single cells, and metagenomes, D. H. Parks, M. Imelfort, C. T. Skennerton, P. Hugenholtz and G. W. Tyson, Genome Res., 2015, [paper link](https://genome.cshlp.org/content/25/7/1043.short), [repository link](https://github.com/Ecogenomics/CheckM)
 - **OpenCageData**: An API to convert coordinates to and from places, [web-site](https://opencagedata.com/)
-- **rMLST**: [rMLST at PubMLST](https://pubmlst.org/rmlst/), [paper link](http://www.ncbi.nlm.nih.gov/pubmed/22282518)
+- **rMLST**: [rMLST at PubMLST](https://pubmlst.org/rmlst/)
+- **Jolley et al.**, Ribosomal multilocus sequence typing: universal characterization of bacteria from domain to strain, K. A. Jolley, C. M. Bliss, J .S. Bennett, H. B. Bratcher, C. Brehony, F. M. Colles, H. Wimalarathna, O. B. Harrison, S. K. Sheppard, A. J. Cody, M .C. Maiden, Microbiology, 2012, [paper link](http://www.ncbi.nlm.nih.gov/pubmed/22282518)
 - **Orlek et al.**: Ordering the mob: Insights into replicon and MOB typing schemes from analysis of a curated dataset of publicly available plasmids, A. Orlek, H. Phan, A. E. Sheppard, M. Doumith, M. Ellington, T. Peto, D. Crook, A. S. Walker, N. Woodford, M. F. Anjum, N. Stoesser, Plasmid, 2017, [paper link](https://www.ncbi.nlm.nih.gov/pubmed/28286183)
+- **Yutin et al.**: Distribution of ribosomal protein genes across bacterial genome partitions, N. Yutin, P. Puigbò, E. V. Koonin, Y. I. Wolf, PLoS One, 2012, [paper link]](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3353972/)
