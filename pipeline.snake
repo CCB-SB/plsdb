@@ -139,7 +139,8 @@ MASTER_KRONA_XML    = os.path.join(config["data"]["odir"]["master"], "%s.xml" % 
 MASTER_KRONA_HTML   = os.path.join(config["data"]["odir"]["master"], "%s.html" % today)
 
 # Other plots
-MASTER_PLOTS        = os.path.join(config["data"]["odir"]["master"], "%s.pdf" % today)
+MASTER_SUM_PLOTS    = os.path.join(config["data"]["odir"]["master"], "%s_summary.pdf" % today)
+MASTER_SUM_STATS    = os.path.join(config["data"]["odir"]["master"], "%s_summary.txt" % today)
 
 ##################################################
 # Rules
@@ -184,8 +185,8 @@ rule all:
         master_tab=MASTER_TAB,
         # krona plot
         master_krona=[MASTER_KRONA_XML, MASTER_KRONA_HTML],
-        # # other plots
-        # master_plots=MASTER_PLOTS,
+        # other plots
+        master_summary=[MASTER_SUM_PLOTS, MASTER_SUM_STATS]
 
 # Tools
 ##################################################
@@ -1358,21 +1359,21 @@ rule krona_html:
     shell:
         "{params.bin} {input} -o {output}"
 
-# # Other plots
-# ##################################################
-# rule other_plots:
-#     input:
-#         MASTER_TAB
-#     output:
-#         MASTER_PLOTS
-#     message:
-#         "Plotting stat.s from collected data"
-#     params:
-#         width=10,
-#         height=6,
-#         pattern=today
-#     shell:
-#         "Rscript create_plots.R --path $(dirname {input[0]}) --pattern {params.pattern} --pdf {output} --width {params.width} --height {params.height}"
+# Summary
+##################################################
+rule summary:
+    input:
+        MASTER_TAB
+    output:
+        pdf=MASTER_SUM_PLOTS,
+        txt=MASTER_SUM_STATS
+    message:
+        "Summary of collected data: plots and statistics"
+    params:
+        width=10,
+        height=6
+    shell:
+        "Rscript summary.R --tab {input} --pdf {output.pdf} --width {params.width} --height {params.height} | tee {output.txt}"
 
 ######################################################################
 # GENERAL RULES
