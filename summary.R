@@ -123,7 +123,7 @@ plot_year <-    ggplot(data=info, aes(x=year)) +
 
 # plot: locations
 plot_locs <-    ggplot(data=locs_aggr, aes(x=loc_lng, y=loc_lat, size=Count)) +
-                borders("world", colour="white", fill="#CCCCCC") + # map
+                borders("world", colour="#cccccc", fill="#ffffff") +
                 geom_point(colour='#333333', shape=4) +
                 theme_bw() +
                 theme(

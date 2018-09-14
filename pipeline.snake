@@ -24,8 +24,7 @@ from utils import setup_logger, run_cmd, mkdir
 ##################################################
 
 # Date
-# today = datetime.datetime.now().strftime("%Y_%m_%d")
-today = "2018_09_03"
+today = datetime.datetime.now().strftime("%Y_%m_%d")
 
 # NCBI DBs
 dbs = OrderedDict()
@@ -157,6 +156,7 @@ rule all:
         krona=BIN_KRONA_XML,
         pmlstdb=[PMLST_UPDATE, PMLST_DB],
         abricate=ABRICATE_UPDATE,
+        rmlst=RMLST_DB,
         # plasmids
         query_plasmids=PLASMIDS_FULL2,
         # plasmid filtering (1)
@@ -164,29 +164,29 @@ rule all:
         # plasmid filtering (2)
         filter_plasmids2=PLASMIDS_FILT2,
         # rmlst
-        rmlst=PLASMIDS_FILT2_RMLST,
+        run_rmlst=PLASMIDS_FILT2_RMLST,
         # plasmid filtering (3)
         filter_plasmids3=PLASMIDS_FILT3,
-		# master files
-        # fasta
-        master_fasta=MASTER_FASTA,
-        # abricate
-        master_abricate=MASTER_ABRICATE_DBS + [MASTER_ABRICATE],
-        # pmlst
-        pmlst=MASTER_PMLST,
-        # blastdb
-		master_blastdb=MASTER_BLASTDB,
-		# mash
-        master_sig=MASTER_MASH_SIG,
-        master_dist=MASTER_MASH_DIST,
-        # umap
-        master_umap=MASTER_MASH_UMAP,
-        # table
-        master_tab=MASTER_TAB,
-        # krona plot
-        master_krona=[MASTER_KRONA_XML, MASTER_KRONA_HTML],
-        # other plots
-        master_summary=[MASTER_SUM_PLOTS, MASTER_SUM_STATS]
+		# # master files
+        # # fasta
+        # master_fasta=MASTER_FASTA,
+        # # abricate
+        # master_abricate=MASTER_ABRICATE_DBS + [MASTER_ABRICATE],
+        # # pmlst
+        # pmlst=MASTER_PMLST,
+        # # blastdb
+		# master_blastdb=MASTER_BLASTDB,
+		# # mash
+        # master_sig=MASTER_MASH_SIG,
+        # master_dist=MASTER_MASH_DIST,
+        # # umap
+        # master_umap=MASTER_MASH_UMAP,
+        # # table
+        # master_tab=MASTER_TAB,
+        # # krona plot
+        # master_krona=[MASTER_KRONA_XML, MASTER_KRONA_HTML],
+        # # other plots
+        # master_summary=[MASTER_SUM_PLOTS, MASTER_SUM_STATS]
 
 # Tools
 ##################################################
@@ -249,6 +249,7 @@ rule install_krona:
         """
 
 # abricate: data
+# NOTE: vfdb is NOT updated because of an issue with ABRicate (duplicate seq. IDs when creating the BLAST database)
 rule update_abricate:
     output:
         ABRICATE_UPDATE
@@ -257,7 +258,7 @@ rule update_abricate:
     message:
         "Update ABRicate databases: {params.dbs}"
     shell:
-        "for db in {params.dbs}; do abricate-get_db --db ${{db}} --force; done 2> {output}"
+        "for db in {params.dbs}; do if [ \"${{db}}\" != \"vfdb\" ] ; then echo \"Update ${{db}}\"; abricate-get_db --db ${{db}} --force; else echo \"Skipping ${{db}}\"; fi; done 2> {output}"
 
 # mlst
 # pmlst: data
@@ -300,13 +301,13 @@ rule get_pmlst_data:
         from glob import glob
         from utils import proc_mlst_scheme_name, download_pmlst_scheme_alleles, download_pmlst_scheme_profiles
 
-        setup_logger(logging.INFO)
+        logger = setup_logger(logging.INFO)
 
         # get schemes
         schemes = requests.get(params.url_schemes)
         assert schemes.status_code != 404, 'Invalid URL {}'.format(params.url_schemes)
         schemes = schemes.json()['schemes']
-        logging.info('There are {} pMLST schemes'.format(len(schemes)))
+        logger.info('There are {} pMLST schemes'.format(len(schemes)))
 
         # get loci
         for scheme in schemes:
@@ -314,7 +315,7 @@ rule get_pmlst_data:
             scheme_name = scheme['description']
             scheme_url  = scheme['scheme']
             scheme_name2 = proc_mlst_scheme_name(scheme_name)
-            logging.info('Scheme {} ({}): {}'.format(scheme_name, scheme_name2, scheme_url))
+            logger.info('Scheme {} ({}): {}'.format(scheme_name, scheme_name2, scheme_url))
 
             # where to save files
             scheme_dir = os.path.join(os.path.dirname(output[0]), scheme_name2)
@@ -345,9 +346,24 @@ rule create_pmlst_db:
     shell:
         "{params.dir}/scripts/mlst-make_blast_db"
 
+# rmlst: data
+# NOTE: FASTA file must exist
+rule rmlst_blastdb:
+    input:
+        fasta=RMLST_FASTA,
+        bin=BIN_MAKEBLASTDB
+    output:
+        RMLST_DB
+    message:
+        "Create BLASTDB from {input}"
+    shell:
+        "{input.bin} -in {input.fasta} -input_type fasta -dbtype nucl -title \"rmlst\""
+
 # Plasmid query
 ##################################################
 rule query_plasmids:
+    input:
+        EUTILS_INSTALL
     output:
         "{dir}/{date}__{db}__nuccore.txt"
     message:
@@ -373,6 +389,8 @@ rule queried_plasmids:
     message:
         "Creating a table of all found plasmids"
     run:
+        logger = setup_logger(logging.INFO)
+
         dfs = []
         for df_file in input:
             df = pandas.read_csv(df_file, sep='\t', header=0)
@@ -393,14 +411,13 @@ rule query_linked_assemblies:
         "Query for linked Assemblies from {input}"
     run:
         from utils import run_epost_split
-        setup_logger(logging.INFO)
         run_epost_split(
             df_file=input[0],
             ofile=output[0],
             header='\t'.join(config['eutils']['header']['link_asm']),
             cmd=config['eutils']['query']['linked'],
             df_col='UID_NUCCORE',
-            split_size=300,
+            split_size=200,
             split_str=None,
             path=config['eutils']['dir'],
             db_source='nuccore',
@@ -416,14 +433,13 @@ rule query_assemblies:
         "Query for Assemblies from {input}"
     run:
         from utils import run_epost_split
-        setup_logger(logging.INFO)
         run_epost_split(
             df_file=input[0],
             ofile=output[0],
             header='\t'.join(config['eutils']['header']['assembly']),
             cmd=config['eutils']['query']['assembly'],
             df_col='UID_ASSEMBLY',
-            split_size=300,
+            split_size=200,
             split_str=';',
             path=config['eutils']['dir']
         )
@@ -438,7 +454,6 @@ rule query_linked_biosamples:
         "Query for linked BioSamples from {input}"
     run:
         from utils import run_epost_split
-        setup_logger(logging.INFO)
         run_epost_split(
             df_file=input[0],
             ofile=output[0],
@@ -461,7 +476,6 @@ rule query_biosamples:
         "Query for BioSamples from {input}"
     run:
         from utils import run_epost_split
-        setup_logger(logging.INFO)
         run_epost_split(
             df_file=input[0],
             ofile=output[0],
@@ -482,12 +496,12 @@ rule query_taxon:
     message:
         "Query for linked Taxa from {input}"
     run:
-        setup_logger(logging.INFO)
+        logger = setup_logger(logging.INFO)
 
         ids = pandas.read_csv(input[0], sep='\t', header=0, dtype=str)['TaxonID_NUCCORE'].fillna(value='')
         ids = set(ids.values)
         assert '' not in ids, 'Have an empty ID in {}'.format(input[0])
-        logging.info('There are {} unique taxonomy IDs'.format(len(ids)))
+        logger.info('There are {} unique taxonomy IDs'.format(len(ids)))
 
         cmd = "{query} > {ofile}".format(
             query=config['eutils']['query']['taxon'].format(
@@ -507,33 +521,70 @@ rule proc_taxon:
     message:
         "Process taxa from {input}"
     run:
+        logger = setup_logger(logging.INFO)
+
         header = config['eutils']['header']['taxon']
         ranks  = config['eutils']['header']['ranks']
         for rank in ranks:
             header += ['taxon_%s_id' % rank, 'taxon_%s_name' % rank]
 
-        with open(output[0], 'w') as ofile:
-            ofile.write('\t'.join(header) + '\n')
-            with open(input[0], 'r') as ifile:
-                for line in ifile:
-                    info = dict.fromkeys(header,'NA')
-                    line = line.rstrip('\n')
-                    for field in line.split('\t'):
-                        if re.search('\|',field):
-                            tid, tname, trank = field.split('|')
-                            if trank == 'no rank':
-                                trank = 'NA'
-                            elif "taxon_%s_name" % trank in header:
-                                info["taxon_%s_name" % trank] = tname
-                                info["taxon_%s_id" % trank] = tid
-                            if info['taxon_id'] == 'NA':
-                                info['taxon_id'] = tid
-                                info['taxon_name'] = tname
-                                info['taxon_rank'] = trank
-                        else: # lineage
-                            info['lineage'] = field
-                    assert info['taxon_id'] != "NA" and info['taxon_name'] != "NA"
-                    ofile.write('\t'.join([info[k] for k in header]) + '\n')
+        df = pandas.DataFrame(columns=header)
+        with open(input[0], 'r') as ifile:
+            i = 0
+            for line in tqdm(ifile):
+                qids  = []
+                qinfo = None
+                line = line.rstrip('\n')
+                for field in line.split('\t'):
+                    if re.search('\|',field):
+                        fields = field.split('|')
+
+                        # taxon ID, name, rank
+                        tid   = None
+                        tname = fields[-2]
+                        trank = fields[-1]
+                        if trank == 'no rank':
+                            trank = 'NA'
+
+                        # taxon ID
+                        if len(qids) == 0: # query ID, save all
+                            for f_i, f_n in enumerate(fields):
+                                if re.fullmatch(r'\d+', f_n) and f_i < (len(fields) - 2):
+                                    qids.append(f_n)
+                            if len(qids) > 1:
+                                logger.info('Taxon with multiple IDs: {}'.format(field))
+                            qinfo = dict.fromkeys(qids)
+                            for qid in qids:
+                                qinfo[qid] = dict.fromkeys(header, 'NA')
+                                qinfo[qid]['taxon_id'] = qid
+                                qinfo[qid]['taxon_name'] = tname
+                                qinfo[qid]['taxon_rank'] = trank
+                        else: # ignore mult. IDs, take first one
+                            tid = fields[0]
+
+                        # if relevant rank
+                        assert qinfo is not None
+                        if 'taxon_%s_name' % trank in header:
+                            for qid in qids:
+                                if tid is None:
+                                    qinfo[qid]['taxon_%s_id' % trank] = qid
+                                else:
+                                    qinfo[qid]['taxon_%s_id' % trank] = tid
+                                qinfo[qid]['taxon_%s_name' % trank] = tname
+                                qinfo[qid]['taxon_%s_rank' % trank] = trank
+                    else: # lineage
+                        assert qinfo is not None
+                        for qid in qids:
+                            qinfo[qid]['lineage'] = field
+                # save info for each query
+                for qid in qids:
+                    df.loc[qid] = [qinfo[qid][k] for k in header]
+            # replace nulls by 'NA'
+            df.fillna(value='NA', inplace=True)
+            # keep only unqiue rows
+            df.drop_duplicates(inplace=True)
+            # save
+            df.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
 
 # Add to table
 rule collect_meta:
@@ -550,31 +601,32 @@ rule collect_meta:
         "Adding meta info to {input.pls}"
     run:
         import datetime
-        setup_logger(logging.INFO)
+
+        logger = setup_logger(logging.INFO)
 
         pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
         pls.set_index('UID_NUCCORE', drop=False, inplace=True, verify_integrity=True)
-        logging.info('Read in {} plasmid records\n{}'.format(pls.shape[0], pls.head()))
+        logger.info('Read in {} plasmid records\n{}'.format(pls.shape[0], pls.head()))
 
         asm = pandas.read_csv(input.asm, sep='\t', header=0, dtype=str)
         asm.set_index('UID_ASSEMBLY', drop=True, inplace=True, verify_integrity=True)
-        logging.info('Read in {} assembly records\n{}'.format(asm.shape[0], asm.head()))
+        logger.info('Read in {} assembly records\n{}'.format(asm.shape[0], asm.head()))
 
         tax = pandas.read_csv(input.tax, sep='\t', header=0, dtype=str)
         tax.set_index('taxon_id', drop=True, inplace=True, verify_integrity=True)
-        logging.info('Read in {} taxonomy records\n{}'.format(tax.shape[0], tax.head()))
+        logger.info('Read in {} taxonomy records\n{}'.format(tax.shape[0], tax.head()))
 
         bios = pandas.read_csv(input.bios, sep='\t', header=0, dtype=str)
         bios.set_index('UID_BIOSAMPLE', drop=True, inplace=True, verify_integrity=True)
-        logging.info('Read in {} biosample records\n{}'.format(bios.shape[0], bios.head()))
+        logger.info('Read in {} biosample records\n{}'.format(bios.shape[0], bios.head()))
 
         pls_asm = pandas.read_csv(input.pls_asm, sep='\t', header=0, dtype=str)
         pls_asm.set_index('UID_NUCCORE', drop=True, inplace=True, verify_integrity=True)
-        logging.info('Read in {} plasmid/assembly records\n{}'.format(pls_asm.shape[0], pls_asm.head()))
+        logger.info('Read in {} plasmid/assembly records\n{}'.format(pls_asm.shape[0], pls_asm.head()))
 
         pls_bios = pandas.read_csv(input.pls_bios, sep='\t', header=0, dtype=str)
         pls_bios.set_index('UID_NUCCORE', drop=True, inplace=True, verify_integrity=True)
-        logging.info('Read in {} plasmid/assembly records\n{}'.format(pls_bios.shape[0], pls_bios.head()))
+        logger.info('Read in {} plasmid/assembly records\n{}'.format(pls_bios.shape[0], pls_bios.head()))
 
         # process plasmid/assembly mapping - only latest or none
         def get_latest_assembly(uids):
@@ -589,7 +641,7 @@ rule collect_meta:
             # get dates, parse, sort, get first
             dates = asm.loc[uids,'SeqReleaseDate_ASSEMBLY'].map(lambda x: datetime.datetime.strptime(x, '%Y/%m/%d %H:%M'))
             dates.sort_values(ascending=False, inplace=True)
-            logging.warn('No latest assembly among {}: latest w.r.t. date is {}'.format(uids, dates.index[0]))
+            logger.warn('No latest assembly among {}: latest w.r.t. date is {}'.format(uids, dates.index[0]))
             return dates.index[0]
 
         pls_asm['UID_ASSEMBLY'] = pls_asm['UID_ASSEMBLY'].map(get_latest_assembly)
@@ -659,13 +711,14 @@ rule parse_locations:
     run:
         from utils import preproc_loc_str, preproc_loc_coords, parse_location
         from utils import load_locs, save_locs, update_locs
-        setup_logger(logging.INFO)
+
+        logger = setup_logger(logging.INFO)
 
         # api key
         with open(params.api_keys, 'r') as ifile:
             api_key = [k.rstrip('\n').strip() for k in ifile.readlines()]
             api_key = api_key.pop()
-        logging.info('Using API key: {}'.format(api_key))
+        logger.info('Using API key: {}'.format(api_key))
 
         # load known locations
         locs = load_locs(params.locs)
@@ -695,24 +748,24 @@ rule parse_locations:
             if l_c is not None: # location coordinates
                 l_c_str = '{};{}'.format(l_c[0], l_c[1])
                 if locs is None or l_c_str not in locs['location']:
-                    logging.info('Retrieving coordinates for location: \"{}\"'.format(l_c))
+                    logger.info('Retrieving coordinates for location: \"{}\"'.format(l_c))
                     try:
                         parsed = parse_location(loc_str=l_c, api_key=api_key, is_name=False)
                         locs = update_locs(locs, {'location': l_c_str, 'type': 'coordinates', 'lat': parsed['lat'], 'lng': parsed['lng']})
                         save_locs(locs, params.locs)
                     except Exception as e:
-                        logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_c))
+                        logger.error('Error while retrieving coordinates for location \"{}\"'.format(l_c))
                         raise(e)
                 coords.append({'ID': i, 'loc_lat': locs.loc[l_c_str,'lat'], 'loc_lng': locs.loc[l_c_str,'lng']})
             elif l_n is not None: # location name
                 if locs is None or l_n not in locs['location']:
-                    logging.info('Retrieving coordinates for location: \"{}\"'.format(l_n))
+                    logger.info('Retrieving coordinates for location: \"{}\"'.format(l_n))
                     try:
                         parsed = parse_location(loc_str=l_n, api_key=api_key, is_name=True)
                         locs = update_locs(locs, {'location': l_n, 'type': 'name', 'lat': parsed['lat'], 'lng': parsed['lng']})
                         save_locs(locs, params.locs)
                     except Exception as e:
-                        logging.error('Error while retrieving coordinates for location \"{}\"'.format(l_n))
+                        logger.error('Error while retrieving coordinates for location \"{}\"'.format(l_n))
                         raise(e)
                 coords.append({'ID': i, 'loc_lat': locs.loc[l_n,'lat'], 'loc_lng': locs.loc[l_n,'lng'], 'loc_parsed': l_n})
         coords = pandas.DataFrame(coords)
@@ -741,28 +794,40 @@ rule filter1:
     params:
         dfilter=config['filtering']['dfilter']
     run:
-        setup_logger(logging.INFO)
+        logger = setup_logger(logging.INFO)
+
         pls = pandas.read_csv(input[0], sep='\t', header=0, dtype=str)
-        logging.info('Read in {} plasmid records'.format(pls.shape[0]))
+        logger.info('Read in {} plasmid records'.format(pls.shape[0]))
 
         # filter by description
         keep_rows = pandas.Series([re.search(params.dfilter, d, flags=re.IGNORECASE) is None for d in pls['Description_NUCCORE']], index=pls.index)
         pls = pls.loc[keep_rows,:]
-        logging.info('Filtered: description "{}": kept {} records'.format(params.dfilter, pls.shape[0]))
+        logger.info('Filtered: description "{}": kept {} records'.format(params.dfilter, pls.shape[0]))
 
         # filter by (assembly) completeness
         def pls_filter(uid):
-            if pandas.isnull(pls.loc[uid, 'UID_ASSEMBLY']):
-                return pls.loc[uid, 'Completeness_NUCCORE'] == 'complete'
-            else:
-                return pls.loc[uid, 'Status_ASSEMBLY'] == 'Complete Genome'
+            assembly_tag = pls.loc[uid, 'Status_ASSEMBLY']
+            has_assembly_tag = pandas.notnull(pls.loc[uid, 'UID_ASSEMBLY']) and pandas.notnull(assembly_tag) and assembly_tag != ""
 
+            complete_tag  = pls.loc[uid, 'Completeness_NUCCORE']
+            has_complete_tag = pandas.notnull(complete_tag) and complete_tag != ""
+
+            if has_assembly_tag and has_complete_tag:
+                return assembly_tag == 'Complete Genome' and complete_tag == 'complete'
+            elif not has_assembly_tag:
+                return complete_tag == 'complete'
+            elif not has_complete_tag:
+                return assembly_tag == 'Complete Genome'
+            return False
+
+        logger.info('Completeness nuccore tag: {}'.format(set(pls['Completeness_NUCCORE'])))
+        logger.info('Completeness assembly tag: {}'.format(set(pls['Status_ASSEMBLY'])))
         pls = pls.loc[pls.index.map(pls_filter),:]
-        logging.info('Filtered: (assembly) completeness: kept {} records'.format(pls.shape[0]))
+        logger.info('Filtered: (assembly) completeness: kept {} records'.format(pls.shape[0]))
 
         # filter by taxonomy
         pls = pls.loc[pls['taxon_superkingdom_id'] == '2',:]
-        logging.info('Filtered: superkingdom ID is 2 (i.e. Bacteria): kept {} records'.format(pls.shape[0]))
+        logger.info('Filtered: superkingdom ID is 2 (i.e. Bacteria): kept {} records'.format(pls.shape[0]))
 
         # save
         pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
@@ -783,14 +848,14 @@ rule filter2:
         from Bio.SeqUtils import GC
         from utils import str2timestamp
 
-        setup_logger(logging.INFO)
+        logger = setup_logger(logging.INFO)
 
         pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
         pls.set_index('ACC_NUCCORE', drop=False, inplace=True, verify_integrity=True)
-        logging.info('Read in {} plasmid records'.format(pls.shape[0]))
+        logger.info('Read in {} plasmid records'.format(pls.shape[0]))
 
         # collect seq. stats.s
-        logging.info('Collecting sequences and their data ...')
+        logger.info('Collecting sequences and their data ...')
         seq = []
         seqs = {}
         with open(input.fna, 'r') as ifile:
@@ -822,7 +887,7 @@ rule filter2:
         pls.drop(columns=['Length'], inplace=True)
 
         # find and assign identity groups
-        logging.info('Grouping identical sequences ...')
+        logger.info('Grouping identical sequences ...')
         pls['UID_IDENTGROUP'] = None
         groupID = 0
         with open(input.dist, 'r') as ifile:
@@ -881,7 +946,7 @@ rule filter2:
                 else:
                     return rec2
 
-        logging.info('Filter by identity ...')
+        logger.info('Filter by identity ...')
         pls['Identical'] = None
         keep = pandas.Series(True, index=pls['ACC_FASTA'])
         for gr, gr_df in tqdm(pls.loc[pandas.notnull(pls['UID_IDENTGROUP']),:].groupby(by=['UID_IDENTGROUP'])):
@@ -896,26 +961,13 @@ rule filter2:
             pls.loc[best,'Identical'] = ';'.join(sorted([acc for acc in gr_df['ACC_FASTA'] if acc != best]))
         pls = pls.loc[keep.index[keep]]
         pls.drop(columns=['UID_IDENTGROUP'], inplace=True)
-        logging.info('Filtered: indentical sequences: kept {} records'.format(pls.shape[0]))
+        logger.info('Filtered: indentical sequences: kept {} records'.format(pls.shape[0]))
 
         # save
         pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
 
 # rMLST
 ##################################################
-# rMLST BLAST DB
-rule rmlst_blastdb:
-    input:
-        RMLST_FASTA
-    output:
-        RMLST_DB
-    params:
-        bin=BIN_MAKEBLASTDB
-    message:
-        "Create BLASTDB from {input}"
-    shell:
-        "{params.bin} -in {input} -input_type fasta -dbtype nucl -title \"rmlst\""
-
 # run rMLST
 rule rmlst_blastn:
     input:
@@ -928,11 +980,11 @@ rule rmlst_blastn:
         bin=BIN_BLASTN,
         cores=30
     run:
-        setup_logger()
+        logger = setup_logger(logging.INFO)
 
         header = config['rmlst']['rmlst_header']
-        ident = config['rmlst']['rmlst_ident']
-        cov = config['rmlst']['rmlst_cov']
+        ident  = config['rmlst']['rmlst_ident']
+        cov    = config['rmlst']['rmlst_cov']
 
         # blastn search
         cmd = config['rmlst']['rmlst_cmd'].format(
@@ -944,7 +996,7 @@ rule rmlst_blastn:
             header=' '.join(header),
             cores=params.cores
         )
-        logging.info(cmd)
+        logger.info(cmd)
         cmd, cmd_s, cmd_o = run_cmd(cmd)
         assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
 
@@ -988,14 +1040,15 @@ rule filter3:
         blastn_qcovs=config['rmlst']['blastn_qcovs']
     run:
         from multiprocessing import Pool
-        setup_logger(logging.INFO)
+
+        logger = setup_logger(logging.INFO)
 
         pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
         pls.set_index('ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
-        logging.info('Read in {} plasmid records\n{}'.format(pls.shape[0], pls.head()))
+        logger.info('Read in {} plasmid records\n{}'.format(pls.shape[0], pls.head()))
 
         rmlst = pandas.read_csv(input.rmlst, sep='\t', header=0, dtype=str)
-        logging.info('Read in {} rMLST hits\n{}'.format(rmlst.shape[0], rmlst.head()))
+        logger.info('Read in {} rMLST hits\n{}'.format(rmlst.shape[0], rmlst.head()))
 
         # count unique loci per query
         pls['hits_rMLST'] = ''
@@ -1028,19 +1081,19 @@ rule filter3:
             try:
                 acc_df = pandas.read_csv(acc_ofile, sep='\t', header=None, names=params.blastn_header)
             except pandas.errors.EmptyDataError:
-                logging.info('KEEP {}: no blastn hits'.format(acc))
+                logger.info('KEEP {}: no blastn hits'.format(acc))
                 continue
             # filter hits
             acc_df = acc_df.loc[(acc_df['pident'] >= params.blastn_pident) & (acc_df['qcovs'] >= params.blastn_qcovs),:]
             # no hits left
             if acc_df.shape[0] == 0:
-                logging.info('KEEP {}: no blastn hits left after filtering (pident {}, qcovs {})'.format(acc, params.blastn_pident, params.blastn_qcovs))
+                logger.info('KEEP {}: no blastn hits left after filtering (pident {}, qcovs {})'.format(acc, params.blastn_pident, params.blastn_qcovs))
                 continue
             else:
                 top1 = acc_df.iloc[0,:]
-                logging.info('RM {}: 1st hit: {} [{}] (evalue {}, pident {}, qcovs {})'.format(acc, top1['sseqid'], top1['stitle'], top1['evalue'], top1['pident'], top1['qcovs']))
+                logger.info('RM {}: 1st hit: {} [{}] (evalue {}, pident {}, qcovs {})'.format(acc, top1['sseqid'], top1['stitle'], top1['evalue'], top1['pident'], top1['qcovs']))
                 pls.drop(index=[acc], inplace=True)
-        logging.info('Filtered: by number of rMLST and blastn hits: kept {} records'.format(pls.shape[0]))
+        logger.info('Filtered: by number of rMLST and blastn hits: kept {} records'.format(pls.shape[0]))
 
         # save
         pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
@@ -1058,14 +1111,16 @@ rule master_fasta:
         "Create FASTA file for records in {input.pls}"
     run:
         from Bio import SeqIO
-        setup_logger(logging.INFO)
+
+        logger = setup_logger(logging.INFO)
+
         mkdir(os.path.dirname(output[0]), True)
 
         ids = list(pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)['ACC_FASTA'])
         n   = len(ids)
         ids = set(ids)
         assert len(ids) == n, 'FASTA IDs in {} are not unique'.format(input.pls)
-        logging.info('Read in {} plasmid records'.format(len(ids)))
+        logger.info('Read in {} plasmid records'.format(len(ids)))
 
         with open(input.fna, 'r') as ifile, open(output[0], 'w') as ofile:
             for record in tqdm(SeqIO.parse(ifile, 'fasta')):
@@ -1094,7 +1149,7 @@ rule abricate:
         ident=lambda wildcards: config['abricate']['params'][wildcards.rdb]['ident'],
         cores=10
     run:
-        setup_logger(logging.INFO)
+        logger = setup_logger(logging.INFO)
 
         # blastn search
         cmd = config['abricate']['blastn']['cmd'].format(
@@ -1106,7 +1161,7 @@ rule abricate:
             header=' '.join(params.header),
             cores=params.cores
         )
-        logging.info(cmd)
+        logger.info(cmd)
         cmd, cmd_s, cmd_o = run_cmd(cmd)
         assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
 
@@ -1143,6 +1198,8 @@ rule cat_abricate:
         blastn=BIN_BLASTN,
         cores=10
     run:
+        logger = setup_logger(logging.INFO)
+
         dfs = []
         for ifile in input:
             dfs.append(
@@ -1173,7 +1230,8 @@ rule pmlst:
         import shutil
         from Bio import SeqIO
         from utils import reproc_mlst_scheme_name
-        setup_logger()
+
+        logger = setup_logger(logging.INFO)
 
         # split multi FASTA to sep. files
         tmp_dir = 'tmp_fasta'
@@ -1181,14 +1239,14 @@ rule pmlst:
         assert not os.path.exists(tmp_dir)
         assert not os.path.exists(tmp_file)
         os.makedirs(tmp_dir)
-        logging.info('Splitting %s into %s/' % (input.fasta, tmp_dir))
+        logger.info('Splitting %s into %s/' % (input.fasta, tmp_dir))
         with open(input.fasta, 'r') as ifile:
             for record in SeqIO.parse(ifile, 'fasta'):
                 SeqIO.write(record, open(os.path.join(tmp_dir, record.id + '.fasta'), 'w'), 'fasta')
 
         # run pmlst
         cmd = params.cmd + " {idir}/*.fasta > {ofile}".format(idir=tmp_dir, ofile=tmp_file)
-        logging.info('Running pmlst: %s' % cmd)
+        logger.info('Running pmlst: %s' % cmd)
         cmd, cmd_s, cmd_o = run_cmd(cmd)
         assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
 
@@ -1196,7 +1254,7 @@ rule pmlst:
         profiles = {}
 
         # process
-        logging.info('Processing')
+        logger.info('Processing')
         with open(output[0], 'w') as ofile, open(tmp_file, 'r') as ifile:
             for line in ifile:
                 line = line.rstrip('\n').split('\t')
@@ -1217,10 +1275,10 @@ rule pmlst:
                     if profiles[line[1]] is None:
                         continue
                     elif isinstance(profiles[line[1]], str) and profiles[line[1]] == 'dummy': # dummy STs
-                        logging.info('Dummy ST: %s' % line[0])
+                        logger.info('Dummy ST: %s' % line[0])
                         line[2] = '-'
                     elif 'oldST' in list(profiles[line[1]]): # ST mapping
-                        logging.info('Mapped ST: %s' % line[0])
+                        logger.info('Mapped ST: %s' % line[0])
                         line[2] = (profiles[line[1]].loc[profiles[line[1]]['ST'] == int(line[2]),'oldST'].tolist())[0]
                 line[1] = reproc_mlst_scheme_name(line[1])
                 # save
@@ -1259,34 +1317,34 @@ rule infotable:
     message:
         "Create info table for records in {input.pls}"
     run:
-        setup_logger(logging.INFO)
+        logger = setup_logger(logging.INFO)
 
         # plasmids
         pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
         pls.set_index(keys='ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
-        logging.info('Read in {} plasmid records\n{}'.format(pls.shape[0], pls.head()))
+        logger.info('Read in {} plasmid records\n{}'.format(pls.shape[0], pls.head()))
 
         # embedding
         emb = pandas.read_csv(input.emb, sep='\t', header=0, index_col='ID', dtype=str)
-        logging.info('Read in embedding for {} records\n{}'.format(emb.shape[0], emb.head()))
+        logger.info('Read in embedding for {} records\n{}'.format(emb.shape[0], emb.head()))
 
         # PlasmidFinder
         pf  = pandas.read_csv(input.pf, sep='\t', header=0)
-        logging.info('Read in {} PlasmidFinder hits\n{}'.format(pf.shape[0], pf.head()))
+        logger.info('Read in {} PlasmidFinder hits\n{}'.format(pf.shape[0], pf.head()))
         # aggregate results - all hits per record
         pfs = []
         for aggr_id, aggr_df in pf.groupby(['qseqid']):
             pfs.append({
                 'qseqid': aggr_id,
-                'plasmidfinder': '|'.join(aggr_df['sseqid'].values)
+                'plasmidfinder': '|'.join(sorted(list(set(aggr_df['sseqid'].values))))
             })
         pfs = pandas.DataFrame(pfs)
         pfs.set_index(keys='qseqid', drop=True, inplace=True, verify_integrity=True)
-        logging.info('There are {} aggregated PlasmidFinder hits\n{}'.format(pfs.shape[0], pfs.head()))
+        logger.info('There are {} aggregated PlasmidFinder hits\n{}'.format(pfs.shape[0], pfs.head()))
 
         # pMLST
         pmlst = pandas.read_csv(input.pmlst, sep='\t', header=None, index_col=0, names=['ID', 'pmlst'])
-        logging.info('Read in {} pMLST records\n{}'.format(pmlst.shape[0], pmlst.head()))
+        logger.info('Read in {} pMLST records\n{}'.format(pmlst.shape[0], pmlst.head()))
 
         # process source strings
         source_map = {
@@ -1304,7 +1362,7 @@ rule infotable:
             right_index=True,
             sort=False,
         )
-        logging.info('Added embedding')
+        logger.info('Added embedding')
 
         pls = pandas.merge(
             left=pls,
@@ -1314,7 +1372,7 @@ rule infotable:
             right_index=True,
             sort=False,
         )
-        logging.info('Added PlasmidFinder hits')
+        logger.info('Added PlasmidFinder hits')
 
         pls = pandas.merge(
             left=pls,
@@ -1324,7 +1382,7 @@ rule infotable:
             right_index=True,
             sort=False,
         )
-        logging.info('Added pMLST hits')
+        logger.info('Added pMLST hits')
 
         # save
         pls.to_csv(
@@ -1469,16 +1527,17 @@ rule umap:
         "UMAP on {input}"
     run:
         import umap, numpy
-        setup_logger(logging.INFO)
+
+        logger = setup_logger(logging.INFO)
 
         # IDs
         ids = None
         with open(input[0], 'r') as ifile:
             ids = ifile.readline().rstrip('\n').split('\t')[1:]
-            logging.info('Distance matrix: {num} x {num}'.format(num=len(ids)))
+            logger.info('Distance matrix: {num} x {num}'.format(num=len(ids)))
 
         # distance matrix
-        logging.info('Start loading distances...')
+        logger.info('Start loading distances...')
         dist = numpy.loadtxt(
             fname=input[0],
             skiprows=1,
@@ -1486,14 +1545,14 @@ rule umap:
         )
 
         # embedding
-        logging.info('Start embedding...')
+        logger.info('Start embedding...')
         embedding = umap.UMAP(
             n_neighbors=params.neighbors,
             n_components=params.components,
             init='random',
             metric='precomputed'
         ).fit_transform(dist)
-        logging.info('Done.')
+        logger.info('Done.')
 
         # save to file
         embedding = pandas.DataFrame(
