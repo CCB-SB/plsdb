@@ -29,7 +29,7 @@ source activate plsdb
 **IMPORTANT**
 
 Due to [a bug in the used ABRicate version](https://github.com/tseemann/abricate/issues/64) the VFDB cannot be updated because of an issue with duplicate sequence IDs.
-To [fix this](https://github.com/tseemann/abricate/issues/64#issuecomment-421895159) the regular expression in file `abricate-get_db` in the function `get_vfdb` in line 387 should be replaced:
+To [fix this](https://github.com/tseemann/abricate/issues/64#issuecomment-421895159) the regular expression used to parse the accession ID should be replaced (file `abricate-get_db`, function `get_vfdb`, line `387`):
 
 ```perl
 #$s->{ID} =~ m/^(\w+)\(\w+\|(\w+)\)$/; # old code
@@ -72,6 +72,8 @@ Call the pipeline using
 ```bash
 snakemake -s pipeline.snake
 ```
+
+**IMPORTANT**: It is better to run the pipeline step by step to perform manual checking of the created files and the logger output.
 
 ### Steps
 - Used NCBI nucleotide database sources:
@@ -125,6 +127,9 @@ snakemake -s pipeline.snake
         - Process the results
     - Create BLAST database file from plasmid FASTA
     - Create sketches from plasmid FASTA using Mash
+- List of similar plasmids:
+    - Use Mash do compute pairwise distances (use a distance cutoff)
+    - Create a list of unique pairs
 - Embedding:
     - Compute pairwise distances between plasmids using Mash
     - Compute embedding using UMAP
