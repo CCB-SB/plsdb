@@ -249,7 +249,6 @@ rule install_krona:
         """
 
 # abricate: data
-# NOTE: vfdb is NOT updated because of an issue with ABRicate (duplicate seq. IDs when creating the BLAST database)
 rule update_abricate:
     output:
         ABRICATE_UPDATE
@@ -258,7 +257,7 @@ rule update_abricate:
     message:
         "Update ABRicate databases: {params.dbs}"
     shell:
-        "for db in {params.dbs}; do if [ \"${{db}}\" != \"vfdb\" ] ; then echo \"Update ${{db}}\"; abricate-get_db --db ${{db}} --force; else echo \"Skipping ${{db}}\"; fi; done 2> {output}"
+        "for db in {params.dbs}; do echo \"Update ${{db}}\"; abricate-get_db --db ${{db}} --force; done 2> {output}"
 
 # mlst
 # pmlst: data

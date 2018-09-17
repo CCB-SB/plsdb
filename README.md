@@ -26,6 +26,16 @@ conda install --name plsdb -c anaconda -c bioconda -c conda-forge --file require
 source activate plsdb
 ```
 
+**IMPORTANT**
+
+Due to [a bug in the used ABRicate version](https://github.com/tseemann/abricate/issues/64) the VFDB cannot be updated because of an issue with duplicate sequence IDs.
+To [fix this](https://github.com/tseemann/abricate/issues/64#issuecomment-421895159) the regular expression in file `abricate-get_db` in the function `get_vfdb` in line 387 should be replaced:
+
+```perl
+#$s->{ID} =~ m/^(\w+)\(\w+\|(\w+)\)$/; # old code
+$s->{ID} =~ m/^(\w+)\(\w+\|(\w+)(\.\d+)?\)$/; # fix
+```
+
 ### R packages
 Only the R-packages imported in `create_plots.R` are quired.
 Use `install.packages()` to install missing packages.
