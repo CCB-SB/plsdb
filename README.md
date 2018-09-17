@@ -123,8 +123,8 @@ snakemake -s pipeline.snake
         - BLASTn search in DBs provided by ABRicate
         - Hits are processed and filtered, and collected in one file
     - Annotate using pMLST:
-        - Use `mlst` to run BLAST search on downloaded pMLST profiles
-        - Process the results
+        - Find best PlasmidFinder hit and use the associated pMLST scheme
+        - Use `mlst` to perform the pMLST analysis and process the results
     - Create BLAST database file from plasmid FASTA
     - Create sketches from plasmid FASTA using Mash
 - List of similar plasmids:
@@ -170,6 +170,8 @@ However, some things need to be considered:
     - E.g. IncA/C cgMLST has "cgST" instead of "ST" and STs in the format "number.number"
     - In such cases the column is renamed and STs are mapped to 1..N (the original values are saved in a different file)
     - Here, the results need to be processed to map the ST back to the original ST value
+
+Also make sure to provide a mapping for each downloaded pMLST scheme to a Python regular expression to be used to match plasmidFinder hits and the pMLST scheme name (see `pmlst/map` in `pipeline.json`).
 
 # References
 

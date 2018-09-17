@@ -271,6 +271,46 @@ def download_pmlst_scheme_profiles(scheme_name, scheme_url, scheme_dir, scheme_p
     df[cols].to_csv(scheme_profiles, sep='\t', index=False, index_label=False)
     return
 
+def process_pmlst_hits(f, pmlst_db_path, logger):
+    """
+    Parse hits from mlst tool
+    :param f: results file
+    :param pmlst_db_path: path to the dir containing the pMLST files
+    :param logger: logger to be used
+    :return list of hits, hit = "<scheme name>(ST): <allele hits>"
+    """
+    import os
+    hits = []
+    profiles = {}
+    with open(f, 'r') as ifile:
+        for line in ifile:
+            line = line.rstrip('\n').split('\t')
+            # no hit
+            if line[1] == "-":
+                continue
+            # process hit
+            if line[2] != "-":
+                pfile = os.path.join(pmlst_db_path, line[1], line[1] + '.txt')
+                if line[1] not in profiles:
+                    if os.path.exists(pfile + '.dummy'):
+                        profiles[line[1]] = 'dummy'
+                    elif os.path.exists(pfile + '.old'):
+                        profiles[line[1]] = pandas.read_csv(pfile + '.old', sep='\t', header=0)
+                    else:
+                        profiles[line[1]] = None
+                if profiles[line[1]] is None:
+                    pass
+                elif isinstance(profiles[line[1]], str) and profiles[line[1]] == 'dummy': # dummy STs
+                    logger.info('Dummy ST: {}'.format(line[1]))
+                    line[2] = '-'
+                elif 'oldST' in list(profiles[line[1]]): # ST mapping
+                    logger.info('Mapped ST: {}'.format(line[1]))
+                    line[2] = (profiles[line[1]].loc[profiles[line[1]]['ST'] == int(line[2]),'oldST'].tolist())[0]
+            line[1] = reproc_mlst_scheme_name(line[1])
+            # save
+            hits.append("{}({}): {}".format(line[1], line[2], ';'.join(line[3:])))
+    return hits
+
 ##################################################
 # LOCATIONS
 ##################################################

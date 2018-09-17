@@ -92,7 +92,15 @@
         "db": "pubmlst_plasmid_seqdef",
         "url": "http://rest.pubmlst.org",
         "url_schemes": "http://rest.pubmlst.org/db/pubmlst_plasmid_isolates/schemes",
-        "cmd": "mlst --minid 85 --mincov 66 --minscore 1"
+        "cmd": "mlst --minid 85 --mincov 66 --scheme {scheme}",
+        "map": {
+            "IncI1_": "IncI1__MLST",
+            "IncA/C": "IncA_C__PMLST",
+            "IncF": "IncF__RST",
+            "IncHI2": "IncHI2__DLST",
+            "IncN": "incN__MLST",
+            "IncHI1": "IncHI1__MLST"
+        }
     },
     "rmlst": {
         "rmlst_fas": "data/rmlst/rmlst.fas",
