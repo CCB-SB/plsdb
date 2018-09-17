@@ -24,7 +24,8 @@ from utils import setup_logger, run_cmd, mkdir
 ##################################################
 
 # Date
-today = datetime.datetime.now().strftime("%Y_%m_%d")
+# today = datetime.datetime.now().strftime("%Y_%m_%d")
+today = '2018_09_14'
 
 # NCBI DBs
 dbs = OrderedDict()
@@ -126,6 +127,10 @@ MASTER_BLASTDB      = expand(os.path.join(config["data"]["odir"]["master"], "%s.
 # Mash
 MASTER_MASH_SIG     = os.path.join(config["data"]["odir"]["master"], "%s.msh"  % today)
 MASTER_MASH_DIST    = os.path.join(config["data"]["odir"]["master"], "%s.dist" % today)
+MASTER_MASH_DISTS   = os.path.join(config["data"]["odir"]["master"], "%s.distS" % today)
+
+# Similar records
+MASTER_SIM          = os.path.join(config["data"]["odir"]["master"], "%s.sim" % today)
 
 # UMAP
 MASTER_MASH_UMAP    = os.path.join(config["data"]["odir"]["master"], "%s.umap" % today)
@@ -167,26 +172,28 @@ rule all:
         run_rmlst=PLASMIDS_FILT2_RMLST,
         # plasmid filtering (3)
         filter_plasmids3=PLASMIDS_FILT3,
-		# # master files
-        # # fasta
-        # master_fasta=MASTER_FASTA,
-        # # abricate
-        # master_abricate=MASTER_ABRICATE_DBS + [MASTER_ABRICATE],
-        # # pmlst
-        # pmlst=MASTER_PMLST,
-        # # blastdb
-		# master_blastdb=MASTER_BLASTDB,
-		# # mash
-        # master_sig=MASTER_MASH_SIG,
-        # master_dist=MASTER_MASH_DIST,
-        # # umap
-        # master_umap=MASTER_MASH_UMAP,
-        # # table
-        # master_tab=MASTER_TAB,
-        # # krona plot
-        # master_krona=[MASTER_KRONA_XML, MASTER_KRONA_HTML],
-        # # other plots
-        # master_summary=[MASTER_SUM_PLOTS, MASTER_SUM_STATS]
+		# master files
+        # fasta
+        master_fasta=MASTER_FASTA,
+        # abricate
+        master_abricate=MASTER_ABRICATE_DBS + [MASTER_ABRICATE],
+        # pmlst
+        pmlst=MASTER_PMLST,
+        # blastdb
+		master_blastdb=MASTER_BLASTDB,
+		# mash
+        master_sig=MASTER_MASH_SIG,
+        master_dist=[MASTER_MASH_DIST, MASTER_MASH_DISTS],
+        # similar records
+        master_sim=MASTER_SIM,
+        # umap
+        master_umap=MASTER_MASH_UMAP,
+        # table
+        master_tab=MASTER_TAB,
+        # krona plot
+        master_krona=[MASTER_KRONA_XML, MASTER_KRONA_HTML],
+        # other plots
+        master_summary=[MASTER_SUM_PLOTS, MASTER_SUM_STATS]
 
 # Tools
 ##################################################
@@ -1136,13 +1143,13 @@ rule master_fasta:
 rule abricate:
     input:
         fna="{basename}.fna",
-        abr=ABRICATE_UPDATE
+        abr=ABRICATE_UPDATE,
+        blastn=BIN_BLASTN
     output:
         "{basename}.abr.{rdb}"
     message:
-        "ABRicate on fasta: {input.fna}"
+        "Search {wildcards.rdb} in fasta: {input.fna}"
     params:
-        blastn=BIN_BLASTN,
         header=config['abricate']['blastn']['header'],
         cov=lambda wildcards: config['abricate']['params'][wildcards.rdb]['cov'],
         ident=lambda wildcards: config['abricate']['params'][wildcards.rdb]['ident'],
@@ -1152,7 +1159,7 @@ rule abricate:
 
         # blastn search
         cmd = config['abricate']['blastn']['cmd'].format(
-            blastn=params.blastn,
+            blastn=input.blastn,
             input=input.fna,
             rdb=wildcards.rdb,
             ident=params.ident,
@@ -1238,22 +1245,22 @@ rule pmlst:
         assert not os.path.exists(tmp_dir)
         assert not os.path.exists(tmp_file)
         os.makedirs(tmp_dir)
-        logger.info('Splitting %s into %s/' % (input.fasta, tmp_dir))
+
+        logger.info('Splitting %s and running pMLST in %s/' % (input.fasta, tmp_dir))
         with open(input.fasta, 'r') as ifile:
-            for record in SeqIO.parse(ifile, 'fasta'):
-                SeqIO.write(record, open(os.path.join(tmp_dir, record.id + '.fasta'), 'w'), 'fasta')
-
-        # run pmlst
-        cmd = params.cmd + " {idir}/*.fasta > {ofile}".format(idir=tmp_dir, ofile=tmp_file)
-        logger.info('Running pmlst: %s' % cmd)
-        cmd, cmd_s, cmd_o = run_cmd(cmd)
-        assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
-
-        # profiles
-        profiles = {}
+            for record in tqdm(SeqIO.parse(ifile, 'fasta')):
+                # create FASTA
+                record_fasta = os.path.join(tmp_dir, record.id + '.fasta')
+                SeqIO.write(record, open(record_fasta, 'w'), 'fasta')
+                # run pmlst
+                cmd = params.cmd + " {fasta} >> {ofile}".format(fasta=record_fasta, ofile=tmp_file)
+                # logger.info('Running pmlst: %s' % cmd)
+                cmd, cmd_s, cmd_o = run_cmd(cmd)
+                assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
 
         # process
         logger.info('Processing')
+        profiles = {}
         with open(output[0], 'w') as ofile, open(tmp_file, 'r') as ifile:
             for line in ifile:
                 line = line.rstrip('\n').split('\t')
@@ -1272,7 +1279,7 @@ rule pmlst:
                         else:
                             profiles[line[1]] = None
                     if profiles[line[1]] is None:
-                        continue
+                        pass
                     elif isinstance(profiles[line[1]], str) and profiles[line[1]] == 'dummy': # dummy STs
                         logger.info('Dummy ST: %s' % line[0])
                         line[2] = '-'
@@ -1298,6 +1305,32 @@ rule pmlst:
 # Mash
 ##################################################
 # See "general" rules
+
+# Similar records
+##################################################
+rule sim_records:
+    input:
+        MASTER_MASH_DISTS
+    output:
+        MASTER_SIM
+    message:
+        'Lits of similar records pairs from {input}'
+    run:
+        pairs = set()
+        with open(input[0], 'r') as ifile, open(output[0], 'w') as ofile:
+            for line in tqdm(ifile):
+                sID, qID, dist, pv, sh = line.rstrip('\n').split('\t')
+                pair = sorted([sID, qID])
+                pair = (pair[0], pair[1])
+                # same ID -> skip
+                if sID == qID:
+                    continue
+                # group ID already set -> skip
+                if pair in pairs:
+                    continue
+                else:
+                    pairs.add(pair)
+                    ofile.write('{}\t{}\n'.format(sID, qID))
 
 # Embedding
 ##################################################
@@ -1456,34 +1489,34 @@ rule get_fasta:
 # BLAST DBs from FASTA
 rule blastndb:
     input:
-        "{basename}.fna"
+        fasta="{basename}.fna",
+        bin=BIN_MAKEBLASTDB
     output:
         ["{basename}.fna.%s" % ext for ext in config['blast']['ext']]
     log:
         "{basename}.makeblastdb.log"
     params:
-        bin=BIN_MAKEBLASTDB,
         date=today
     message:
-        "Create BLASTDB from {input}"
+        "Create BLASTDB from {input.fasta}"
     shell:
-        "{params.bin} -in {input} -input_type fasta -dbtype nucl -title \"plsdb_{params.date}\" -logfile {log}"
+        "{input.bin} -in {input.fasta} -input_type fasta -dbtype nucl -title \"plsdb_{params.date}\" -logfile {log}"
 
 # Mash sketch
 rule mash_sketch:
     input:
-        "{basename}.fna"
+        fasta="{basename}.fna",
+        bin=BIN_MASH
     output:
         "{basename}.msh"
     params:
-        params=config['mash']['sketch_params'],
-        mash=BIN_MASH
+        params=config['mash']['sketch_params']
     message:
         "Create Mash signatures from {input}"
     shell:
-        "{params.mash} sketch {params.params} -o $(dirname {output})/$(basename -s .msh {output}) {input}"
+        "{input.bin} sketch {params.params} -o $(dirname {output})/$(basename -s .msh {output}) {input.fasta}"
 
-# Mash dist (only if 0)
+# Mash dist (only if dist = 0)
 rule mash_dist_zero:
     input:
         "{basename}.msh"
@@ -1491,6 +1524,20 @@ rule mash_dist_zero:
         "{basename}.dist0"
     params:
         params=config['mash']['dist0_params'],
+        mash=BIN_MASH
+    message:
+        "Compare signatures in {input}"
+    shell:
+        "{params.mash} dist {params.params} {input} {input} > {output}"
+
+# Mash dist for highly sim. seq.s (dist cutoff)
+rule mash_dist_sim:
+    input:
+        "{basename}.msh"
+    output:
+        "{basename}.distS"
+    params:
+        params=config['mash']['distS_params'],
         mash=BIN_MASH
     message:
         "Compare signatures in {input}"

@@ -48,7 +48,7 @@
         "dir": "tools/mash-Linux64-v2.0",
         "sketch_params": "-i -S 42 -p 20 -k 21 -s 1000",
         "dist0_params": "-d 0 -p 20",
-        "distc_params": "-p 20",
+        "distS_params": "-d 0.00123693 -p 20",
         "dist_params": "-t -p 20"
     },
     "krona": {
@@ -89,19 +89,10 @@
         }
     },
     "pmlst": {
-        "ids": {
-            "IncI1": 1,
-            "IncHI2": 2,
-            "IncF": 3,
-            "IncN": 4,
-            "IncHI1": 5,
-            "IncA/C PMLST": 6,
-            "IncA/C cgPMLST": 7
-        },
         "db": "pubmlst_plasmid_seqdef",
         "url": "http://rest.pubmlst.org",
         "url_schemes": "http://rest.pubmlst.org/db/pubmlst_plasmid_isolates/schemes",
-        "cmd": "mlst --minid 85 --mincov 66 --minscore 1 --threads 2"
+        "cmd": "mlst --minid 85 --mincov 66 --minscore 1"
     },
     "rmlst": {
         "rmlst_fas": "data/rmlst/rmlst.fas",
