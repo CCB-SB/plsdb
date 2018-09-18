@@ -24,10 +24,11 @@ get_argparser <- function(){
 ranks <- c('species', 'genus', 'family', 'order', 'class', 'phylum', 'superkingdom')
 
 theme_font <- theme(
-    axis.text   =element_text(size=12),
-    axis.title  =element_text(size=14, face="bold"),
-    legend.text =element_text(size=12),
-    legend.title=element_text(size=14, face="bold")
+    axis.text   =element_text(size=14),
+    axis.title  =element_text(size=16, face="bold"),
+    legend.text =element_text(size=14),
+    legend.title=element_text(size=16, face="bold"),
+    panel.border = element_blank(),
 )
 
 ####################
@@ -108,7 +109,7 @@ plot_utaxa <-   ggplot(data=num_taxa, aes(x=rank, y=count)) +
                 theme(
                     panel.grid.major=element_blank(),
                     panel.grid.minor=element_blank(),
-                    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)
+                    axis.ticks.x=element_blank()
                 ) +
                 theme_font
 
@@ -116,9 +117,18 @@ plot_utaxa <-   ggplot(data=num_taxa, aes(x=rank, y=count)) +
 plot_year <-    ggplot(data=info, aes(x=year)) +
                 geom_histogram(binwidth=1, fill='white', colour='#333333', position="dodge") +
                 scale_y_sqrt(breaks=c(100, seq(1000, 10000, 1000))) +
-                xlab('Year') + ylab('Number of nuccore records') +
+                scale_x_continuous(breaks=c(
+                    min(info$year),
+                    seq(
+                        min(sapply(info$year, function(x){ ifelse(x %% 5 == 0, x, NA) }), na.rm=TRUE),
+                        max(sapply(info$year, function(x){ ifelse(x %% 5 == 0, x, NA) }), na.rm=TRUE),
+                        5
+                    ),
+                    max(info$year))
+                ) +
+                xlab('Year') + ylab('Number of records') +
                 theme_bw() +
-                theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+                # theme(axis.text.x = element_text(angle=90, vjust=0.5, hjust=1)) +
                 theme_font
 
 # plot: locations
