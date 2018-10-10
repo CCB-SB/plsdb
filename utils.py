@@ -273,7 +273,7 @@ def download_pmlst_scheme_profiles(scheme_name, scheme_url, scheme_dir, scheme_p
 
 def process_pmlst_hits(f, pmlst_db_path, logger):
     """
-    Parse hits from mlst tool
+    Parse hits from mlst tool (https://github.com/tseemann/mlst)
     :param f: results file
     :param pmlst_db_path: path to the dir containing the pMLST files
     :param logger: logger to be used
@@ -307,8 +307,61 @@ def process_pmlst_hits(f, pmlst_db_path, logger):
                     logger.info('Mapped ST: {}'.format(line[1]))
                     line[2] = (profiles[line[1]].loc[profiles[line[1]]['ST'] == int(line[2]),'oldST'].tolist())[0]
             line[1] = reproc_mlst_scheme_name(line[1])
+            # incN -> IncN
+            if re.search('incN', line[1], re.IGNORECASE):
+                line[1] = re.sub('incN', 'IncN', line[1])
+            # IncF: https://academic.oup.com/jac/article/65/12/2518/752763#83186263
+            if re.search('incF', line[1], re.IGNORECASE):
+                assert line[2] == '-', "IncF ST != -: {}({}): {}".format(line[1], line[2], ';'.join(line[3:]))
+                # regular expressions
+                re_k = r'\((?P<alleles>~?(\d+|-)\??(,~?(\d+|-)\??)*)\)' # to find alleles
+                re_f = r'FI(?P<letter>(C|I|IS|IK|IY))\(' # to find FI(C/I/K/S/Y)
+                re_a = r'FIA\(' # to find FIA
+                re_b = r'FIB\(' # to find FIB
+                # placeholders for alleles
+                st_f = "-" # C/F/K/S/Y allele number
+                st_l = "-" # C/F/K/S/Y letter if non-missing allele number
+                st_a = "-" # A allele number
+                st_b = "-" # B allele number
+                mult_f = 0 # non-missing alleles for multiple letter from C/F/K/S/Y
+                for locus in line[3:]:
+                    # extract alleles
+                    alleles = re.search(re_k, locus).group('alleles').split(',') # get and split alleles
+                    # exact alleles: rm missing, with "~" or "?"
+                    alleles_cleaned = [a for a in alleles if a != "-" and not re.search("~", a) and not re.search("\?", a)]
+                    ge_zero = len(set(alleles_cleaned)) > 0 # at least one exact allele
+                    mult_alleles = len(set(alleles_cleaned)) > 1 # multiple exact alleles
+                    # which locus
+                    if re.match(re_a, locus, re.IGNORECASE) and not mult_alleles:
+                        if ge_zero:
+                            st_a = alleles_cleaned[0]
+                    elif re.match(re_b, locus, re.IGNORECASE) and not mult_alleles:
+                        if ge_zero:
+                            st_b = alleles_cleaned[0]
+                    elif re.match(re_f, locus, re.IGNORECASE) and ge_zero:
+                        mult_f += 1
+                        # ambiguous: more than one loci with non-missing alleles
+                        if mult_f > 1:
+                            continue
+                        # letter
+                        st_l = re.match(re_f, locus).group('letter')
+                        if st_l == "I":
+                            st_l = "F"
+                        else:
+                            st_l = re.sub("I", "", st_l)
+                        # allele
+                        if mult_alleles:
+                            continue
+                        st_f = alleles_cleaned[0]
+                if st_l == "-" and mult_f == 0: # no allele for C/F/K/S/Y
+                    assert st_f == "-"
+                    st_l = "F"
+                elif mult_f > 1: # mult. loci with non-missing alleles
+                    st_f = "-"
+                    st_l = "-"
+                line[2] = "{l}{f}:A{a}:B{b}".format(l=st_l, f=st_f, a=st_a, b=st_b)
             # save
-            hits.append("{}({}): {}".format(line[1], line[2], ';'.join(line[3:])))
+            hits.append("{}({}):{}".format(line[1], line[2], ';'.join(line[3:])))
     return hits
 
 ##################################################

@@ -24,8 +24,8 @@ from utils import setup_logger, run_cmd, mkdir
 ##################################################
 
 # Date
-today = datetime.datetime.now().strftime("%Y_%m_%d")
-# today = '2018_09_14'
+# today = datetime.datetime.now().strftime("%Y_%m_%d")
+today = '2018_09_14'
 
 # NCBI DBs
 dbs = OrderedDict()
@@ -1208,10 +1208,17 @@ rule cat_abricate:
 
         dfs = []
         for ifile in input:
-            dfs.append(
-                pandas.read_csv(ifile, sep='\t', header=0)
-            )
-        dfs = pandas.concat(dfs, axis=0)
+            df = pandas.read_csv(ifile, sep='\t', header=0)
+            # PlasmidFinder: best hit per replicon
+            if re.search('plasmidfinder', ifile):
+                logger.info('PlasmidFinder hits: get best hit per replicon and plasmid')
+                pf = []
+                for aggr_id, aggr_df in tqdm(df.groupby(['qseqid','sseqid'])):
+                    aggr_df = aggr_df.sort_values(by=['evalue', 'cov', 'pident'], axis=0, ascending=[True, False, False])
+                    pf.extend(aggr_df.head(1).to_dict('records'))
+                df = pandas.DataFrame(pf) # as data frame
+            dfs.append(df)
+        dfs = pandas.concat(dfs, axis=0, sort=False)
         dfs.to_csv(
             path_or_buf=output[0],
             sep='\t',
@@ -1226,7 +1233,7 @@ rule pmlst:
     input:
         db=PMLST_DB,
         fasta="{path}/{date}.fna",
-        pf="{path}/{date}.abr.plasmidfinder"
+        pf="{path}/{date}.abr"
     output:
         "{path}/{date}.pmlst"
     message:
@@ -1239,68 +1246,65 @@ rule pmlst:
         logger = setup_logger(logging.INFO)
 
         # PlasmidFinder
-        pf  = pandas.read_csv(input.pf, sep='\t', header=0)
+        pf = pandas.read_csv(input.pf, sep='\t', header=0)
+        pf = pf.loc[pf['sseqdb'] == 'plasmidfinder',]
         logger.info('Read in {} PlasmidFinder hits\n{}'.format(pf.shape[0], pf.head()))
-        # best hit per record
-        pfs = []
-        logger.info('Get best hit per query.')
-        for aggr_id, aggr_df in tqdm(pf.groupby(['qseqid'])):
-            aggr_df = aggr_df.sort_values(by=['pident', 'cov', 'evalue', 'gaps', 'sseqid'], axis=0, ascending=[False, False, True, True, True])
-            pfs.append({
-                'qseqid': aggr_id,
-                'plasmidfinder': aggr_df.head(1)['sseqid'].values[0]
-            })
-        # as data frame
-        pfs = pandas.DataFrame(pfs)
-        pfs.set_index(keys='qseqid', drop=False, inplace=True, verify_integrity=True)
-        logger.info('There are {} PlasmidFinder best hits\n{}'.format(pfs.shape[0], pfs.head()))
 
         # pMLST
         pmlst_hits = []
         tmp_file = 'pmlst.tmp'
         tmp_fasta = os.path.join(tmp_file + '.fasta')
-        logger.info('Run pMLST for each record with available scheme w.r.t. PlasmidFinder hit.')
+        logger.info('Run pMLST for each record with available scheme w.r.t. PlasmidFinder hits.')
         with open(input.fasta, 'r') as ifile:
             for record in tqdm(SeqIO.parse(ifile, 'fasta')):
-                if record.id not in pfs.index:
+                # found replicons
+                record_replicons = list(pf.loc[pf['qseqid'] == record.id,'sseqid'])
+                if len(record_replicons) == 0:
                     continue
-                # set scheme
-                scheme = None
-                for k,v in config['pmlst']['map'].items():
-                    if re.match(k, pfs.loc[record.id, 'plasmidfinder'], re.IGNORECASE):
-                        scheme = v
-                        break
-                if scheme is None:
-                    continue
-                # create FASTA
-                SeqIO.write(record, open(tmp_fasta, 'w'), 'fasta')
-                # run pmlst
-                cmd = config['pmlst']['cmd'].format(scheme=scheme) + " {fasta} > {ofile}".format(fasta=tmp_fasta, ofile=tmp_file)
-                cmd, cmd_s, cmd_o = run_cmd(cmd)
-                assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
-                # process hits
-                hits = process_pmlst_hits(f=tmp_file, pmlst_db_path=os.path.join(ENV_PATH, 'db/pubmlst'), logger=logger)
-                for i in range(0, len(hits)):
-                    hits[i] = {
-                        'ID': record.id,
-                        'pmlst': hits[i]
-                    }
-                pmlst_hits += hits
+                else:
+                    SeqIO.write(record, open(tmp_fasta, 'w'), 'fasta') # create tmp FASTA
+
+                used_schemes = set()
+                for record_replicon in record_replicons:
+                    # set scheme
+                    scheme = None
+                    for k,v in config['pmlst']['map'].items():
+                        if re.match(k, record_replicon, re.IGNORECASE):
+                            scheme = v
+                            break
+                    if scheme is None or scheme in used_schemes: # no matching scheme/already done
+                        continue
+                    else:
+                        used_schemes.add(scheme)
+
+                    # run pmlst
+                    cmd = config['pmlst']['cmd'].format(scheme=scheme) + " {fasta} > {ofile}".format(fasta=tmp_fasta, ofile=tmp_file)
+                    cmd, cmd_s, cmd_o = run_cmd(cmd)
+                    assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
+
+                    # process hits
+                    hits = process_pmlst_hits(f=tmp_file, pmlst_db_path=os.path.join(ENV_PATH, 'db/pubmlst'), logger=logger)
+                    for i in range(0, len(hits)):
+                        hits[i] = {
+                            'ID': record.id,
+                            'pmlst': hits[i]
+                        }
+                    pmlst_hits += hits
 
         # add pMLST hits to PlasmidFinder hits
         pmlst_hits = pandas.DataFrame(pmlst_hits)
-        pmlst_hits.set_index(keys='ID', drop=True, inplace=True, verify_integrity=True)
-        pfs = pandas.merge(
-            left=pfs,
-            right=pmlst_hits,
-            how='left',
-            left_index=True,
-            right_index=True,
-            sort=False,
-        )
+        # pmlst_hits.set_index(keys='ID', drop=True, inplace=True, verify_integrity=True)
+        # pfs = pandas.merge(
+        #     left=pfs,
+        #     right=pmlst_hits,
+        #     how='left',
+        #     left_index=True,
+        #     right_index=True,
+        #     sort=False,
+        # )
 
         # save
-        pfs.to_csv(
+        pmlst_hits.to_csv(
             path_or_buf=output[0],
             sep='\t',
             header=True,
@@ -1356,6 +1360,7 @@ rule infotable:
     input:
         pls=PLASMIDS_FILT3,
         emb="%s/{date}.umap" % config["data"]["odir"]["master"],
+        abr="%s/{date}.abr" % config["data"]["odir"]["master"],
         pmlst="%s/{date}.pmlst" % config["data"]["odir"]["master"]
     output:
         "%s/{date}.tsv" % config["data"]["odir"]["master"]
@@ -1373,10 +1378,28 @@ rule infotable:
         emb = pandas.read_csv(input.emb, sep='\t', header=0, index_col='ID', dtype=str)
         logger.info('Read in embedding for {} records\n{}'.format(emb.shape[0], emb.head()))
 
+        # PlasmidFinder
+        abr = pandas.read_csv(input.abr, sep='\t', header=0)
+        abr = abr.loc[abr['sseqdb'] == 'plasmidfinder',['qseqid', 'sseqid']]
+        logger.info('Read in {} PlasmidFinder hits\n{}'.format(abr.shape[0], abr.head()))
+        pf = []; pf_index = []
+        for aggr_id, aggr_df in abr.groupby(['qseqid']):
+            assert len(set(aggr_df['sseqid'])) == len(aggr_df['sseqid'])
+            pf_index.append(list(aggr_df['qseqid'])[0])
+            pf.append({'plasmidfinder': '|'.join(aggr_df['sseqid'])})
+        pf = pandas.DataFrame(pf, index=pf_index)
+        logger.info('Aggr PlasmidFinder hits\n{}'.format(pf.head()))
+
         # pMLST
-        pmlst = pandas.read_csv(input.pmlst, sep='\t', header=0)
-        pmlst.set_index(keys='qseqid', drop=True, inplace=True, verify_integrity=True)
-        logger.info('Read in {} PlasmidFinder/pMLST records\n{}'.format(pmlst.shape[0], pmlst.head()))
+        pmlst_df = pandas.read_csv(input.pmlst, sep='\t', header=0)
+        logger.info('Read in {} pMLST records\n{}'.format(pmlst_df.shape[0], pmlst_df.head()))
+        pmlst = []; pmlst_index = []
+        for aggr_id, aggr_df in pmlst_df.groupby(['ID']):
+            assert len(set(aggr_df['pmlst'])) == len(aggr_df['pmlst'])
+            pmlst_index.append(list(aggr_df['ID'])[0])
+            pmlst.append({'pmlst': '|'.join(aggr_df['pmlst'])})
+        pmlst = pandas.DataFrame(pmlst, index=pmlst_index)
+        logger.info('Aggr pMLST hits\n{}'.format(pmlst.head()))
 
         # process source strings
         source_map = {
@@ -1398,13 +1421,23 @@ rule infotable:
 
         pls = pandas.merge(
             left=pls,
+            right=pf,
+            how='left',
+            left_index=True,
+            right_index=True,
+            sort=False,
+        )
+        logger.info('Added PlasmidFinder hits')
+
+        pls = pandas.merge(
+            left=pls,
             right=pmlst,
             how='left',
             left_index=True,
             right_index=True,
             sort=False,
         )
-        logger.info('Added PlasmidFinder/pMLST hits')
+        logger.info('Added pMLST hits')
 
         # save
         pls.to_csv(

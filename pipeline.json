@@ -76,7 +76,7 @@
             },
             "plasmidfinder": {
                 "ident": 80,
-                "cov": 96
+                "cov": 60
             },
             "resfinder": {
                 "ident": 95,

@@ -115,16 +115,19 @@ snakemake -s pipeline.snake
     - Create the BlastDB of rMLST allele sequences
         - The FASTAs are **NOT** downloaded by the pipeline (see the "Requirements" section above)
     - The plasmid sequences are aligned against the rMLST allele sequences
-    - Records having more than 5 unique rMLST loci are searched in NCBI chromosomal sequences using BLASTn
+    - Records having more than 5 unique rMLST loci are searched in NCBI chromosomal sequences using BLASTn (remote access)
     - Records with hits are removed
 - Plasmid nucleotide sequences:
     - Create a new FASTA with nucl. sequences of remained plasmids
     - Annotate using ABRicate:
         - BLASTn search in DBs provided by ABRicate
         - Hits are processed and filtered, and collected in one file
+            - PlasmidFinder hits: best hit per replicon (for each plasmid record)
     - Annotate using pMLST:
-        - Find best PlasmidFinder hit and use the associated pMLST scheme
-        - Use `mlst` to perform the pMLST analysis and process the results
+        - For each found replicon use the associated pMLST scheme (if available)
+        - Use `mlst` to perform the pMLST analysis
+        - Process the results
+            - Set IncF ST according to the FAB formula (**Villa et al.**)
     - Create BLAST database file from plasmid FASTA
     - Create sketches from plasmid FASTA using Mash
 - List of similar plasmids:
@@ -198,5 +201,6 @@ of the comprehensive antibiotic resistance database.", B. Jia, A. R. Raphenya, B
 - **Jolley et al.**, Ribosomal multilocus sequence typing: universal characterization of bacteria from domain to strain, K. A. Jolley, C. M. Bliss, J .S. Bennett, H. B. Bratcher, C. Brehony, F. M. Colles, H. Wimalarathna, O. B. Harrison, S. K. Sheppard, A. J. Cody, M .C. Maiden, Microbiology, 2012, [paper link](http://www.ncbi.nlm.nih.gov/pubmed/22282518)
 - **Orlek et al.**: Ordering the mob: Insights into replicon and MOB typing schemes from analysis of a curated dataset of publicly available plasmids, A. Orlek, H. Phan, A. E. Sheppard, M. Doumith, M. Ellington, T. Peto, D. Crook, A. S. Walker, N. Woodford, M. F. Anjum, N. Stoesser, Plasmid, 2017, [paper link](https://www.ncbi.nlm.nih.gov/pubmed/28286183)
 - **Yutin et al.**: Distribution of ribosomal protein genes across bacterial genome partitions, N. Yutin, P. Puigbò, E. V. Koonin, Y. I. Wolf, PLoS One, 2012, [paper link]](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3353972/)
+- **Villa et al.**: Replicon sequence typing of IncF plasmids carrying virulence and resistance determinants, L. Villa, A. García-Fernández, D. Fortini, A. Carattoli, Journal of Antimicrobial Chemotherapy, 2010, [paper link](https://www.ncbi.nlm.nih.gov/pubmed/20935300)
 
 The data processing pipeline makes use of the [PubMLST website](https://pubmlst.org/) developed by Keith Jolley ([Jolley & Maiden 2010, BMC Bioinformatics, 11:595](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-595)) and sited at the University of Oxford. The development of that website was funded by the Wellcome Trust.
