@@ -60,10 +60,6 @@
         "components": 2
     },
     "abricate": {
-        "blastn":{
-            "cmd": "{blastn} -query {input} -db $(conda info --base)/envs/plsdb/db/{rdb}/sequences -task blastn -perc_identity {ident} -out {output} -outfmt '6 {header}' -num_threads {cores} -evalue 1E-20 -culling_limit 1",
-            "header": ["qseqid", "qstart", "qend", "qlen", "sseqid", "sstart", "send", "slen", "stitle", "evalue", "pident", "length", "gaps"]
-        },
         "dbs": ["argannot", "card", "plasmidfinder", "resfinder", "vfdb"],
         "params": {
             "argannot": {

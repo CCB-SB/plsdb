@@ -25,7 +25,7 @@ from utils import setup_logger, run_cmd, mkdir
 
 # Date
 today = datetime.datetime.now().strftime("%Y_%m_%d")
-#today = '2018_09_14'
+# today = '2018_09_14'
 
 # NCBI DBs
 dbs = OrderedDict()
@@ -260,11 +260,34 @@ rule update_abricate:
     output:
         ABRICATE_UPDATE
     params:
-        dbs=' '.join(config['abricate']['dbs'])
+        dbs=config['abricate']['dbs']
     message:
         "Update ABRicate databases: {params.dbs}"
-    shell:
-        "for db in {params.dbs}; do echo \"Update ${{db}}\"; abricate-get_db --db ${{db}} --force; done 2> {output}"
+    run:
+        logger = setup_logger(logging.INFO)
+
+        for db in params.dbs:
+            # run ABRicate to update the databases
+            cmd = "abricate-get_db --db {db} --force; done 2>> {output}".format(
+                db=db,
+                output=output[0]
+            )
+            logger.info('Update with ABRicate DB {}: {}'.format(db, cmd))
+            cmd, cmd_s, cmd_o = run_cmd(cmd)
+            assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
+
+            # reformat FASTA: remove non-UTF-8 characters
+            seq0 = "{env_path}/db/{db}/sequence"
+            seq1 = seq0 + ".tmp"
+            cmd = "mv {input} {input}.tmp && iconv -c -t UTF-8 < {input}.tmp > {input}".format(
+                input=os.path.join(ENV_PATH, 'db', db, 'sequences')
+            )
+            logger.info('Remove non-UTF-8 symbols: {}'.format(cmd))
+            cmd, cmd_s, cmd_o = run_cmd(cmd)
+            assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
+
+        with open(output[0], 'a') as ofile:
+            ofile.write('\nUPDATE DONE.\n')
 
 # mlst
 # pmlst: data
@@ -1137,9 +1160,10 @@ rule master_fasta:
 
 # ABRicate annot
 ##################################################
-# NOTE: To have more control over the BLAST search and filtering ABRicate is not used directly.
-#       BLASTn is run using ABRicate DBs and the results are filtered by indentity and coverage
-#       analogous to the ABRicate implementation.
+# NOTE: Using a procedure analoguous to that of PlasmidFinder (https://bitbucket.org/genomicepidemiology/plasmidfinder)
+#   1) Call Blaster (from CGE core module): call BLAST and pre-process hits (best hit per subject)
+#   2) Filter results by identity and coverage; from overlapping hits keep only the best hit
+#   Differences/modifications: see tag "CHANGED"
 rule abricate:
     input:
         fna="{basename}.fna",
@@ -1150,41 +1174,89 @@ rule abricate:
     message:
         "Search {wildcards.rdb} in fasta: {input.fna}"
     params:
-        header=config['abricate']['blastn']['header'],
         cov=lambda wildcards: config['abricate']['params'][wildcards.rdb]['cov'],
-        ident=lambda wildcards: config['abricate']['params'][wildcards.rdb]['ident'],
-        cores=10
+        ident=lambda wildcards: config['abricate']['params'][wildcards.rdb]['ident']
     run:
+        from utils import call_blaster
         logger = setup_logger(logging.INFO)
 
-        # blastn search
-        cmd = config['abricate']['blastn']['cmd'].format(
-            blastn=input.blastn,
-            input=input.fna,
-            rdb=wildcards.rdb,
-            ident=params.ident,
-            output=output[0],
-            header=' '.join(params.header),
-            cores=params.cores
-        )
-        logger.info(cmd)
-        cmd, cmd_s, cmd_o = run_cmd(cmd)
-        assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
+        db_path = os.path.join(ENV_PATH, 'db', wildcards.rdb)
+        logger.info('Blaster database in {}'.format(db_path))
 
-        # read in results
-        df = pandas.read_csv(output[0], sep='\t', header=None, names=params.header)
+        # call Blaster to get and pre-process BLAST hits
+        df_all = []
+        df = []
+        for record in tqdm(SeqIO.parse(input.fna, 'fasta')):
+            # call Blaster: get BLAST hits and pre-process them
+            result = call_blaster(record=record, fasta=input.fna, db_path=db_path, blast=input.blastn, cov=params.cov, ident=params.ident)
+            # no results
+            if not result:
+                continue
 
-        # compute coverage
-        # https://github.com/tseemann/abricate/blob/f38e303611291336a7dbb01e94c22fd894e51016/bin/abricate#L135
-        df['cov'] =  100 * (df['length'] - df['gaps']) / df['slen']
-        # filter by coverage
-        df = df.loc[df['cov'] >= params.cov,:]
+            # convert to table
+            result = pandas.DataFrame(result)
+
+            # filter by coverage and identity
+            result = result.loc[(result['cov'] >= params.cov) & (result['pident'] >= params.ident),:]
+            # no results left
+            if result.shape[0] == 0:
+                continue
+
+            # compute score from identity and coverage
+            result = result.assign(ic_score = result['pident'] * result['cov'])
+
+            # sort by query start: small -> large (ascending)
+            result.sort_values(by=['qstart'], ascending=[True], inplace=True)
+            df_all.append(result)
+
+            # overlapping hits
+            keep_hit = [True] * result.shape[0] # True = keep, False = remove
+            current_i   = 0
+            current_end = result['qend'].values[0]
+            current_ics = result['ic_score'].values[0]
+            for i in range(0, result.shape[0]-1):
+                next_start = result['qstart'].values[i+1]
+                next_end   = result['qend'].values[i+1]
+                next_ics   = result['ic_score'].values[i+1]
+
+                if next_start <= current_end: # overlapping hits; CHANGED: <=, NOT <
+                    # remove hit with lower identity-coverage score
+                    if current_ics < next_ics:
+                        keep_hit[current_i] = False
+                        # update current
+                        current_i   = i+1
+                        current_end = next_end
+                        current_ics = next_ics
+                    else:
+                        keep_hit[i+1] = False
+                else: # no overlap, update current; CHANGED: otherwise if no overlap always comparing to the latest "current"
+                    current_i   = i+1
+                    current_end = next_end
+                    current_ics = next_ics
+            result = result.loc[keep_hit,:]
+
+            # rm coverage-identity score
+            result.drop(['ic_score'], axis=1, inplace=True)
+
+            # save
+            df.append(result)
+        df_all = pandas.concat(df_all, axis=0, sort=False)
+        df = pandas.concat(df, axis=0, sort=False)
 
         # sseqid -> DB + ID
+        df_all['sseqdb'] = df_all['sseqid'].map(lambda x: x.split('~~~')[0])
+        df_all['sseqid'] = df_all['sseqid'].map(lambda x: ', '.join(x.split('~~~')[1:]))
         df['sseqdb'] = df['sseqid'].map(lambda x: x.split('~~~')[0])
         df['sseqid'] = df['sseqid'].map(lambda x: ', '.join(x.split('~~~')[1:]))
 
         # save
+        df_all.to_csv(
+            path_or_buf=output[0]+'.all',
+            sep='\t',
+            header=True,
+            index=False,
+            index_label=False
+        )
         df.to_csv(
             path_or_buf=output[0],
             sep='\t',
@@ -1204,20 +1276,9 @@ rule cat_abricate:
         blastn=BIN_BLASTN,
         cores=10
     run:
-        logger = setup_logger(logging.INFO)
-
         dfs = []
         for ifile in input:
-            df = pandas.read_csv(ifile, sep='\t', header=0)
-            # PlasmidFinder: best hit per replicon
-            if re.search('plasmidfinder', ifile):
-                logger.info('PlasmidFinder hits: get best hit per replicon and plasmid')
-                pf = []
-                for aggr_id, aggr_df in tqdm(df.groupby(['qseqid','sseqid'])):
-                    aggr_df = aggr_df.sort_values(by=['evalue', 'cov', 'pident'], axis=0, ascending=[True, False, False])
-                    pf.extend(aggr_df.head(1).to_dict('records'))
-                df = pandas.DataFrame(pf) # as data frame
-            dfs.append(df)
+            dfs.append(pandas.read_csv(ifile, sep='\t', header=0))
         dfs = pandas.concat(dfs, axis=0, sort=False)
         dfs.to_csv(
             path_or_buf=output[0],

@@ -121,8 +121,11 @@ snakemake -s pipeline.snake
     - Create a new FASTA with nucl. sequences of remained plasmids
     - Annotate using ABRicate:
         - BLASTn search in DBs provided by ABRicate
-        - Hits are processed and filtered, and collected in one file
-            - PlasmidFinder hits: best hit per replicon (for each plasmid record)
+            - Blaster from [CGE core module](https://bitbucket.org/genomicepidemiology/cge_core_module) is used for search and pre-processing
+        - Filtering:
+            - Identity and coverage cutoffs
+            - Overlapping matches are removed
+        - All hits are ollected into one file
     - Annotate using pMLST:
         - For each found replicon use the associated pMLST scheme (if available)
         - Use `mlst` to perform the pMLST analysis
@@ -192,7 +195,7 @@ M. Kempf, L. Landraud, and J. M. Rolain, Antimicrob. Agents Chemother., 2014, [p
 of the comprehensive antibiotic resistance database.", B. Jia, A. R. Raphenya, B. Alcock, N. Waglechner, P. Guo, K. K. Tsang, B. A. Lago, B. M. Dave, S. Pereira, A. N. Sharma, S. Doshi, M. Courtot, R. Lo, L. E. Williams, J. G. Frye, T. Elsayegh, D. Sardar, E. L. Westman, A. C. Pawlowski, T. A. Johnson, F. S. Brinkman, G. D. Wright, and A. G. McArthur, Nucleic Acids Res., 2017, [paper link]( https://www.ncbi.nlm.nih.gov/pubmed/27789705)
 - **ResFinder**: "Identification of acquired antimicrobial resistance genes", E. Zankari, H. Hasman, S. Cosentino, M. Vestergaard, S. Rasmussen, O. Lund, F. M. Aarestrup, and M. V. Larsen, J. Antimicrob. Chemother., 2012, [paper link](https://www.ncbi.nlm.nih.gov/pubmed/22782487)
 - **VFDB**: "VFDB: a reference database for bacterial virulence factors", L. Chen, J. Yang, J. Yu, Z. Yao, L. Sun, Y. Shen, and Q. Jin, Nucleic Acids Res., 2005, [paper link](https://www.ncbi.nlm.nih.gov/pubmed/15608208)
-- **PlasmidFinder**: "In silico detection and typing of plasmids using PlasmidFinder and plasmid multilocus sequence typing.", A. Carattoli, E. Zankari, A. Garcia-Fernandez, M. Voldby Larsen, O. Lund, L. Villa, F. Møller Aarestrup, and H. Hasman, Antimicrob. Agents Chemother., 2014, [paper link](http://aac.asm.org/content/58/7/3895.long)
+- **PlasmidFinder**: "In silico detection and typing of plasmids using PlasmidFinder and plasmid multilocus sequence typing.", A. Carattoli, E. Zankari, A. Garcia-Fernandez, M. Voldby Larsen, O. Lund, L. Villa, F. Møller Aarestrup, and H. Hasman, Antimicrob. Agents Chemother., 2014, [paper link](http://aac.asm.org/content/58/7/3895.long), [repository link](https://bitbucket.org/genomicepidemiology/plasmidfinder)
 - **pMLST in PubMLST**: [web-site](https://pubmlst.org/plasmid/)
 - **mlst**: Tool implemented by Thorsten Seemann, [repository link](https://github.com/tseemann/mlst)
 - **checkM**: CheckM: assessing the quality of microbial genomes recovered from isolates, single cells, and metagenomes, D. H. Parks, M. Imelfort, C. T. Skennerton, P. Hugenholtz and G. W. Tyson, Genome Res., 2015, [paper link](https://genome.cshlp.org/content/25/7/1043.short), [repository link](https://github.com/Ecogenomics/CheckM)
@@ -202,5 +205,6 @@ of the comprehensive antibiotic resistance database.", B. Jia, A. R. Raphenya, B
 - **Orlek et al.**: Ordering the mob: Insights into replicon and MOB typing schemes from analysis of a curated dataset of publicly available plasmids, A. Orlek, H. Phan, A. E. Sheppard, M. Doumith, M. Ellington, T. Peto, D. Crook, A. S. Walker, N. Woodford, M. F. Anjum, N. Stoesser, Plasmid, 2017, [paper link](https://www.ncbi.nlm.nih.gov/pubmed/28286183)
 - **Yutin et al.**: Distribution of ribosomal protein genes across bacterial genome partitions, N. Yutin, P. Puigbò, E. V. Koonin, Y. I. Wolf, PLoS One, 2012, [paper link]](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3353972/)
 - **Villa et al.**: Replicon sequence typing of IncF plasmids carrying virulence and resistance determinants, L. Villa, A. García-Fernández, D. Fortini, A. Carattoli, Journal of Antimicrobial Chemotherapy, 2010, [paper link](https://www.ncbi.nlm.nih.gov/pubmed/20935300)
+- **CGE core module**: [repository link](https://bitbucket.org/genomicepidemiology/cge_core_module)
 
 The data processing pipeline makes use of the [PubMLST website](https://pubmlst.org/) developed by Keith Jolley ([Jolley & Maiden 2010, BMC Bioinformatics, 11:595](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-595)) and sited at the University of Oxford. The development of that website was funded by the Wellcome Trust.

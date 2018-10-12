@@ -170,6 +170,60 @@ def run_blastn_check(acc, obname, main_fasta, blastn_cmd, blastn_bin, blastn_hea
     logger.info('END {}'.format(acc))
     return
 
+def call_blaster(record, fasta, db_path, blast, cov, ident):
+    import os
+    from Bio import SeqIO
+    from blaster import Blaster
+    tmp_fasta   = '%s.fasta.tmp' % record.id
+    tmp_blaster = '%s.blaster.tmp' % record.id
+
+    # Create FASTA
+    SeqIO.write(record, tmp_fasta, 'fasta')
+
+    # Call Blaster
+    if os.path.exists(tmp_blaster):
+        os.remove(tmp_blaster)
+    results = Blaster(
+        inputfile=tmp_fasta,
+        databases=['sequences'], # created by Abricate, *.fsa link
+        db_path=db_path,
+        out_path=tmp_blaster,
+        min_cov=cov/100.0, # expects 0.0 .. 1.0
+        threshold=ident/100.0, # expects 0.0 .. 1.0
+        blast=blast,
+        cut_off=False
+    )
+
+    # Collect results
+    if results.results['sequences'] == 'No hit found':
+        os.remove(tmp_fasta)
+        os.remove(tmp_blaster)
+        return
+
+    df = []
+    for result in results.results['sequences'].values():
+        df.append({
+            'qseqid': result['contig_name'].split(' ')[0],
+            'qstart': result['query_start'],
+            'qend': result['query_end'],
+            # 'qlen':,
+            'sseqid': result['sbjct_header'].split(' ')[0],
+            'stitle': result['sbjct_header'],
+            'sstart': result['sbjct_start'],
+            'send':result['sbjct_end'],
+            'slen': result['sbjct_length'],
+            'evalue': result['evalue'],
+            'pident': result['perc_ident'],
+            'length': result['HSP_length'],
+            'gaps': result['gaps'],
+            'cov': result['perc_coverage']
+        })
+
+    # rm tmp files
+    os.remove(tmp_fasta)
+    os.remove(tmp_blaster)
+    return df
+
 def proc_mlst_scheme_name(scheme_name):
     """
     Process scheme name, e.g. to be used as directory name
