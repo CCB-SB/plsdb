@@ -28,7 +28,7 @@
         "query": {
             "plasmid": {
                 "esearch_query": "biomol_genomic[PROP] AND plasmid[FILT] NOT complete cds[TITL] NOT gene[TITL] NOT genes[TITL] NOT contig[TITL] NOT scaffold[TITL] NOT whole genome map[TITL] NOT partial sequence[TITL] NOT partial plasmid[TITL] NOT locus[TITL] NOT region[TITL] NOT fragment[TITL] NOT integron[TITL] NOT transposon[TITL] NOT insertion sequence[TITL] NOT insertion element[TITL] NOT phage[TITL] NOT operon[TITL]",
-                "xtract_query": "-pattern DocumentSummary -ID '(NA)' -CAP '(NA)' -TITLE '(NA)' -DATE '(NA)' -TOPO '(NA)' -COMPL '(NA)' -TID '(NA)' -GEN '(NA)' -LEN '(NA)' -ID Id -CAP Caption -TITLE Title -DATE CreateDate -TOPO Topology -COMPL Completeness -TID TaxId -GEN Genome -LEN Slen -element '&ID' '&CAP' '&TITLE' '&DATE' '&TOPO' '&COMPL' '&TID' '&GEN' '&LEN'",
+                "xtract_query": "-pattern DocumentSummary -ID '(NA)' -ACC '(NA)' -TITLE '(NA)' -DATE '(NA)' -TOPO '(NA)' -COMPL '(NA)' -TID '(NA)' -GEN '(NA)' -LEN '(NA)' -ID Id -ACC AccessionVersion -TITLE Title -DATE CreateDate -TOPO Topology -COMPL Completeness -TID TaxId -GEN Genome -LEN Slen -element '&ID' '&ACC' '&TITLE' '&DATE' '&TOPO' '&COMPL' '&TID' '&GEN' '&LEN'",
                 "efilter_query": "-location plasmid -organism bacteria -source {db}",
                 "cmd": "{path}/esearch -db nuccore -query \"{esearch_query}\" | {path}/efilter {efilter_query} | {path}/efetch -format docsum | {path}/xtract {xtract_query}"
             },

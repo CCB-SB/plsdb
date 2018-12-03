@@ -1,0 +1,22 @@
+Changes w.r.t. commit `6568949003525ebd6e02abb2de2b68348244d075`
+
+- Conda requirements
+    - Newer version:
+        - umap-learn==0.3.7
+        - mlst==2.15.2
+        - abricate==0.8.10
+        - snakemake==5.3.0
+        - requests==2.20.1
+    - Added to the list:
+        - perl-net-ssleay==1.84
+        - perl-libwww-perl==6.15
+        - perl-lwp-protocol-https==6.07
+- "Patch" for updating PlasmidFinder sequences by ABRicate
+- "Patch" for VFDB (ABRicate) is no longer required
+- ARGannot (ABRicate) is not updated bcause the URL is not working
+    - Using provided version from 20.10.2018
+- Plasmid query: Retrieving accession instead of accession only
+    - Field `Caption` was replaced by `AccessionVersion` in the `esearch` query
+- Location table was updated based on new queries
+- Filtering out plasmids with identical sequences:
+    - Additional rule: If same accession keep the one with higher version number

@@ -356,16 +356,12 @@ sub get_bacmet2 {
 #..............................................................................
 sub get_card {
   # https://github.com/tseemann/abricate/issues/25
-  # my $tarball = 'card.tar.bz2';
-  # download(
-  #   #'https://card.mcmaster.ca/download/0/broadstreet-v2.0.2.tar.gz',
-  #   'https://card.mcmaster.ca/latest/data',
-  #   $tarball # yes, it's really BZ2 not GZ ...
-  # );
-  # BEGIN VGalata
-  my $tarball = 'card-data.tar.bz2';
-  system "wget https://card.mcmaster.ca/latest/data -O $tarball";
-  # END
+  my $tarball = 'card.tar.bz2';
+  download(
+    #'https://card.mcmaster.ca/download/0/broadstreet-v2.0.2.tar.gz',
+    'https://card.mcmaster.ca/latest/data',
+    $tarball # yes, it's really BZ2 not GZ ...
+  );
 #  my $fasta = "./nucleotide_fasta_protein_homolog_model.fasta";
   my $jsonfile = "./card.json";
   system("tar", "xf", $tarball, $jsonfile)==0 or err("Problem with tar xf $tarball $jsonfile");

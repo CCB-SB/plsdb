@@ -23,17 +23,14 @@ conda create --name plsdb python=3
 # install packages
 conda install --name plsdb -c anaconda -c bioconda -c conda-forge --file requirements.txt
 # activate env
-conda activate plsdb
+source activate plsdb
 ```
 
-**IMPORTANT**
+**IMPORTANT**: Currently, ABRicate (version `0.8.10`) does not download the PlasmidFinder sequences from the BitBucket repository ([see this issue](https://github.com/tseemann/abricate/issues/66)).
+Thus, the code in the function `get_plasmidfinder` in `abricate-get_db` has to be changed to download the most recent version of the sequence files.
 
-Due to [a bug in the used ABRicate version](https://github.com/tseemann/abricate/issues/64) the VFDB cannot be updated because of an issue with duplicate sequence IDs.
-To [fix this](https://github.com/tseemann/abricate/issues/64#issuecomment-421895159) the regular expression used to parse the accession ID should be replaced (file `abricate-get_db`, function `get_vfdb`, line `387`):
-
-```perl
-#$s->{ID} =~ m/^(\w+)\(\w+\|(\w+)\)$/; # old code
-$s->{ID} =~ m/^(\w+)\(\w+\|(\w+)(\.\d+)?\)$/; # fix
+```bash
+rsync -av patch_abricate-get_db $HOME/miniconda3/envs/plsdb/bin/abricate-get_db
 ```
 
 ### R packages

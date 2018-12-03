@@ -164,10 +164,10 @@ rule all:
         rmlst=RMLST_DB,
         # plasmids
         query_plasmids=PLASMIDS_FULL2,
-        # # plasmid filtering (1)
-        # filter_plasmids1=PLASMIDS_FILT1,
-        # # plasmid filtering (2)
-        # filter_plasmids2=PLASMIDS_FILT2,
+        # plasmid filtering (1)
+        filter_plasmids1=PLASMIDS_FILT1,
+        # plasmid filtering (2)
+        filter_plasmids2=PLASMIDS_FILT2,
         # # rmlst
         # run_rmlst=PLASMIDS_FILT2_RMLST,
         # # plasmid filtering (3)
@@ -757,7 +757,7 @@ rule parse_locations:
 
         # sample table with locations
         pls = pandas.read_csv(input[0], header=0, sep='\t', dtype=str)
-        pls.set_index('ACC_NUCCORE', drop=False, inplace=True, verify_integrity=True)
+        pls.set_index('UID_NUCCORE', drop=False, inplace=True, verify_integrity=True)
 
         # parse
         coords = []
@@ -893,10 +893,9 @@ rule filter2:
         with open(input.fna, 'r') as ifile:
             for record in tqdm(SeqIO.parse(ifile, 'fasta')):
                 assert re.fullmatch(r'\w+\.\d+', record.id), 'Unexpected ID format in FASTA: {}'.format(record.id)
-                rid = record.id.split('.')[0]
+                assert record.id in list(pls.index), 'Unknown FASTA ID {}'.format(record.id)
                 seq.append({
-                    'ACC_FASTA': record.id,
-                    'ACC_NUCCORE': rid,
+                    'ACC_NUCCORE': record.id,
                     'GC_NUCCORE': GC(record.seq),
                     'Length': len(record.seq)
                 })
@@ -912,7 +911,6 @@ rule filter2:
             right_index=True,
             sort=False,
         )
-        pls.set_index('ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
         # check seq. length
         assert pls['Length_NUCCORE'].astype(int).equals(pls['Length']), 'Sequence length is not always identical: nuccore vs. FASTA'
         # drop 2nd seq. len. col.
@@ -955,12 +953,24 @@ rule filter2:
         def compare_records(rec1, rec2):
             """
             Compare two plasmid records:
+			0) Prefer the one with higher version number (if same accession)
             1) Prefer the one from RefSeq
             2) Prefer the one with location information
             3) Prefer the one with an assembly
             N) Prefer the older one
             """
-            if rec1['Source_NUCCORE'] == "refseq" and rec2['Source_NUCCORE'] != "refseq":
+            rec1_acc, rec1_ver = rec1['ACC_NUCCORE'].split('.')
+            rec1_ver = int(rec1_ver)
+            rec2_acc, rec2_ver = rec2['ACC_NUCCORE'].split('.')
+            rec2_ver = int(rec2_ver)
+
+            if rec1_acc == rec2_acc:
+                assert rec1_ver != rec2_ver, 'Both records have the same accession and version: {} vs {}'.format(rec1['UID_NUCCORE'], rec1['UID_NUCCORE'])
+                if rec1_ver > rec2_ver:
+                    return rec1
+                else:
+                    return rec2
+            elif rec1['Source_NUCCORE'] == "refseq" and rec2['Source_NUCCORE'] != "refseq":
                 return rec1
             elif rec1['Source_NUCCORE'] != "refseq" and rec2['Source_NUCCORE'] == "refseq":
                 return rec2
@@ -979,8 +989,8 @@ rule filter2:
                     return rec2
 
         logger.info('Filter by identity ...')
-        pls['Identical'] = None
-        keep = pandas.Series(True, index=pls['ACC_FASTA'])
+        pls['Identical'] = ''
+        keep = pandas.Series(True, index=pls['ACC_NUCCORE'])
         for gr, gr_df in tqdm(pls.loc[pandas.notnull(pls['UID_IDENTGROUP']),:].groupby(by=['UID_IDENTGROUP'])):
             assert pandas.notnull(gr)
             best = None
@@ -988,12 +998,30 @@ rule filter2:
                 if best is None:
                     best = acc
                 else:
-                    best = compare_records(gr_df.loc[best,:], gr_df.loc[acc,:])['ACC_FASTA']
-            keep.loc[gr_df.loc[gr_df['ACC_FASTA'] != best,'ACC_FASTA']] = False
-            pls.loc[best,'Identical'] = ';'.join(sorted([acc for acc in gr_df['ACC_FASTA'] if acc != best]))
+                    best = compare_records(gr_df.loc[best,:], gr_df.loc[acc,:])['ACC_NUCCORE']
+            keep.loc[gr_df.loc[gr_df['ACC_NUCCORE'] != best,'ACC_NUCCORE']] = False
+            pls.loc[best,'Identical'] = ';'.join(sorted([acc for acc in gr_df['ACC_NUCCORE'] if acc != best]))
         pls = pls.loc[keep.index[keep]]
         pls.drop(columns=['UID_IDENTGROUP'], inplace=True)
         logger.info('Filtered: indentical sequences: kept {} records'.format(pls.shape[0]))
+
+        # by accession
+        logger.info('Filter by accession ...')
+        pls['ACC_WO_VERSION'] = pls['ACC_NUCCORE'].apply(lambda x: x.split('.')[0])
+        keep = pandas.Series(True, index=pls['ACC_NUCCORE'])
+        for gr, gr_df in tqdm(pls.groupby(by=['ACC_WO_VERSION'])):
+            assert pandas.notnull(gr)
+            best = None
+            for acc in gr_df.index:
+                if best is None:
+                    best = acc
+                else:
+                    best = compare_records(gr_df.loc[best,:], gr_df.loc[acc,:])['ACC_NUCCORE']
+            keep.loc[gr_df.loc[gr_df['ACC_NUCCORE'] != best,'ACC_NUCCORE']] = False
+            pls.loc[best,'Identical'] += ';'.join(sorted([acc for acc in gr_df['ACC_NUCCORE'] if acc != best]))
+        pls = pls.loc[keep.index[keep]]
+        pls.drop(columns=['ACC_WO_VERSION'], inplace=True)
+        logger.info('Filtered: sequences w/ same accession: kept {} records'.format(pls.shape[0]))
 
         # save
         pls.to_csv(output[0], sep='\t', header=True, index=False, index_label=False)
@@ -1076,7 +1104,7 @@ rule filter3:
         logger = setup_logger(logging.INFO)
 
         pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
-        pls.set_index('ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
+        pls.set_index('ACC_NUCCORE', drop=False, inplace=True, verify_integrity=True)
         logger.info('Read in {} plasmid records\n{}'.format(pls.shape[0], pls.head()))
 
         rmlst = pandas.read_csv(input.rmlst, sep='\t', header=0, dtype=str)
@@ -1092,7 +1120,7 @@ rule filter3:
         pls.to_csv('%s.backup' % output[0], sep='\t', header=True, index=False, index_label=False)
 
         # check those above given cutoff
-        check_ids = pls.loc[pls['hitscount_rMLST'] > params.cutoff,'ACC_FASTA']
+        check_ids = pls.loc[pls['hitscount_rMLST'] > params.cutoff,'ACC_NUCCORE']
         # run BLASTn
         from utils import run_blastn_check
         pool = Pool(params.cores)
@@ -1148,7 +1176,7 @@ rule master_fasta:
 
         mkdir(os.path.dirname(output[0]), True)
 
-        ids = list(pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)['ACC_FASTA'])
+        ids = list(pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)['ACC_NUCCORE'])
         n   = len(ids)
         ids = set(ids)
         assert len(ids) == n, 'FASTA IDs in {} are not unique'.format(input.pls)
@@ -1435,7 +1463,7 @@ rule infotable:
 
         # plasmids
         pls = pandas.read_csv(input.pls, sep='\t', header=0, dtype=str)
-        pls.set_index(keys='ACC_FASTA', drop=False, inplace=True, verify_integrity=True)
+        pls.set_index(keys='ACC_NUCCORE', drop=False, inplace=True, verify_integrity=True)
         logger.info('Read in {} plasmid records\n{}'.format(pls.shape[0], pls.head()))
 
         # embedding
@@ -1569,7 +1597,7 @@ rule get_fasta:
     shell:
         """
         mkdir -p $(dirname {output}) &&
-        python download_fastas.py -t {input} -i \"UID_NUCCORE\" -o {output} -c 10 -s 100 -e {params.eutils} 2>&1 | tee {output}.log &&
+        python download_fastas.py -t {input} -i \"UID_NUCCORE\" -o {output} -c 1 -s 100 -e {params.eutils} 2>&1 | tee {output}.log &&
         cat {output}.tmp.* > {output} && rm {output}.tmp.*
         """
 
