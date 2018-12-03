@@ -23,7 +23,7 @@ conda create --name plsdb python=3
 # install packages
 conda install --name plsdb -c anaconda -c bioconda -c conda-forge --file requirements.txt
 # activate env
-source activate plsdb
+conda activate plsdb
 ```
 
 **IMPORTANT**

@@ -164,36 +164,36 @@ rule all:
         rmlst=RMLST_DB,
         # plasmids
         query_plasmids=PLASMIDS_FULL2,
-        # plasmid filtering (1)
-        filter_plasmids1=PLASMIDS_FILT1,
-        # plasmid filtering (2)
-        filter_plasmids2=PLASMIDS_FILT2,
-        # rmlst
-        run_rmlst=PLASMIDS_FILT2_RMLST,
-        # plasmid filtering (3)
-        filter_plasmids3=PLASMIDS_FILT3,
-		# master files
-        # fasta
-        master_fasta=MASTER_FASTA,
-        # abricate
-        master_abricate=MASTER_ABRICATE_DBS + [MASTER_ABRICATE],
-        # pmlst
-        pmlst=MASTER_PMLST,
-        # blastdb
-		master_blastdb=MASTER_BLASTDB,
-		# mash
-        master_sig=MASTER_MASH_SIG,
-        master_dist=[MASTER_MASH_DIST, MASTER_MASH_DISTS],
-        # similar records
-        master_sim=MASTER_SIM,
-        # umap
-        master_umap=MASTER_MASH_UMAP,
-        # table
-        master_tab=MASTER_TAB,
-        # krona plot
-        master_krona=[MASTER_KRONA_XML, MASTER_KRONA_HTML],
-        # other plots
-        master_summary=[MASTER_SUM_PLOTS, MASTER_SUM_STATS]
+        # # plasmid filtering (1)
+        # filter_plasmids1=PLASMIDS_FILT1,
+        # # plasmid filtering (2)
+        # filter_plasmids2=PLASMIDS_FILT2,
+        # # rmlst
+        # run_rmlst=PLASMIDS_FILT2_RMLST,
+        # # plasmid filtering (3)
+        # filter_plasmids3=PLASMIDS_FILT3,
+		# # master files
+        # # fasta
+        # master_fasta=MASTER_FASTA,
+        # # abricate
+        # master_abricate=MASTER_ABRICATE_DBS + [MASTER_ABRICATE],
+        # # pmlst
+        # pmlst=MASTER_PMLST,
+        # # blastdb
+		# master_blastdb=MASTER_BLASTDB,
+		# # mash
+        # master_sig=MASTER_MASH_SIG,
+        # master_dist=[MASTER_MASH_DIST, MASTER_MASH_DISTS],
+        # # similar records
+        # master_sim=MASTER_SIM,
+        # # umap
+        # master_umap=MASTER_MASH_UMAP,
+        # # table
+        # master_tab=MASTER_TAB,
+        # # krona plot
+        # master_krona=[MASTER_KRONA_XML, MASTER_KRONA_HTML],
+        # # other plots
+        # master_summary=[MASTER_SUM_PLOTS, MASTER_SUM_STATS]
 
 # Tools
 ##################################################
@@ -268,13 +268,16 @@ rule update_abricate:
 
         for db in params.dbs:
             # run ABRicate to update the databases
-            cmd = "abricate-get_db --db {db} --force; done 2>> {output}".format(
-                db=db,
-                output=output[0]
-            )
-            logger.info('Update with ABRicate DB {}: {}'.format(db, cmd))
-            cmd, cmd_s, cmd_o = run_cmd(cmd)
-            assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
+            # NOTE: abricate's URL does not work (404 error, 2018.12.03)
+            if db == 'argannot':
+                logger.warning('ABRicate database argannot is NOT updated')
+            else:
+	            cmd = "abricate-get_db --db {db} --force; done 2>&1".format(db=db)
+	            logger.info('Update with ABRicate DB {}: {}'.format(db, cmd))
+	            cmd, cmd_s, cmd_o = run_cmd(cmd)
+	            assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd, cmd_s, cmd_o)
+	            with open(output[0], 'a') as ofile:
+	            	ofile.write(cmd_o)
 
             # reformat FASTA: remove non-UTF-8 characters
             seq0 = "{env_path}/db/{db}/sequence"
