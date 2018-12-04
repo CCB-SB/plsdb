@@ -24,8 +24,8 @@ from utils import setup_logger, run_cmd, mkdir
 ##################################################
 
 # Date
-today = datetime.datetime.now().strftime("%Y_%m_%d")
-# today = '2018_09_14'
+# today = datetime.datetime.now().strftime("%Y_%m_%d")
+today = '2018_12_03'
 
 # NCBI DBs
 dbs = OrderedDict()
@@ -153,9 +153,9 @@ MASTER_SUM_STATS    = os.path.join(config["data"]["odir"]["master"], "%s_summary
 # ALL rule
 ##################################################
 rule all:
-	input:
+    input:
         # tools
-		blast=[BIN_MAKEBLASTDB, BIN_BLASTN],
+        blast=[BIN_MAKEBLASTDB, BIN_BLASTN],
         mash=BIN_MASH,
         eutils=EUTILS_INSTALL,
         krona=BIN_KRONA_XML,
@@ -168,32 +168,32 @@ rule all:
         filter_plasmids1=PLASMIDS_FILT1,
         # plasmid filtering (2)
         filter_plasmids2=PLASMIDS_FILT2,
-        # # rmlst
-        # run_rmlst=PLASMIDS_FILT2_RMLST,
-        # # plasmid filtering (3)
-        # filter_plasmids3=PLASMIDS_FILT3,
-		# # master files
-        # # fasta
-        # master_fasta=MASTER_FASTA,
-        # # abricate
-        # master_abricate=MASTER_ABRICATE_DBS + [MASTER_ABRICATE],
-        # # pmlst
-        # pmlst=MASTER_PMLST,
-        # # blastdb
-		# master_blastdb=MASTER_BLASTDB,
-		# # mash
-        # master_sig=MASTER_MASH_SIG,
-        # master_dist=[MASTER_MASH_DIST, MASTER_MASH_DISTS],
-        # # similar records
-        # master_sim=MASTER_SIM,
-        # # umap
-        # master_umap=MASTER_MASH_UMAP,
-        # # table
-        # master_tab=MASTER_TAB,
-        # # krona plot
-        # master_krona=[MASTER_KRONA_XML, MASTER_KRONA_HTML],
-        # # other plots
-        # master_summary=[MASTER_SUM_PLOTS, MASTER_SUM_STATS]
+        # rmlst
+        run_rmlst=PLASMIDS_FILT2_RMLST,
+        # plasmid filtering (3)
+        filter_plasmids3=PLASMIDS_FILT3,
+        # master files
+        # fasta
+        master_fasta=MASTER_FASTA,
+        # abricate
+        master_abricate=MASTER_ABRICATE_DBS + [MASTER_ABRICATE],
+        # pmlst
+        pmlst=MASTER_PMLST,
+        # blastdb
+        master_blastdb=MASTER_BLASTDB,
+        # mash
+        master_sig=MASTER_MASH_SIG,
+        master_dist=[MASTER_MASH_DIST, MASTER_MASH_DISTS],
+        # similar records
+        master_sim=MASTER_SIM,
+        # umap
+        master_umap=MASTER_MASH_UMAP,
+        # table
+        master_tab=MASTER_TAB,
+        # krona plot
+        master_krona=[MASTER_KRONA_XML, MASTER_KRONA_HTML],
+        # other plots
+        master_summary=[MASTER_SUM_PLOTS, MASTER_SUM_STATS]
 
 # Tools
 ##################################################
@@ -989,7 +989,7 @@ rule filter2:
                     return rec2
 
         logger.info('Filter by identity ...')
-        pls['Identical'] = ''
+        pls['Identical'] = None
         keep = pandas.Series(True, index=pls['ACC_NUCCORE'])
         for gr, gr_df in tqdm(pls.loc[pandas.notnull(pls['UID_IDENTGROUP']),:].groupby(by=['UID_IDENTGROUP'])):
             assert pandas.notnull(gr)
@@ -1005,9 +1005,10 @@ rule filter2:
         pls.drop(columns=['UID_IDENTGROUP'], inplace=True)
         logger.info('Filtered: indentical sequences: kept {} records'.format(pls.shape[0]))
 
-        # by accession
+        # by accession and version
         logger.info('Filter by accession ...')
         pls['ACC_WO_VERSION'] = pls['ACC_NUCCORE'].apply(lambda x: x.split('.')[0])
+        pls['OldVersion'] = None
         keep = pandas.Series(True, index=pls['ACC_NUCCORE'])
         for gr, gr_df in tqdm(pls.groupby(by=['ACC_WO_VERSION'])):
             assert pandas.notnull(gr)
@@ -1018,7 +1019,7 @@ rule filter2:
                 else:
                     best = compare_records(gr_df.loc[best,:], gr_df.loc[acc,:])['ACC_NUCCORE']
             keep.loc[gr_df.loc[gr_df['ACC_NUCCORE'] != best,'ACC_NUCCORE']] = False
-            pls.loc[best,'Identical'] += ';'.join(sorted([acc for acc in gr_df['ACC_NUCCORE'] if acc != best]))
+            pls.loc[best,'OldVersion'] = ';'.join(sorted([acc for acc in gr_df['ACC_NUCCORE'] if acc != best]))
         pls = pls.loc[keep.index[keep]]
         pls.drop(columns=['ACC_WO_VERSION'], inplace=True)
         logger.info('Filtered: sequences w/ same accession: kept {} records'.format(pls.shape[0]))
