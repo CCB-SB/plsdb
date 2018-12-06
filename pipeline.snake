@@ -24,8 +24,8 @@ from utils import setup_logger, run_cmd, mkdir
 ##################################################
 
 # Date
-# today = datetime.datetime.now().strftime("%Y_%m_%d")
-today = '2018_12_05'
+today = datetime.datetime.now().strftime("%Y_%m_%d")
+#today = '2018_12_05'
 
 # NCBI DBs
 dbs = OrderedDict()
