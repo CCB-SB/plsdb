@@ -57,7 +57,8 @@
     },
     "umap": {
         "neighbors": 50,
-        "components": 2
+        "components": 2,
+        "min_dist": 0.1
     },
     "abricate": {
         "dbs": ["argannot", "card", "plasmidfinder", "resfinder", "vfdb"],
@@ -110,4 +111,5 @@
         "blastn_pident": 99,
         "blastn_qcovs": 80
     },
+    "old_tab": "data/master/2018_09_14.tsv"
 }

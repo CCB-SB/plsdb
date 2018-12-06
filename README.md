@@ -15,7 +15,7 @@ bash Miniconda3-latest-Linux-x86_64.sh
 export PATH=$HOME/miniconda3/bin:$PATH
 ```
 
-#### Main conda environment
+#### Conda environment
 Create the main environment and install needed packages:
 ```bash
 # create env
@@ -28,20 +28,26 @@ source activate plsdb
 
 **IMPORTANT**: Currently, ABRicate (version `0.8.10`) does not download the PlasmidFinder sequences from the BitBucket repository ([see this issue](https://github.com/tseemann/abricate/issues/66)).
 Thus, the code in the function `get_plasmidfinder` in `abricate-get_db` has to be changed to download the most recent version of the sequence files.
+If using the version listed in the requirements file (`requirements.txt`) just replace the file by the modified copy.
 
 ```bash
 rsync -av patch_abricate-get_db $HOME/miniconda3/envs/plsdb/bin/abricate-get_db
 ```
 
 ### R packages
-Only the R-packages imported in `create_plots.R` are quired.
-Use `install.packages()` to install missing packages.
+Use `install.packages()` to install missing packages:
+- `testit`
+- `argparse`
+- `ggplot2`
+- `scales`
+- `maps`
 
 ### Other tools
-Other tools installed by the pipeline:
-- Binaries of [edirect/eutils](https://www.ncbi.nlm.nih.gov/books/NBK179288/)
-- Binaries of [Mash](https://github.com/marbl/Mash)
-- Binaries of [BLAST+](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+)
+Other tools installed by the pipeline (in the local folder `tools/`):
+- [edirect/eutils](https://www.ncbi.nlm.nih.gov/books/NBK179288/)
+- [Mash](https://github.com/marbl/Mash)
+- [BLAST+](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+)
+- [Krona](https://github.com/marbl/Krona/archive/xl2.5.zip)
 
 ### Datasets
 The pipeline will automatically update the following databases/datasets:
@@ -55,6 +61,15 @@ The pipeline expects a single FASTA file with all sequences (its path should be 
 To map location names to coordinates the [OpenCageData](https://opencagedata.com/) API is used which requires an API key (you can register for a free trial account).
 The key should be stored in a local file specified in the pipeline config (`pipeline.json`, see `data/api_keys`).
 Also, a file with some of the already retrieved locations is included (`locs.tsv`) and will be updated with newly retrieved locations if you run the pipeline.
+
+### Settings
+Some settings which you may need to change:
+- Date (in `pipeline.snake`, variable `today`)
+    - E.g. if you re-run/start some pipeline steps on the next day
+- Path to an older version of the final plasmid table to compare it to the created one (in `pipeline.json`, value `old_tab`)
+- Paths:
+    - Paths to data (in `pipeline.json`, value `data/odir`)
+    - Paths to tools (in `pipeline.json`, value `dir` for each tool)
 
 --------------------------------------------------
 
@@ -70,7 +85,14 @@ Call the pipeline using
 snakemake -s pipeline.snake
 ```
 
-**IMPORTANT**: It is better to run the pipeline step by step to perform manual checking of the created files and the logger output.
+**IMPORTANT**: It is better to run the pipeline step by step to perform manual checking of the created files and the logger output:
+- Install the tools
+- Run required data updates: pMLST, ABRicate
+    - ABRicate updates: Check the created log file because an update can fail easily if anything changed in one of the dependencies, e.g. different URL or ID format
+- Collect plasmid data
+    - If any BioSample or assembly IDs are not found stop the pipeline and start again later (probably the NCBI database is being updated right now)
+    - If new locations are added they should be checked manually (the coordinates can be wrong depending on the query string)
+- The 3rd filtering step may run for a couple of hours (BLAST search for rMLST analysis)
 
 ### Steps
 - Used NCBI nucleotide database sources:
@@ -80,8 +102,10 @@ snakemake -s pipeline.snake
     - Install Mash
     - Install BLAST+
     - Install edirect/eutils
+    - Install KronaTools
     - Get and process pMLST data from PubMLST DB
     - Update data for ABRicate
+    - Create a BlastDB of rMLST allele sequences
 - Plasmid records:
     - Query for plasmids in the NCBI nucleotide database
         - `esearch` query from **Orlek et al.**
@@ -108,9 +132,8 @@ snakemake -s pipeline.snake
     - Group plasmids with identical sequences
     - Among these groups select one record
         - Prefer RefSeq records and those with more information
+    - Group plasmids by accession (without version number) and select only one record
 - Filtering (3): To remove putative chromosomal sequences
-    - Create the BlastDB of rMLST allele sequences
-        - The FASTAs are **NOT** downloaded by the pipeline (see the "Requirements" section above)
     - The plasmid sequences are aligned against the rMLST allele sequences
     - Records having more than 5 unique rMLST loci are searched in NCBI chromosomal sequences using BLASTn (remote access)
     - Records with hits are removed
@@ -141,6 +164,10 @@ snakemake -s pipeline.snake
     - Embedding coordinates
     - PlasmidFinder hits
     - pMLST hits
+- Compare created table to an olrder version
+    - Which plasmid records were removed
+    - Which plasmid records were added
+    - Which plasmid records changed
 
 #### Notes
 
@@ -171,10 +198,10 @@ However, some things need to be considered:
 - Problematic profile file formatting:
     - `mlst` requires an ST column with numeric values and one column per locus
     - E.g. IncA/C cgMLST has "cgST" instead of "ST" and STs in the format "number.number"
-    - In such cases the column is renamed and STs are mapped to 1..N (the original values are saved in a different file)
+    - In such cases the column is renamed and STs are mapped to 1..N (the original values are saved in a separate file)
     - Here, the results need to be processed to map the ST back to the original ST value
 
-Also make sure to provide a mapping for each downloaded pMLST scheme to a Python regular expression to be used to match plasmidFinder hits and the pMLST scheme name (see `pmlst/map` in `pipeline.json`).
+Also make sure to provide a mapping for each downloaded pMLST scheme to a Python regular expression. These are used to match PlasmidFinder hits and pMLST scheme names (see `pmlst/map` in `pipeline.json`).
 
 # References
 
@@ -195,7 +222,6 @@ of the comprehensive antibiotic resistance database.", B. Jia, A. R. Raphenya, B
 - **PlasmidFinder**: "In silico detection and typing of plasmids using PlasmidFinder and plasmid multilocus sequence typing.", A. Carattoli, E. Zankari, A. Garcia-Fernandez, M. Voldby Larsen, O. Lund, L. Villa, F. Møller Aarestrup, and H. Hasman, Antimicrob. Agents Chemother., 2014, [paper link](http://aac.asm.org/content/58/7/3895.long), [repository link](https://bitbucket.org/genomicepidemiology/plasmidfinder)
 - **pMLST in PubMLST**: [web-site](https://pubmlst.org/plasmid/)
 - **mlst**: Tool implemented by Thorsten Seemann, [repository link](https://github.com/tseemann/mlst)
-- **checkM**: CheckM: assessing the quality of microbial genomes recovered from isolates, single cells, and metagenomes, D. H. Parks, M. Imelfort, C. T. Skennerton, P. Hugenholtz and G. W. Tyson, Genome Res., 2015, [paper link](https://genome.cshlp.org/content/25/7/1043.short), [repository link](https://github.com/Ecogenomics/CheckM)
 - **OpenCageData**: An API to convert coordinates to and from places, [web-site](https://opencagedata.com/)
 - **rMLST**: [rMLST at PubMLST](https://pubmlst.org/rmlst/)
 - **Jolley et al.**, Ribosomal multilocus sequence typing: universal characterization of bacteria from domain to strain, K. A. Jolley, C. M. Bliss, J .S. Bennett, H. B. Bratcher, C. Brehony, F. M. Colles, H. Wimalarathna, O. B. Harrison, S. K. Sheppard, A. J. Cody, M .C. Maiden, Microbiology, 2012, [paper link](http://www.ncbi.nlm.nih.gov/pubmed/22282518)
@@ -204,4 +230,6 @@ of the comprehensive antibiotic resistance database.", B. Jia, A. R. Raphenya, B
 - **Villa et al.**: Replicon sequence typing of IncF plasmids carrying virulence and resistance determinants, L. Villa, A. García-Fernández, D. Fortini, A. Carattoli, Journal of Antimicrobial Chemotherapy, 2010, [paper link](https://www.ncbi.nlm.nih.gov/pubmed/20935300)
 - **CGE core module**: [repository link](https://bitbucket.org/genomicepidemiology/cge_core_module)
 
-The data processing pipeline makes use of the [PubMLST website](https://pubmlst.org/) developed by Keith Jolley ([Jolley & Maiden 2010, BMC Bioinformatics, 11:595](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-595)) and sited at the University of Oxford. The development of that website was funded by the Wellcome Trust.
+## Notes
+
+This data processing pipeline makes use of the [PubMLST website](https://pubmlst.org/) developed by Keith Jolley ([Jolley & Maiden 2010, BMC Bioinformatics, 11:595](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-595)) and sited at the University of Oxford. The development of that website was funded by the Wellcome Trust.

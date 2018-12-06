@@ -601,6 +601,8 @@ def handle_loc_exceptions(loc_str):
         return None
     elif re.search('China,Zhejiang', loc_str, flags=re.IGNORECASE) and re.search('maternal and child health hospital', loc_str, flags=re.IGNORECASE):
         return 'China,Zhejiang,Maternal and Child Health Hospital'
+    elif re.search('USA,Lost Angeles', loc_str, flags=re.IGNORECASE):
+        return 'USA,Los Angeles'
     return loc_str
 
 def preproc_loc_str(loc_str):

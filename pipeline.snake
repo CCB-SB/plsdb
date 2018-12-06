@@ -25,7 +25,7 @@ from utils import setup_logger, run_cmd, mkdir
 
 # Date
 # today = datetime.datetime.now().strftime("%Y_%m_%d")
-today = '2018_12_03'
+today = '2018_12_05'
 
 # NCBI DBs
 dbs = OrderedDict()
@@ -146,6 +146,9 @@ MASTER_KRONA_HTML   = os.path.join(config["data"]["odir"]["master"], "%s.html" %
 MASTER_SUM_PLOTS    = os.path.join(config["data"]["odir"]["master"], "%s_summary.pdf" % today)
 MASTER_SUM_STATS    = os.path.join(config["data"]["odir"]["master"], "%s_summary.txt" % today)
 
+# Compare created table to an old version
+MASTER_CHANGES      = os.path.join(config["data"]["odir"]["master"], "%s_changes.tsv" % today)
+
 ##################################################
 # Rules
 ##################################################
@@ -193,7 +196,9 @@ rule all:
         # krona plot
         master_krona=[MASTER_KRONA_XML, MASTER_KRONA_HTML],
         # other plots
-        master_summary=[MASTER_SUM_PLOTS, MASTER_SUM_STATS]
+        master_summary=[MASTER_SUM_PLOTS, MASTER_SUM_STATS],
+        # compare to older version
+        master_compare=MASTER_CHANGES
 
 # Tools
 ##################################################
@@ -957,7 +962,8 @@ rule filter2:
             1) Prefer the one from RefSeq
             2) Prefer the one with location information
             3) Prefer the one with an assembly
-            N) Prefer the older one
+            4) Prefer the older one
+            5) Compare by accession (string), prefer the "smaller" one
             """
             rec1_acc, rec1_ver = rec1['ACC_NUCCORE'].split('.')
             rec1_ver = int(rec1_ver)
@@ -976,14 +982,18 @@ rule filter2:
                 return rec2
             elif pandas.notnull(rec1['loc_lat']) and pandas.isnull(rec2['loc_lat']):
                 return rec1
-            elif pandas.isnull(rec1['loc_lat']) and pandas.notnull(rec2['loc_lat']):
+            elif pandas.isnull(rec1['loc_lat'])  and pandas.notnull(rec2['loc_lat']):
                 return rec2
             elif pandas.notnull(rec1['UID_ASSEMBLY']) and pandas.isnull(rec2['UID_ASSEMBLY']):
                 return rec1
-            elif pandas.isnull(rec1['UID_ASSEMBLY']) and pandas.notnull(rec2['UID_ASSEMBLY']):
+            elif pandas.isnull(rec1['UID_ASSEMBLY'])  and pandas.notnull(rec2['UID_ASSEMBLY']):
+                return rec2
+            elif str2timestamp(rec1['CreateDate_NUCCORE'], '%Y/%m/%d') < str2timestamp(rec2['CreateDate_NUCCORE'], '%Y/%m/%d'):
+                return rec1
+            elif str2timestamp(rec1['CreateDate_NUCCORE'], '%Y/%m/%d') > str2timestamp(rec2['CreateDate_NUCCORE'], '%Y/%m/%d'):
                 return rec2
             else:
-                if str2timestamp(rec1['CreateDate_NUCCORE'], '%Y/%m/%d') < str2timestamp(rec2['CreateDate_NUCCORE'], '%Y/%m/%d'):
+                if rec1['ACC_NUCCORE'] < rec2['ACC_NUCCORE']:
                     return rec1
                 else:
                     return rec2
@@ -1569,7 +1579,8 @@ rule krona_html:
 ##################################################
 rule summary:
     input:
-        MASTER_TAB
+        tab=MASTER_TAB,
+        script='summary.R'
     output:
         pdf=MASTER_SUM_PLOTS,
         txt=MASTER_SUM_STATS
@@ -1579,7 +1590,20 @@ rule summary:
         width=10,
         height=6
     shell:
-        "Rscript summary.R --tab {input} --pdf {output.pdf} --width {params.width} --height {params.height} | tee {output.txt}"
+        "Rscript {input.script} --tab {input.tab} --pdf {output.pdf} --width {params.width} --height {params.height} | tee {output.txt}"
+
+# Compare to older version
+##################################################
+rule compare:
+    input:
+        new=MASTER_TAB,
+        old=config['old_tab'],
+        new_nonfiltered=PLASMIDS_FULL2,
+        script='compare_master_tabs.R'
+    output:
+        MASTER_CHANGES
+    shell:
+        "Rscript {input.script} -n {input.new} -o {input.old} -f {input.new_nonfiltered} -t {output} -l {output}.log"
 
 ######################################################################
 # GENERAL RULES
@@ -1684,7 +1708,8 @@ rule umap:
         "{basename}.umap.log"
     params:
         neighbors=config['umap']['neighbors'],
-        components=config['umap']['components']
+        components=config['umap']['components'],
+        min_dist=config['umap']['min_dist']
     message:
         "UMAP on {input}"
     run:
@@ -1711,8 +1736,10 @@ rule umap:
         embedding = umap.UMAP(
             n_neighbors=params.neighbors,
             n_components=params.components,
+            min_dist=params.min_dist,
             init='random',
-            metric='precomputed'
+            metric='precomputed',
+            random_state=42
         ).fit_transform(dist)
         logger.info('Done.')
 
