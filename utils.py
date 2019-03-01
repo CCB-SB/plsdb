@@ -107,8 +107,14 @@ def run_epost_split(df_file, ofile, header, cmd, df_col, split_size, split_str, 
         ohandle.write(header + '\n')
         for chunk in tqdm.tqdm(split_list(ids, split_size)):
             cmd_c = cmd.format(**kwargs, ids=','.join(chunk))
-            cmd_c, cmd_s, cmd_o = run_cmd(cmd_c)
-            assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd_c, cmd_s, cmd_o)
+            tries = 10
+            while tries > 0:
+                cmd_c_, cmd_s, cmd_o = run_cmd(cmd_c)
+                assert cmd_s == 0, 'CMD: {}: {}\n{}'.format(cmd_c_, cmd_s, cmd_o)
+                if re.search("Server Error", cmd_o) or re.search("value not found", cmd_o):
+                    tries -= 1
+                else:
+                    break
             # checks
             if re.search('elink', cmd):
                 for line in cmd_o.split('\n'):
