@@ -21,7 +21,7 @@
             "link_asm": ["UID_NUCCORE", "UID_ASSEMBLY"],
             "link_bios": ["UID_NUCCORE", "UID_BIOSAMPLE"],
             "assembly": ["UID_ASSEMBLY", "Status_ASSEMBLY", "SeqReleaseDate_ASSEMBLY", "SubmissionDate_ASSEMBLY", "Latest_ASSEMBLY"],
-            "biosample": ["UID_BIOSAMPLE", "ACC_BIOSAMPLE", "Location_BIOSAMPLE", "Coordinates_BIOSAMPLE", "IsolationSource_BIOSAMPLE"],
+            "biosample": ["UID_BIOSAMPLE", "ACC_BIOSAMPLE", "Location_BIOSAMPLE", "Coordinates_BIOSAMPLE", "IsolationSource_BIOSAMPLE", "Host_BIOSAMPLE", "SamplType_BIOSAMPLE"],
             "taxon": ["taxon_id", "taxon_name", "taxon_rank", "lineage"],
             "ranks": ["species", "genus", "family", "order", "class", "phylum", "superkingdom"]
         },
@@ -34,12 +34,12 @@
             },
             "linked": "{path}/epost -db {db_source} -id \"{ids}\" -format uid | {path}/elink -target {db_target} -cmd neighbor -batch | {path}/xtract -pattern LinkSet -element IdList/Id -block LinkSetDb -sep ';' -element Id",
             "assembly": "{path}/epost -db assembly -id \"{ids}\" -format uid | {path}/efetch -format docsum | {path}/xtract -pattern DocumentSummary -LATEST '(False)' -element Id assembly-status SeqReleaseDate SubmissionDate -block PropertyList -if string -equals 'latest' -LATEST '(True)' -block DocumentSummary -element '&LATEST'",
-            "biosample": "{path}/epost -db biosample -id \"{ids}\" -format uid | {path}/efetch -format xml | {path}/xtract -pattern BioSample  -LOC '(NA)' -COORD '(NA)' -SOURCE '(NA)' -group Attribute -if Attribute@attribute_name -equals 'geo_loc_name' -LOC Attribute -group Attribute -if Attribute@attribute_name -equals 'lat_lon' -COORD Attribute -group Attribute -if Attribute@attribute_name -equals 'isolation_source' -SOURCE Attribute -group BioSample -element @id -element @accession -element '&LOC' '&COORD' '&SOURCE'",
+            "biosample": "{path}/epost -db biosample -id \"{ids}\" -format uid | {path}/efetch -format xml | {path}/xtract -pattern BioSample  -LOC '(NA)' -COORD '(NA)' -SOURCE '(NA)' -HOST '(NA)' -STYPE '(NA)' -group Attribute -if Attribute@attribute_name -equals 'geo_loc_name' -LOC Attribute -group Attribute -if Attribute@attribute_name -equals 'lat_lon' -COORD Attribute -group Attribute -if Attribute@attribute_name -equals 'isolation_source' -SOURCE Attribute -group Attribute -if Attribute@attribute_name -equals 'host' -HOST Attribute -group Attribute -if Attribute@attribute_name -equals 'sample_type' -STYPE Attribute -group BioSample -element @id -element @accession -element '&LOC' '&COORD' '&SOURCE' '&HOST' '&STYPE'",
             "taxon": "{path}/efetch -db taxonomy -id \"{ids}\" -format xml | {path}/xtract -pattern Taxon -sep '|' -element TaxId,ScientificName,Rank -element Lineage -block '*/Taxon' -sep '|' -element TaxId,ScientificName,Rank"
         }
     },
     "blast": {
-        "url": "ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.7.1+-x64-linux.tar.gz",
+        "url": "ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.7.1/ncbi-blast-2.7.1+-x64-linux.tar.gz",
         "dir": "tools/ncbi-blast-2.7.1+",
         "ext": ["nin", "nhr", "nsq"]
     },
@@ -111,5 +111,5 @@
         "blastn_pident": 99,
         "blastn_qcovs": 80
     },
-    "old_tab": "data/master/2018_09_14.tsv"
+    "old_tab": "data/master/2018_12_05.tsv"
 }

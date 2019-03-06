@@ -1,11 +1,11 @@
 #!/usr/bin/python
 
 import pandas
-import logging
 import argparse
+from Bio import SeqIO
 from multiprocessing import Pool
 
-from utils import split_list, setup_logger, run_cmd
+from utils import split_list, run_cmd
 
 ##################################################
 # ARGS
@@ -44,15 +44,19 @@ def download_sequences(i, ids):
         ofile=ofile,
         IDformat=ARGS.idformat
     )
-    logging.info('CMD: %s' % cmd)
+    # Execute
     cmd, cmd_s, cmd_o = run_cmd(cmd)
+    # Check CMD status
     assert cmd_s == 0, "CMD ERROR: %s: %d\n%s" % (cmd, cmd_s, cmd_o)
+    # Check FASTA
+    with open(ofile, 'r') as of:
+        count = 0
+        for record in SeqIO.parse(of, 'fasta'):
+            count += 1
+        assert count == len(set(ids)), "FASTA ERROR: missing IDs: %s" % (cmd)
     return
 
 if __name__ == "__main__":
-    # Logger setup
-    setup_logger()
-
     # Args
     ARGS = get_arg_parser().parse_args()
 
@@ -61,9 +65,9 @@ if __name__ == "__main__":
     for tab in ARGS.tabs:
         tmp = pandas.read_csv(filepath_or_buffer=tab, sep='\t', header=0)
         assert ARGS.icol in list(tmp.columns), 'File %s has no column \"%s\"' % (tab, ARGS.icol)
-        logging.info('TAB %s: %d IDs' % (tab, tmp.shape[0]))
+        print('TAB %s: %d IDs' % (tab, tmp.shape[0]))
         ids.update(list(tmp[ARGS.icol]))
-    logging.info('IDS: %d' % len(ids))
+    print('IDS: %d' % len(ids))
 
     # Download
     pool = Pool(ARGS.cores)

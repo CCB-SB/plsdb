@@ -24,8 +24,8 @@ from utils import setup_logger, run_cmd, mkdir
 ##################################################
 
 # Date
-today = datetime.datetime.now().strftime("%Y_%m_%d")
-#today = '2018_12_05'
+# today = datetime.datetime.now().strftime("%Y_%m_%d")
+today = '2019_03_05'
 
 # NCBI DBs
 dbs = OrderedDict()
@@ -165,40 +165,44 @@ rule all:
         pmlstdb=[PMLST_UPDATE, PMLST_DB],
         abricate=ABRICATE_UPDATE,
         rmlst=RMLST_DB,
-        # # plasmids
-        # query_plasmids=PLASMIDS_FULL2,
-        # # plasmid filtering (1)
-        # filter_plasmids1=PLASMIDS_FILT1,
-        # # plasmid filtering (2)
-        # filter_plasmids2=PLASMIDS_FILT2,
-        # # rmlst
-        # run_rmlst=PLASMIDS_FILT2_RMLST,
-        # # plasmid filtering (3)
-        # filter_plasmids3=PLASMIDS_FILT3,
-        # # master files
-        # # fasta
-        # master_fasta=MASTER_FASTA,
-        # # abricate
-        # master_abricate=MASTER_ABRICATE_DBS + [MASTER_ABRICATE],
-        # # pmlst
-        # pmlst=MASTER_PMLST,
-        # # blastdb
-        # master_blastdb=MASTER_BLASTDB,
-        # # mash
-        # master_sig=MASTER_MASH_SIG,
-        # master_dist=[MASTER_MASH_DIST, MASTER_MASH_DISTS],
-        # # similar records
-        # master_sim=MASTER_SIM,
-        # # umap
-        # master_umap=MASTER_MASH_UMAP,
-        # # table
-        # master_tab=MASTER_TAB,
-        # # krona plot
-        # master_krona=[MASTER_KRONA_XML, MASTER_KRONA_HTML],
-        # # other plots
-        # master_summary=[MASTER_SUM_PLOTS, MASTER_SUM_STATS],
-        # # compare to older version
-        # master_compare=MASTER_CHANGES
+        # plasmids
+        query_plasmids=PLASMIDS_ALL,
+        query_assemblies=[PLASMIDS_ALL_ASM, PLASMIDS_ASM],
+        query_biosamples=[PLASMIDS_ALL_BIOS,PLASMIDS_BIOS],
+        query_taxa=[PLASMIDS_TAX, PLASMIDS_TAXP],
+        query_plasmids2=PLASMIDS_FULL2,
+        # plasmid filtering (1)
+        filter_plasmids1=PLASMIDS_FILT1,
+        # plasmid filtering (2)
+        filter_plasmids2=PLASMIDS_FILT2,
+        # rmlst
+        run_rmlst=PLASMIDS_FILT2_RMLST,
+        # plasmid filtering (3)
+        filter_plasmids3=PLASMIDS_FILT3,
+        # master files
+        # fasta
+        master_fasta=MASTER_FASTA,
+        # abricate
+        master_abricate=MASTER_ABRICATE_DBS + [MASTER_ABRICATE],
+        # pmlst
+        pmlst=MASTER_PMLST,
+        # blastdb
+        master_blastdb=MASTER_BLASTDB,
+        # mash
+        master_sig=MASTER_MASH_SIG,
+        master_dist=[MASTER_MASH_DIST, MASTER_MASH_DISTS],
+        # similar records
+        master_sim=MASTER_SIM,
+        # umap
+        master_umap=MASTER_MASH_UMAP,
+        # table
+        master_tab=MASTER_TAB,
+        # krona plot
+        master_krona=[MASTER_KRONA_XML, MASTER_KRONA_HTML],
+        # other plots
+        master_summary=[MASTER_SUM_PLOTS, MASTER_SUM_STATS],
+        # compare to older version
+        master_compare=MASTER_CHANGES
 
 # Tools
 ##################################################
@@ -493,7 +497,7 @@ rule query_linked_biosamples:
             header='\t'.join(config['eutils']['header']['link_bios']),
             cmd=config['eutils']['query']['linked'],
             df_col='UID_NUCCORE',
-            split_size=300,
+            split_size=200,
             split_str=None,
             path=config['eutils']['dir'],
             db_source='nuccore',
@@ -877,6 +881,7 @@ rule filter2:
     message:
         "Filter out identical plasmids {input.pls}"
     run:
+        import numpy
         from Bio import SeqIO
         from Bio.SeqUtils import GC
         from utils import str2timestamp
@@ -913,7 +918,7 @@ rule filter2:
             sort=False,
         )
         # check seq. length
-        assert pls['Length_NUCCORE'].astype(int).equals(pls['Length']), 'Sequence length is not always identical: nuccore vs. FASTA'
+        assert pls['Length_NUCCORE'].astype(int).equals(pls['Length'].astype(int)), 'Sequence length is not always identical: nuccore vs. FASTA'
         # drop 2nd seq. len. col.
         pls.drop(columns=['Length'], inplace=True)
 
@@ -954,12 +959,12 @@ rule filter2:
         def compare_records(rec1, rec2):
             """
             Compare two plasmid records:
-			0) Prefer the one with higher version number (if same accession)
+            0) Prefer the one with higher version number (if same accession)
             1) Prefer the one from RefSeq
             2) Prefer the one with location information
             3) Prefer the one with an assembly
             4) Prefer the older one
-            5) Compare by accession (string), prefer the "smaller" one
+            5) Compare by accession (string), prefer the "smaller" one (just have something to break the ties)
             """
             rec1_acc, rec1_ver = rec1['ACC_NUCCORE'].split('.')
             rec1_ver = int(rec1_ver)
@@ -1618,7 +1623,7 @@ rule get_fasta:
     shell:
         """
         mkdir -p $(dirname {output}) &&
-        python download_fastas.py -t {input} -i \"UID_NUCCORE\" -o {output} -c 1 -s 100 -e {params.eutils} 2>&1 | tee {output}.log &&
+        python download_fastas.py -t {input} -i \"UID_NUCCORE\" -o {output} -c 2 -s 200 -e {params.eutils} 2>&1 | tee {output}.log &&
         cat {output}.tmp.* > {output} && rm {output}.tmp.*
         """
 
