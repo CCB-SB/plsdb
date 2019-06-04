@@ -39,13 +39,13 @@
         }
     },
     "blast": {
-        "url": "ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.7.1/ncbi-blast-2.7.1+-x64-linux.tar.gz",
-        "dir": "tools/ncbi-blast-2.7.1+",
+        "url": "ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.9.0/ncbi-blast-2.9.0+-x64-linux.tar.gz",
+        "dir": "tools/ncbi-blast-2.9.0+",
         "ext": ["nin", "nhr", "nsq"]
     },
     "mash": {
-        "url": "https://github.com/marbl/Mash/releases/download/v2.0/mash-Linux64-v2.0.tar",
-        "dir": "tools/mash-Linux64-v2.0",
+        "url": "https://github.com/marbl/Mash/releases/download/v2.1.1/mash-Linux64-v2.1.1.tar",
+        "dir": "tools/mash-Linux64-v2.1.1",
         "sketch_params": "-i -S 42 -p 20 -k 21 -s 1000",
         "dist0_params": "-d 0 -p 20",
         "distS_params": "-d 0.00123693 -p 20",
@@ -111,5 +111,5 @@
         "blastn_pident": 99,
         "blastn_qcovs": 80
     },
-    "old_tab": "data/master/2018_12_05.tsv"
+    "old_tab": "data/master/2019_03_05.tsv"
 }

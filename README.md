@@ -15,22 +15,25 @@ bash Miniconda3-latest-Linux-x86_64.sh
 export PATH=$HOME/miniconda3/bin:$PATH
 ```
 
+Current `conda` version: `4.6.14`
+
 #### Conda environment
 Create the main environment and install needed packages:
 ```bash
 # create env
-conda create --name plsdb python=3
-# install packages
-conda install --name plsdb -c anaconda -c bioconda -c conda-forge --file requirements.txt
+conda env create --name plsdb python=3 --file requirements.yml
 # activate env
 source activate plsdb
 ```
 
-**IMPORTANT**: Currently, ABRicate (version `0.8.10`) does not download the PlasmidFinder sequences from the BitBucket repository ([see this issue](https://github.com/tseemann/abricate/issues/66)).
-Thus, the code in the function `get_plasmidfinder` in `abricate-get_db` has to be changed to download the most recent version of the sequence files.
-If using the version listed in the requirements file (`requirements.txt`) just replace the file by the modified copy.
+**IMPORTANT**: Currently, ABRicate (version `0.8.13`) does not update some databases correctly:
+- PlasmidFinder: Should be downloaded from the BitBucket repository ([see this issue](https://github.com/tseemann/abricate/issues/66))
+- ARG-ANNOT: The URL changed
+The file `patch_abricate-get_db` should resolve these issues.
+Replace `abricate-get_db` by this file before running the pipeline.
 
 ```bash
+# "patch" created for version 0.8.13 (same as in requirements.yml)
 rsync -av patch_abricate-get_db $HOME/miniconda3/envs/plsdb/bin/abricate-get_db
 ```
 
@@ -172,7 +175,6 @@ snakemake -s pipeline.snake
 #### Notes
 
 ##### Finding putative chromosomal sequences
-
 The candidates for putative chromosomal sequences are determined by searching for the rps genes - ribosome protein subunits which are used in the rMLST scheme (containing 53 rps genes) introduced by **Jolley et al.**:
 
     "The rps loci are ideal targets for a universal characterization scheme as they are:
@@ -182,9 +184,9 @@ The candidates for putative chromosomal sequences are determined by searching fo
 
 However, some of the rps genes can also be found on plasmids as described by **Yutin et al.**:
 
-    In 68 of the 995 analyzed bacterial genomes, r-protein genes are
+    "In 68 of the 995 analyzed bacterial genomes, r-protein genes are
     distributed across two or more genome partitions. In some cases,
-    paralogous proteins are encoded in different chromosomes or plasmids.
+    paralogous proteins are encoded in different chromosomes or plasmids."
 
 Thus, the presence of (some) rps genes alone cannot be always used as an indicator for chromosomal sequences.
 Therefore, the records containing more than 5 rps genes are searched in the NCBI sequences using BLAST.

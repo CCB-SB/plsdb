@@ -25,7 +25,7 @@ from utils import setup_logger, run_cmd, mkdir
 
 # Date
 # today = datetime.datetime.now().strftime("%Y_%m_%d")
-today = '2019_03_05'
+today = '2019_06_03'
 
 # NCBI DBs
 dbs = OrderedDict()
@@ -157,6 +157,7 @@ MASTER_CHANGES      = os.path.join(config["data"]["odir"]["master"], "%s_changes
 ##################################################
 rule all:
     input:
+        # NOTE Should be executed on the same day
         # tools
         blast=[BIN_MAKEBLASTDB, BIN_BLASTN],
         mash=BIN_MASH,
@@ -164,7 +165,7 @@ rule all:
         krona=BIN_KRONA_XML,
         pmlstdb=[PMLST_UPDATE, PMLST_DB],
         abricate=ABRICATE_UPDATE,
-        rmlst=RMLST_DB,
+        rmlst=RMLST_DB, # NOTE Requires an existing FASTA (see README.md)
         # plasmids
         query_plasmids=PLASMIDS_ALL,
         query_assemblies=[PLASMIDS_ALL_ASM, PLASMIDS_ASM],
@@ -176,14 +177,15 @@ rule all:
         # plasmid filtering (2)
         filter_plasmids2=PLASMIDS_FILT2,
         # rmlst
-        run_rmlst=PLASMIDS_FILT2_RMLST,
+        run_rmlst=PLASMIDS_FILT2_RMLST, # NOTE One of the most time consuming steps (ca. 6 hours for ca. 17k records)
         # plasmid filtering (3)
-        filter_plasmids3=PLASMIDS_FILT3,
+        filter_plasmids3=PLASMIDS_FILT3, # NOTE One of the most time consuming steps (multiple hours, depends on the number of sequences)
+        # NOTE Can be executed on other days (don't forget to set "today" to a fixed value)
         # master files
         # fasta
         master_fasta=MASTER_FASTA,
         # abricate
-        master_abricate=MASTER_ABRICATE_DBS + [MASTER_ABRICATE],
+        master_abricate=MASTER_ABRICATE_DBS + [MASTER_ABRICATE], # NOTE Do not execute these rules in parallel (access to same tmp files)
         # pmlst
         pmlst=MASTER_PMLST,
         # blastdb
@@ -1279,18 +1281,20 @@ rule abricate:
             result = result.loc[keep_hit,:]
 
             # rm coverage-identity score
-            result.drop(['ic_score'], axis=1, inplace=True)
+            result = result.drop(['ic_score'], axis=1, inplace=False) # inplace=True produces SettingWithCopyWarning
 
             # save
             df.append(result)
         df_all = pandas.concat(df_all, axis=0, sort=False)
         df = pandas.concat(df, axis=0, sort=False)
 
-        # sseqid -> DB + ID
-        df_all['sseqdb'] = df_all['sseqid'].map(lambda x: x.split('~~~')[0])
-        df_all['sseqid'] = df_all['sseqid'].map(lambda x: ', '.join(x.split('~~~')[1:]))
-        df['sseqdb'] = df['sseqid'].map(lambda x: x.split('~~~')[0])
-        df['sseqid'] = df['sseqid'].map(lambda x: ', '.join(x.split('~~~')[1:]))
+        # stitle -> DB + ID
+        # title format: <BLAST DB ID> <DB>~~~<name>~~~<ID> <name>
+        # example: gnl|BL_ORD_ID|578 argannot~~~(Bla)blaFRI-3~~~KY524440:1-885 (Bla)blaFRI-3
+        df_all['sseqdb'] = df_all['stitle'].map(lambda x: x.split(' ')[1].split('~~~')[0])
+        df_all['sseqid'] = df_all['stitle'].map(lambda x: ', '.join(x.split(' ')[1].split('~~~')[1:]))
+        df['sseqdb']     = df['stitle'].map(lambda x: x.split(' ')[1].split('~~~')[0])
+        df['sseqid']     = df['stitle'].map(lambda x: ', '.join(x.split(' ')[1].split('~~~')[1:]))
 
         # save
         df_all.to_csv(
@@ -1623,7 +1627,7 @@ rule get_fasta:
     shell:
         """
         mkdir -p $(dirname {output}) &&
-        python download_fastas.py -t {input} -i \"UID_NUCCORE\" -o {output} -c 2 -s 200 -e {params.eutils} 2>&1 | tee {output}.log &&
+        python download_fastas.py -t {input} -i \"UID_NUCCORE\" -o {output} -c 1 -s 500 -e {params.eutils} 2>&1 | tee {output}.log &&
         cat {output}.tmp.* > {output} && rm {output}.tmp.*
         """
 

@@ -1,0 +1,19 @@
+name: plsdb
+channels:
+    - defaults
+    - conda-forge
+    - bioconda
+dependencies:
+    - conda-forge:biopython==1.73
+    - conda-forge:numpy==1.16.4
+    - conda-forge:pandas==0.24.2
+    - conda-forge:tqdm==4.32.1
+    - conda-forge:umap-learn==0.3.9
+    - bioconda:mlst==2.16.1
+    - bioconda:abricate==0.8.13
+    - bioconda:snakemake==5.5.0
+    - conda-forge:requests==2.22.0
+    - conda-forge:geocoder==1.38.1
+    - bioconda:perl-net-ssleay==1.88
+    - bioconda:perl-libwww-perl==6.36
+    - bioconda:perl-lwp-protocol-https==6.07

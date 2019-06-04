@@ -218,7 +218,8 @@ class Blaster():
                   # Getting the whole database sequence
                   for seq_record in SeqIO.parse(db_file, "fasta"):
                      # if seq_record.description.replace(" ", "") == hit['sbjct_header'].replace(" ", ""):
-                     if seq_record.id == hit['sbjct_header'].split(" ")[0]: # CHANGED by Valentina Galata, 2018.10.11
+                     # if seq_record.id == hit['sbjct_header'].split(" ")[0]: # CHANGED by Valentina Galata, 2018.10.11
+                     if seq_record.id == hit['sbjct_header'].split(" ")[1]: # CHANGED by Valentina Galata, 2019.06.04
                         found = True # CHANGED by Valentina Galata, 2018.10.11
                         start_seq = str(seq_record.seq)[:int(hit["sbjct_start"])-1]
                         end_seq = str(seq_record.seq)[int(hit["sbjct_end"]):]

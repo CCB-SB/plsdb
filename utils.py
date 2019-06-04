@@ -436,7 +436,7 @@ def load_locs(loc_file):
 
     locs = None
     if os.path.exists(loc_file):
-        locs = pandas.read_csv(loc_file, sep='\t', header=0)
+        locs = pandas.read_csv(loc_file, sep='\t', header=0, na_values=[''])
         locs.set_index('location', drop=False, inplace=True, verify_integrity=True)
         logger.info('Loaded locations from {}\n{}'.format(loc_file, locs.head()))
     else:
@@ -454,7 +454,7 @@ def update_locs(locs, dict):
 
 def save_locs(locs, ofile):
     assert locs is not None
-    locs.to_csv(ofile, sep='\t', header=True, index=False, index_label=False)
+    locs.to_csv(ofile, sep='\t', header=True, index=False, index_label=False, na_rep='')
     return
 
 # Strings used for missing locations (to avoid unneccessary queries)
@@ -609,6 +609,8 @@ def handle_loc_exceptions(loc_str):
         return 'China,Zhejiang,Maternal and Child Health Hospital'
     elif re.search('USA,Lost Angeles', loc_str, flags=re.IGNORECASE):
         return 'USA,Los Angeles'
+    elif re.search('Germany,Gottingen', loc_str, flags=re.IGNORECASE):
+        return 'Germany,Goettingen'
     return loc_str
 
 def preproc_loc_str(loc_str):
