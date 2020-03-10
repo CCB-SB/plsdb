@@ -53,6 +53,11 @@ def download_sequences(i, ids):
         count = 0
         for record in SeqIO.parse(of, 'fasta'):
             count += 1
+        if(count != len(set(ids))):
+            print("count: ", count)
+            print("Length id set: ", len(set(ids)))
+            print(cmd)
+            print("--------------------------------------------------------------------------------------------------------------------")
         assert count == len(set(ids)), "FASTA ERROR: missing IDs: %s" % (cmd)
     return
 
