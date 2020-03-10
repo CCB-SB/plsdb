@@ -741,7 +741,6 @@ rule collect_meta:
 
         # check if this column name is really used
         if 'UID_ASSEMBLY_x' in pls:
-            print("Remove duplicate column")
             # check if columns are really identical
             assert pls['UID_ASSEMBLY_x'].equals(pls['UID_ASSEMBLY_y']), 'Unknown UID contained'
             # merge the two identical columns (else pipe gets problems later on)
@@ -769,13 +768,11 @@ rule parse_locations:
         logger = setup_logger(logging.INFO)
 
         # api key
-        print("key")
         with open(params.api_keys, 'r') as ifile:
             api_key = [k.rstrip('\n').strip() for k in ifile.readlines()]
             api_key = api_key.pop()
         logger.info('Using API key: {}'.format(api_key))
 
-        print("locations")
         # load known locations
         locs = load_locs(params.locs)
 
@@ -851,7 +848,6 @@ rule filter1:
         dfilter=config['filtering']['dfilter']
     run:
         logger = setup_logger(logging.INFO)
-        print(input[0])
         pls = pandas.read_csv(input[0], sep='\t', header=0, dtype=str)
         pls.set_index('UID_NUCCORE', drop=False, inplace=True, verify_integrity=True)
         logger.info('Read in {} plasmid records'.format(pls.shape[0]))
@@ -882,10 +878,7 @@ rule filter1:
 
         logger.info('Completeness nuccore tag: {}'.format(set(pls['Completeness_NUCCORE'])))
         logger.info('Completeness assembly tag: {}'.format(set(pls['Status_ASSEMBLY'])))
-        print("try index map")
-        print(pls.index)
         pls = pls.loc[pls.index.map(pls_filter),:]
-        print("succeeded index map")
         logger.info('Filtered: (assembly) completeness: kept {} records'.format(pls.shape[0]))
 
         # filter by taxonomy
