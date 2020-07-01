@@ -4,6 +4,7 @@ import pandas
 import argparse
 from Bio import SeqIO
 from multiprocessing import Pool
+import time
 
 from utils import split_list, run_cmd
 
@@ -45,15 +46,22 @@ def download_sequences(i, ids):
         IDformat=ARGS.idformat
     )
     # Execute
-    cmd, cmd_s, cmd_o = run_cmd(cmd)
-    # Check CMD status
-    assert cmd_s == 0, "CMD ERROR: %s: %d\n%s" % (cmd, cmd_s, cmd_o)
-    # Check FASTA
-    with open(ofile, 'r') as of:
-        count = 0
-        for record in SeqIO.parse(of, 'fasta'):
-            count += 1
-        assert count == len(set(ids)), "FASTA ERROR: missing IDs: %s" % (cmd)
+    
+    count = 0
+    for repeat in range (5):
+        cmd, cmd_s, cmd_o = run_cmd(cmd)
+        # Check CMD status
+        assert cmd_s == 0, "CMD ERROR: %s: %d\n%s" % (cmd, cmd_s, cmd_o)
+        # Check FASTA
+        with open(ofile, 'r') as of:
+            count = 0
+            for record in SeqIO.parse(of, 'fasta'):
+                count += 1
+            if (count == len(set(ids))): # length is correct
+                return
+            # else: repeat the loop and therefore: rerun!
+            time.sleep(5) # sleep in case NCBI has problems with too many accesses
+    assert count == len(set(ids)), "FASTA ERROR: missing IDs: %s" % (cmd)
     return
 
 if __name__ == "__main__":

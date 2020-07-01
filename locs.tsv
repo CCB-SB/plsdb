@@ -1530,7 +1530,7 @@ lat	lng	location	type
 42.3602534	-71.0582912	USA,Massachusetts,Boston	name
 39.5162234	-76.9382069	USA,MD	name
 43.6211955	-84.6824346	USA,MI	name
-43.0171773	-83.7236024	USA,Michigan,Flint	name
+43.0171773	-90.75	USA,Michigan,Flint	name
 43.411391	-106.280075	USA,midwest	name
 45.98965870000001	-94.6113288	USA,Minnesota	name
 48.0690686	-91.1083076	USA,Minnesota area	name
@@ -1995,7 +1995,7 @@ lat	lng	location	type
 50.44876	-104.61731	Canada,Saskatchewan,Regina	name
 46.234953	-63.132935	Canada,Prince Edward Island,Charlottetown	name
 45.278752	-66.058044	Canada,New Brunswick,Saint John	name
-47.561701	-52.715149	Canada,Newfoundland and Labrador,St. John's	name
+52.7	-68.8	Canada,Newfoundland and Labrador,St. John's	name
 45.2724	-75.2183	45.2724N;75.2183W	coordinates
 49.0546	-122.328	49.0546N;122.3280W	coordinates
 49.1833	-122.85	49.1833N;122.8500W	coordinates
@@ -2327,7 +2327,7 @@ lat	lng	location	type
 33.94	-117.46	USA,Riverside,CA	name
 35.0945604	-118.9793722	USA,Mettler,Kern County,CA	name
 36.722263	-119.811438	USA,Parlier,Fresno County,CA	name
-38.6533819	-89.98821099999999	USA,Collinsville,IL	name
+38.6533819	-89.98821099999998	USA,Collinsville,IL	name
 35.8916196	-119.047324	USA,Ducor,CA	name
 20.445128	106.33787	20.445128N;106.337870E	coordinates
 78.01	-168.01	78.01N;168.01W	coordinates
@@ -2342,8 +2342,8 @@ lat	lng	location	type
 53.124722999999996	23.159714	53.124723N;23.159714E	coordinates
 -42.6128006	-73.8669621	42.6128006S;73.8669621W	coordinates
 -41.7696323	-73.1575979	41.7696323S;73.1575979W	coordinates
--41.4629843	-72.96557059999999	41.4629843S;72.9655706W	coordinates
-35.569906700000004	126.8559787	South Korea,Jeongeup-si	name
+-41.4629843	-72.96557059999998	41.4629843S;72.9655706W	coordinates
+35.56990670000001	126.8559787	South Korea,Jeongeup-si	name
 8.6400349	-11.8400269	Sierra Leone	name
 27.0	107.0	China,Guizhou	name
 28.661603000000003	77.247617	28.661603N;77.247617E	coordinates
@@ -2354,7 +2354,7 @@ lat	lng	location	type
 32.41	106.11	32.41N;106.11E	coordinates
 38.3880155	140.9761025	Japan,Miyagi	name
 43.0	-89.0	43N;89W	coordinates
-42.284547700000005	-83.72966679999999	42.2845477N;83.7296668W	coordinates
+42.28454770000001	-83.72966679999998	42.2845477N;83.7296668W	coordinates
 35.9754168	139.4160114	Japan,Saitama	name
 16.8776	42.6162	16.87760N;42.61620E	coordinates
 -24.4842187	-51.8148872	Brazil,Parana State	name
@@ -2364,7 +2364,7 @@ lat	lng	location	type
 37.541	125.98	37.541N;125.98E	coordinates
 34.837408700000005	127.89271140000001	South Korea,namhae	name
 33.2541176	126.56696709999999	South Korea,Seogwipo-si	name
-48.630138200000005	-2.3039303	France,Baie de la Fresnaye	name
+48.63013820000001	-2.3039303	France,Baie de la Fresnaye	name
 43.66	142.83	43.66N;142.83E	coordinates
 35.408	138.873	35.408N;138.873E	coordinates
 35.504	138.768	35.504N;138.768E	coordinates
@@ -2457,7 +2457,7 @@ lat	lng	location	type
 62.8452777	7.518194099999999	Norway,More og Romsdal	name
 -46.37	-75.62	Chile,Region de Aysen	name
 50.5686	8.6717	50.5686N;8.6717E	coordinates
--37.756527	145.06038600000002	37.756527S;145.060386E	coordinates
+-37.756527	145.06038600000005	37.756527S;145.060386E	coordinates
 35.1174	-89.9711	35.117400N;89.971100W	coordinates
 34.0	112.0	34N;112E	coordinates
 -62.0	-58.0	62S;58W	coordinates
@@ -2474,7 +2474,7 @@ lat	lng	location	type
 50.073935999999996	14.341213	50.073936N;14.341213E	coordinates
 55.7952	12.5806	55.795200N;12.580600E	coordinates
 55.843861	12.42477	55.843861N;12.424770E	coordinates
-35.682838700000005	139.7594549	Japan,Tokyo;Tokyo Bay	name
+35.68283870000001	139.7594549	Japan,Tokyo;Tokyo Bay	name
 23.2	113.3	23.2N;113.3E	coordinates
 37.7974	-120.9966	37.7974N;120.9966W	coordinates
 28.08	113.01	28.08N;113.01E	coordinates
@@ -2505,7 +2505,7 @@ lat	lng	location	type
 25.0	121.0	25N;121E	coordinates
 33.875062899999996	35.843409	Lebanon	name
 36.0000001	118.9999999	China,shandong	name
-43.397614700000005	45.6985005	Russia,Chechnya	name
+43.39761470000001	45.6985005	Russia,Chechnya	name
 52.033409000000006	113.50089299999999	Russia,Chita region	name
 27.7	85.3	27.7N;85.3E	coordinates
 27.6	85.5	27.6N;85.5E	coordinates
@@ -2521,7 +2521,7 @@ lat	lng	location	type
 51.5074	-0.1278	51.5074N;0.1278W	coordinates
 28.4	115.55	28.40N;115.55E	coordinates
 -23.5505	-46.6333	23.5505S;46.6333W	coordinates
-51.9994572	4.362724500000001	Netherlands,Delft	name
+51.9994572	4.3627245000000014	Netherlands,Delft	name
 21.32	105.4	21.32N;105.40E	coordinates
 21.27	106.19	21.27N;106.19E	coordinates
 20.45	106.34	20.45N;106.34E	coordinates
@@ -2545,7 +2545,7 @@ lat	lng	location	type
 30.981801300000004	104.27255459999999	China,Sichuan,Guanghan	name
 45.548	-122.911	45.548N;122.911W	coordinates
 39.02	-76.56	39.02N;76.56W	coordinates
-31.458746	-83.51792420000001	USA,Tift County GA	name
+31.458746	-83.51792420000002	USA,Tift County GA	name
 35.85	127.14	35.85N;127.14E	coordinates
 45.852176	9.414997999999999	45.852176N;9.414998E	coordinates
 6.52	3.38	6.52N;3.38E	coordinates
@@ -2554,6 +2554,225 @@ lat	lng	location	type
 34.98	118.28	34.98N;118.28E	coordinates
 35.08	118.4	35.08N;118.40E	coordinates
 -69.22	76.23	69.22S;76.23E	coordinates
--29.861825	31.009909	South Africa,Durban	name
+-29.861825	31.009909000000004	South Africa,Durban	name
 35.1905	129.221	35.1905N;129.221E	coordinates
 34.766437	127.933093	34.766437N;127.933093E	coordinates
+16.866069	96.195132	16.866069N;96.195132E	coordinates
+37.112140999999994	-122.2717179	USA,California,Waddell Creek	name
+36.8037342	-121.7894955	USA,California,Moss Landing Harbor	name
+36.798741799999995	-121.7884729	USA,California,Old Salinas River	name
+13.3	78.59	India,South	name
+36.77	-119.17	36.77N;119.17W	coordinates
+20.5296832	106.3876068	Viet Nam,Thai Binh	name
+27.69	111.66	27.69N;111.66E	coordinates
+27.72	112.0	27.72N;112E	coordinates
+35.803815	126.88055700000001	South Korea,Jeollabuk-do,Gimje-si	name
+36.0638034	120.3781372	China,Shandong,Qingdao	name
+22.35	113.58	22.35N;113.58E	coordinates
+26.91667	87.91667	USA,International Space Station,Node 3	name
+-25.7303	28.2044	25.7303S;28.2044E	coordinates
+-25.7362	28.1997	25.7362S;28.1997E	coordinates
+33.6251241	130.61800159999999	Japan,Fukuoka	name
+57.682490855650215	11.96115218102932	57.68249085565022N;11.96115218102932E	coordinates
+37.073806	25.520554	37.073806N;25.520554E	coordinates
+26.05	119.17	China,Agricultural Bio-Resources Research Institute,Fujian Academy of Agricultural Sciences,Fuzhou	name
+37.487175	127.06561299999998	South Korea,Kyunggi-do	name
+27.99	120.68	27.99N;120.68E	coordinates
+33.51413	78.31409000000001	33.514130N;78.314090E	coordinates
+33.998296999999994	77.851231	33.998297N;77.851231E	coordinates
+34.112586	78.111237	34.112586N;78.111237E	coordinates
+35.0	127.02799999999999	35.00N;127.028E	coordinates
+31.577626399999996	120.29513109999999	China,Wuxi	name
+-69.4666	39.5666	69.4666S;39.5666E	coordinates
+59.667	10.769	59.667N;10.769E	coordinates
+59.667	10.767000000000001	59.667N;10.767E	coordinates
+59.667	10.767999999999999	59.667N;10.768E	coordinates
+59.4	10.46	59.40N;10.46E	coordinates
+52.26465770000001	10.523606599999999	Germany,Braunschweig	name
+33.21	126.32	33.21N;126.32E	coordinates
+21.0	110.0	21N;110E	coordinates
+29.031392999999998	103.764009	China,muchuan	name
+37.4274745	-122.169719	37.4274745N;122.169719W	coordinates
+53.89	27.54	53.89N;27.54E	coordinates
+41.1555564	1.1076133	Spain,Reus,Catalonia	name
+57.7072326	11.9670171	Sweden,Goteborg	name
+33.749	-84.38799999999999	33.7490N;84.3880W	coordinates
+16.2490067	-61.565044400000005	Guadeloupe	name
+-20.2759451	57.5703566	Mauritius	name
+11.0	107.0	11N;107E	coordinates
+35.12	113.37	35.12N;113.37E	coordinates
+-41.0335	147.667	41.0335S;147.667E	coordinates
+-35.406977600000005	173.80483859999998	New Zealand,Kaikohe	name
+-31.875983500000004	147.2869493	Australia,NSW	name
+41.15	1.08	Sri Lanka	name
+-30.15	-71.29	30.15S;71.29W	coordinates
+-12.699818800000001	-38.3260762	Brazil,Camacari	name
+46.9321	7.4199	46.9321N;7.4199E	coordinates
+46.9478	7.422000000000001	46.9478N;7.4220E	coordinates
+46.9482	7.4421	46.9482N;7.4421E	coordinates
+29.833794800000003	106.38482069999999	China,Beibei District,Chongqing	name
+-13.9626	33.7741	13.9626S;33.7741E	coordinates
+58.4496	85.0279	58.4496N;85.0279E	coordinates
+36.700359999999996	126.28391	South Korea,Coasted Sand Dune,Taean	name
+33.687438799999995	-80.4363743	USA,SC	name
+44.6471761	-100.348761	USA,SD	name
+38.5224751	-121.75139270000001	USA,CA-UC Davis	name
+27.999587800000004	112.00953799999999	China,hunan	name
+27.25	120.0	27.25N;120E	coordinates
+37.0	112.0	China,Shanxi	name
+55.76	37.62	55.76N;37.62E	coordinates
+53.821732700000005	-61.2295532	Canada,Newfoundland and Labrador	name
+35.0158859	126.71083130000001	South Korea,Naju-si	name
+36.7959437	127.1270918	South Korea,Chungnam,Chonan-si	name
+35.4197868	-119.20756770000001	35.4197868N;119.2075677W	coordinates
+37.88	-122.3	37.88N;122.30W	coordinates
+36.888595200000005	127.45129070000002	36.8885952N;127.4512907E	coordinates
+23.1	113.23	23.10N;113.23E	coordinates
+25.41	32.39	25.41N;32.39E	coordinates
+13.757925	100.485849	13.757925N;100.485849E	coordinates
+25.017661399999998	110.2357637	China,Guangdong province	name
+37.2752	127.0095	South Korea,Gyeonggi-do	name
+36.6593	126.6729	South Korea,Chungcheongnam-do	name
+36.0	-119.0	36N;119W	coordinates
+38.0	-116.0	38N;116W	coordinates
+45.46	9.19	45.46N;9.19E	coordinates
+4.927455999999999	-1.7490216	Ghana,Sekondi-Takoradi	name
+13.75	100.5	13.75N;100.5E	coordinates
+34.87	126.99	34.87N;126.99E	coordinates
+36.8	127.7	36.80N;127.70E	coordinates
+35.18	129.08	35.18N;129.08E	coordinates
+37.66	126.77	37.66N;126.77E	coordinates
+37.82	128.16	37.82N;128.16E	coordinates
+19.05198	72.829114	19.051980N;72.829114E	coordinates
+28.5659	77.2111	28.5659N;77.2111E	coordinates
+55.93967610000001	12.56553	55.9396761N;12.56553E	coordinates
+-19.5352154	-42.6699025	Brazil,Timoteo,Minas Gerais	name
+-23.77671	-46.3036	Brazil,Paranapiacaba,Sao Paulo	name
+27.25	119.0	27.25N;119E	coordinates
+34.9732784	128.322233	South Korea,Goseong-gun	name
+38.7604815	-92.5617875	USA,MO	name
+36.472570000000005	127.09123999999998	South Korea,Gongju-si	name
+35.9479291	126.95780249999999	South Korea,Iksan-si	name
+36.993	129.4006	South Korea,Uljin-gun	name
+46.71667	11.5	Italy,7 km north of Bozen/Bolzano below the Rittner Horn,South Tyrol	name
+-69.4857	39.5962	69.4857S;39.5962E	coordinates
+44.5990718	-72.5002608	USA,Vermont	name
+43.6211955	-84.6824346	USA,Michigan	name
+43.9792797	-120.737257	USA,Oregon	name
+54.37238000000001	-2.9067213	United Kingdom,Windermere,Cumbria,England	name
+-43.8982991	-73.7537762	43.8982991S;73.7537762W	coordinates
+39.9	116.4	39.9N;116.4E	coordinates
+31.22	121.46	31.22N;121.46E	coordinates
+45.462185	-75.590873	45.462185N;75.590873W	coordinates
+-12.03	-77.02	12.03S;77.02W	coordinates
+-17.78	-63.18	17.78S;63.18W	coordinates
+30.89	105.4	30.89N;105.40E	coordinates
+-35.2809	149.13	35.2809S;149.1300E	coordinates
+32.0	117.0	China,Anhui	name
+39.83	119.48	39.83N;119.48E	coordinates
+47.6	126.08	47.6N;126.08E	coordinates
+35.14	115.26	35.14N;115.26E	coordinates
+30.7	118.4	30.7N;118.4E	coordinates
+37.1	122.25	37.10N;122.25E	coordinates
+32.63	117.05	32.63N;117.05E	coordinates
+33.98	119.83	33.98N;119.83E	coordinates
+27.5	120.0	27.50N;120.00E	coordinates
+31.23	121.47	31.23N;121.47E	coordinates
+37.566	126.9784	South Korea,Republic of,Seoul	name
+13.470061999999999	-15.4900464	Gambia	name
+74.8258	71.3072	74.8258N;71.3072E	coordinates
+16.9	96.1	16.9N;96.1E	coordinates
+16.8	96.2	16.8N;96.2E	coordinates
+28.97	118.88	28.97N;118.88E	coordinates
+-35.5972284	-71.48868	Chile,Maule Region	name
+26.8381	80.9346001	India,Lucknow,UP	name
+37.746	126.488	South Korea,Ganghwa	name
+37.7598955	126.78015020000001	South Korea,Paju	name
+50.03	19.56	50.03N;19.56E	coordinates
+42.2000966	-71.42450490000002	USA,MA,Holliston	name
+50.06	14.38	50.06N;14.38E	coordinates
+14.475060699999998	-14.452961199999999	Senegal	name
+49.82	18.16	49.82N;18.16E	coordinates
+50.08	14.36	50.08N;14.36E	coordinates
+35.8198999	127.109	South Korea,Jeollabuk-do	name
+37.46460379999999	127.0301117	37.4646038N;127.0301117E	coordinates
+28.41	115.54	28.41N;115.54E	coordinates
+35.51	127.02	35.51N;127.02E	coordinates
+34.68	135.5	34.68N;135.50E	coordinates
+31.45	119.18	31.45N;119.18E	coordinates
+57.101000000000006	-2.0780000000000003	57.101N;2.078W	coordinates
+11.353	76.7959	11.3530N;76.7959E	coordinates
+33.362221999999996	126.53333300000001	33.362222N;126.533333E	coordinates
+59.39	30.24	59.39N;30.24E	coordinates
+23.1060862	114.41411049999999	China,Huizhou	name
+41.8933203	12.4829321	Italy,Rome	name
+31.894343199999998	84.26	China,Tibet autonomous region	name
+11.05	103.005	China,the South China Sea	name
+59.742033	30.433159000000003	59.742033N;30.433159E	coordinates
+36.06	-94.17	USA,University of Arkansas Poultry Research Farm	name
+47.608013	-122.335167	47.608013N;122.335167W	coordinates
+24.91	121.3	24.91N;121.30E	coordinates
+37.054969299999996	126.93106929999999	37.0549693N;126.9310693E	coordinates
+29.7068	-95.3971	29.7068N;95.3971W	coordinates
+20.4	-89.13	20.40N;89.13W	coordinates
+56.2639	9.5018	56.2639N;9.5018E	coordinates
+21.15	110.31	21.15N;110.31E	coordinates
+30.02	122.34	30.02N;122.34E	coordinates
+25.116670000000003	108.4	China,Guiyang and Nanxiong	name
+26.5055	127.85	26.5055N;127.8500E	coordinates
+35.86	139.61	35.86N;139.61E	coordinates
+-23.556174	-46.627129	23.556174S;46.627129W	coordinates
+23.3	120.9	23.3N;120.9E	coordinates
+2.4933	102.8591	2.4933N;102.8591E	coordinates
+45.4222633	-75.7390982	Canada,Gatineau,Quebec	name
+32.5934	-85.4952	32.5934N;85.4952W	coordinates
+27.9958689	120.6915792	China,wenzhou	name
+37.0	126.0	37N;126E	coordinates
+-6.8228	39.2697	6.8228S;39.2697E	coordinates
+34.900405	139.8880854	Japan,Chiba,Boso Peninsula	name
+39.2904	-76.6122	39.2904N;76.6122W	coordinates
+36.126225299999994	128.19721850000002	36.1262253N;128.1972185E	coordinates
+36.8150283	127.11406540000002	South Korea,Cheonan-si	name
+30.4	120.52	30.40N;120.52E	coordinates
+30.41	104.11	30.41N;104.11E	coordinates
+21.54	110.5	21.54N;110.50E	coordinates
+6.310815	-10.807622	6.310815N;10.807622W	coordinates
+41.5514979	-70.6147519	USA,Falmouth,MA	name
+-33.4	-70.54	33.4S;70.54W	coordinates
+3.35	101.25	Malaysia,northern region of Selangor	name
+-23.599026000000002	-46.642875	23.599026S;46.642875W	coordinates
+-23.5489	-46.6388	23.5489S;46.6388W	coordinates
+37.42	112.58	37.42N;112.58E	coordinates
+-11.4816	-37.933601	11.481600S;37.933601W	coordinates
+-20.949529000000002	-48.47929	20.949529S;48.479290W	coordinates
+35.004709600000005	135.8686739	Japan,Shiga,Otsu City	name
+38.46	141.09	38.46N;141.09E	coordinates
+37.263332500000004	127.02874720000001	South Korea,Suwon city	name
+53.40990600000001	-2.967714	53.409906N;2.967714W	coordinates
+6.24	-75.58	6.24N;75.58W	coordinates
+74.7	-94.9	Canada,Char Lake,Arctic	name
+24.1	120.45	24.10N;120.45E	coordinates
+12.9141	74.85600000000001	12.9141N;74.8560E	coordinates
+23.881999999999998	90.2808	23.8820N;90.2808E	coordinates
+-30.3154739	-61.1645076	Argentina,Santa Fe	name
+24.19	58.17	24.19N;58.17E	coordinates
+45.1960403	-63.1653789	Canada,Nova Scotia	name
+48.9	-93.7	Canada,Unknown (Presumed,Ontario)	name
+32.589878000000006	-85.511525	32.589878N;85.511525W	coordinates
+47.509944399999995	18.929382	Hungary,Budakeszi	name
+37.3754	126.6648	37.3754N;126.6648E	coordinates
+34.7	-93.25	USA,Arkansas Broiler farm	name
+13.035	5.22	13.035N;5.22E	coordinates
+38.101690999999995	13.358379999999999	38.101691N;13.358380E	coordinates
+53.4094	-2.9641	53.4094N;2.9641W	coordinates
+43.47	145.26	43.47N;145.26E	coordinates
+54.31283199999999	9.992192	54.312832N;9.992192E	coordinates
+35.972722	36.128278	35.972722N;36.128278E	coordinates
+19.0335	72.83800000000001	19.0335N;72.838E	coordinates
+-22.55	-43.11	22.55S;43.11W	coordinates
+-42.8825088	147.3281233	Australia,Hobart	name
+19.2000001	109.5999999	China,Hainan	name
+36.0	124.0	China,Qingdao,Yellow Sea	name
+20.77	73.72	India,North	name
+28.6138954	77.2090057	India,New Delhi	name
+73.25	-79.61	Canada,Byot Island	name
