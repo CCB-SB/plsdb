@@ -15,7 +15,6 @@
     },
     "ncbi_ref_genomes": "ftp://ftp.ncbi.nlm.nih.gov/genomes/GENOME_REPORTS/prok_reference_genomes.txt",
     "eutils": {
-        "dir": "tools/edirect",
         "header": {
             "plasmid": ["UID_NUCCORE", "ACC_NUCCORE", "Description_NUCCORE", "CreateDate_NUCCORE", "Topology_NUCCORE", "Completeness_NUCCORE", "TaxonID_NUCCORE", "Genome_NUCCORE", "Length_NUCCORE"],
             "link_asm": ["UID_NUCCORE", "UID_ASSEMBLY"],
@@ -30,12 +29,12 @@
                 "esearch_query": "biomol_genomic[PROP] AND plasmid[FILT] NOT complete cds[TITL] NOT gene[TITL] NOT genes[TITL] NOT contig[TITL] NOT scaffold[TITL] NOT whole genome map[TITL] NOT partial sequence[TITL] NOT partial plasmid[TITL] NOT locus[TITL] NOT region[TITL] NOT fragment[TITL] NOT integron[TITL] NOT transposon[TITL] NOT insertion sequence[TITL] NOT insertion element[TITL] NOT phage[TITL] NOT operon[TITL]",
                 "xtract_query": "-pattern DocumentSummary -ID '(NA)' -ACC '(NA)' -TITLE '(NA)' -DATE '(NA)' -TOPO '(NA)' -COMPL '(NA)' -TID '(NA)' -GEN '(NA)' -LEN '(NA)' -ID Id -ACC AccessionVersion -TITLE Title -DATE CreateDate -TOPO Topology -COMPL Completeness -TID TaxId -GEN Genome -LEN Slen -element '&ID' '&ACC' '&TITLE' '&DATE' '&TOPO' '&COMPL' '&TID' '&GEN' '&LEN'",
                 "efilter_query": "-location plasmid -organism bacteria -source {db}",
-                "cmd": "{path}/esearch -db nuccore -query \"{esearch_query}\" | {path}/efilter {efilter_query} | {path}/efetch -format docsum | {path}/xtract {xtract_query}"
+                "cmd": "esearch -db nuccore -query \"{esearch_query}\" | efilter {efilter_query} | efetch -format docsum | xtract {xtract_query}"
             },
-            "linked": "{path}/epost -db {db_source} -id \"{ids}\" -format uid | {path}/elink -target {db_target} -cmd neighbor -batch | {path}/xtract -pattern LinkSet -element IdList/Id -block LinkSetDb -sep ';' -element Id",
-            "assembly": "{path}/epost -db assembly -id \"{ids}\" -format uid | {path}/efetch -format docsum | {path}/xtract -pattern DocumentSummary -LATEST '(False)' -element Id assembly-status SeqReleaseDate SubmissionDate -block PropertyList -if string -equals 'latest' -LATEST '(True)' -block DocumentSummary -element '&LATEST'",
-            "biosample": "{path}/epost -db biosample -id \"{ids}\" -format uid | {path}/efetch -format xml | {path}/xtract -pattern BioSample  -LOC '(NA)' -COORD '(NA)' -SOURCE '(NA)' -HOST '(NA)' -STYPE '(NA)' -group Attribute -if Attribute@attribute_name -equals 'geo_loc_name' -LOC Attribute -group Attribute -if Attribute@attribute_name -equals 'lat_lon' -COORD Attribute -group Attribute -if Attribute@attribute_name -equals 'isolation_source' -SOURCE Attribute -group Attribute -if Attribute@attribute_name -equals 'host' -HOST Attribute -group Attribute -if Attribute@attribute_name -equals 'sample_type' -STYPE Attribute -group BioSample -element @id -element @accession -element '&LOC' '&COORD' '&SOURCE' '&HOST' '&STYPE'",
-            "taxon": "{path}/efetch -db taxonomy -id \"{ids}\" -format xml | {path}/xtract -pattern Taxon -sep '|' -element TaxId,ScientificName,Rank -element Lineage -block '*/Taxon' -sep '|' -element TaxId,ScientificName,Rank"
+            "linked": "epost -db {db_source} -id \"{ids}\" -format uid | elink -target {db_target} -cmd neighbor -batch | xtract -pattern LinkSet -element IdList/Id -block LinkSetDb -sep ';' -element Id",
+            "assembly": "epost -db assembly -id \"{ids}\" -format uid | efetch -format docsum | xtract -pattern DocumentSummary -LATEST '(False)' -element Id assembly-status SeqReleaseDate SubmissionDate -block PropertyList -if string -equals 'latest' -LATEST '(True)' -block DocumentSummary -element '&LATEST'",
+            "biosample": "epost -db biosample -id \"{ids}\" -format uid | efetch -format xml | xtract -pattern BioSample  -LOC '(NA)' -COORD '(NA)' -SOURCE '(NA)' -HOST '(NA)' -STYPE '(NA)' -group Attribute -if Attribute@attribute_name -equals 'geo_loc_name' -LOC Attribute -group Attribute -if Attribute@attribute_name -equals 'lat_lon' -COORD Attribute -group Attribute -if Attribute@attribute_name -equals 'isolation_source' -SOURCE Attribute -group Attribute -if Attribute@attribute_name -equals 'host' -HOST Attribute -group Attribute -if Attribute@attribute_name -equals 'sample_type' -STYPE Attribute -group BioSample -element @id -element @accession -element '&LOC' '&COORD' '&SOURCE' '&HOST' '&STYPE'",
+            "taxon": "efetch -db taxonomy -id \"{ids}\" -format xml | xtract -pattern Taxon -sep '|' -element TaxId,ScientificName,Rank -element Lineage -block '*/Taxon' -sep '|' -element TaxId,ScientificName,Rank"
         }
     },
     "blast": {
@@ -111,5 +110,5 @@
         "blastn_pident": 99,
         "blastn_qcovs": 80
     },
-    "old_tab": "data/master/2019_10_07.tsv"
+    "old_tab": "data/master/2020_06_29.tsv"
 }

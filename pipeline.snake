@@ -25,7 +25,7 @@ from utils import setup_logger, run_cmd, mkdir
 
 # Date
 #today = datetime.datetime.now().strftime("%Y_%m_%d")
-today = '2020_03_04'
+today = '2020_11_19'
 
 # NCBI DBs
 dbs = OrderedDict()
@@ -36,10 +36,9 @@ dbs['refseq'] = 'RefSeq'
 tmp_c, tmp_s, CONDA_PATH = run_cmd('conda info --base')
 assert tmp_s == 0
 CONDA_PATH = CONDA_PATH.rstrip()
-
 # conda env path
-ENV_PATH = os.path.join(CONDA_PATH, 'envs', config['env_name'])
-
+#ENV_PATH = os.path.join(CONDA_PATH, 'envs', config['env_name'])
+ENV_PATH = os.environ["CONDA_PREFIX"]
 ##################################################
 # Tools
 ##################################################
@@ -49,9 +48,6 @@ BIN_BLASTN = os.path.join(config["blast"]["dir"], "bin/blastn")
 
 # Mash
 BIN_MASH = os.path.join(config["mash"]["dir"], "mash")
-
-# edirect/eutils
-EUTILS_INSTALL = os.path.join(config["eutils"]["dir"], "install.done")
 
 # Krona
 BIN_KRONA_XML = os.path.join(config["krona"]["dir"], "bin/ktImportXML")
@@ -161,7 +157,6 @@ rule all:
         # tools
         blast=[BIN_MAKEBLASTDB, BIN_BLASTN],
         mash=BIN_MASH,
-        eutils=EUTILS_INSTALL,
         krona=BIN_KRONA_XML,
         pmlstdb=[PMLST_UPDATE, PMLST_DB],
         abricate=ABRICATE_UPDATE,
@@ -231,25 +226,6 @@ rule install_mash:
         "installing mash from {params.url}"
     shell:
         "mkdir -p tools && cd tools && wget {params.url} && tar -xvf {params.name} && rm {params.name}"
-
-# edirect/eutils
-rule install_eutils:
-    output:
-        EUTILS_INSTALL
-    message:
-        "Install edirect/euils"
-    shell:
-        """
-        mkdir -p $(dirname {output}) && cd tools
-        perl -MNet::FTP -e \
-            '$ftp = new Net::FTP("ftp.ncbi.nlm.nih.gov", Passive => 1);
-             $ftp->login; $ftp->binary;
-             $ftp->get("/entrez/entrezdirect/edirect.tar.gz");'
-        gunzip -c edirect.tar.gz | tar xf -
-        rm edirect.tar.gz
-        cd edirect && wget https://ftp.ncbi.nlm.nih.gov/entrez/entrezdirect/xtract.Linux.gz && gunzip -f xtract.Linux.gz && chmod +x xtract.Linux
-        touch $(basename {output})
-        """
 
 # krona
 rule install_krona:
@@ -401,15 +377,12 @@ rule rmlst_blastdb:
 # Plasmid query
 ##################################################
 rule query_plasmids:
-    input:
-        EUTILS_INSTALL
     output:
         "{dir}/{date}__{db}__nuccore.txt"
     message:
         "Query for plasmids in {wildcards.db}"
     params:
         query=lambda wildcards: config['eutils']['query']['plasmid']['cmd'].format(
-            path=config['eutils']['dir'],
             esearch_query=config['eutils']['query']['plasmid']['esearch_query'],
             efilter_query=config['eutils']['query']['plasmid']['efilter_query'].format(db=wildcards.db),
             xtract_query=config['eutils']['query']['plasmid']['xtract_query']
@@ -458,7 +431,6 @@ rule query_linked_assemblies:
             df_col='UID_NUCCORE',
             split_size=200,
             split_str=None,
-            path=config['eutils']['dir'],
             db_source='nuccore',
             db_target='assembly'
         )
@@ -480,7 +452,6 @@ rule query_assemblies:
             df_col='UID_ASSEMBLY',
             split_size=200,
             split_str=';',
-            path=config['eutils']['dir']
         )
 
 # Linked biosamples
@@ -501,7 +472,6 @@ rule query_linked_biosamples:
             df_col='UID_NUCCORE',
             split_size=200,
             split_str=None,
-            path=config['eutils']['dir'],
             db_source='nuccore',
             db_target='biosample'
         )
@@ -523,7 +493,6 @@ rule query_biosamples:
             df_col='UID_BIOSAMPLE',
             split_size=300,
             split_str=';',
-            path=config['eutils']['dir']
         )
 
 # Linked taxonomy
@@ -544,7 +513,6 @@ rule query_taxon:
 
         cmd = "{query} > {ofile}".format(
             query=config['eutils']['query']['taxon'].format(
-                path=config['eutils']['dir'],
                 ids=','.join(ids)
             ),
             ofile=output[0]
@@ -684,11 +652,9 @@ rule collect_meta:
             dates.sort_values(ascending=False, inplace=True)
             logger.warn('No latest assembly among {}: latest w.r.t. date is {}'.format(uids, dates.index[0]))
             return dates.index[0]
-
         #for uid in pls_asm['UID_ASSEMBLY']:
         #    assert uid in asm['UID_ASSEMBLY'], 'Unknown UID {}'.format(uid)
         pls_asm['UID_ASSEMBLY'] = pls_asm['UID_ASSEMBLY'].map(get_latest_assembly)
-
         # add assembly ID
         pls = pandas.merge(
             left=pls,
@@ -1639,12 +1605,10 @@ rule get_fasta:
         "{basename}.fna"
     message:
         "Downloading sequences for IDs in {input}"
-    params:
-        eutils=config['eutils']['dir']
     shell:
         """
         mkdir -p $(dirname {output}) &&
-        python download_fastas.py -t {input} -i \"UID_NUCCORE\" -o {output} -c 1 -s 500 -e {params.eutils} 2>&1 | tee {output}.log &&
+        python download_fastas.py -t {input} -i \"UID_NUCCORE\" -o {output} -c 1 -s 500 -e $(dirname $(which efetch)) 2>&1 | tee {output}.log &&
         cat {output}.tmp.* > {output} && rm {output}.tmp.*
         """
 
