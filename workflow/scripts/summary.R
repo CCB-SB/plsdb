@@ -65,6 +65,9 @@ STs <- sapply(info$pmlst, function(x){
 })
 
 # Locations: count number of points per locus (same coordinates)
+print(info$loc_lat)
+print(colnames(info))
+
 locs_aggr <- aggregate(x=1:nrow(info), by=list(loc_lat=info$loc_lat, loc_lng=info$loc_lng), FUN=function(x){ return(length(x)) })
 colnames(locs_aggr)[colnames(locs_aggr)=='x'] <- 'Count'
 

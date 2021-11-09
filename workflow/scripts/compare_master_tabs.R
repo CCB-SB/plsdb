@@ -89,7 +89,7 @@ write(
 # and remove ACC_FASTA column (which was accession + version)
 newTab <- round_coords(rm_accfasta_col(replace_acc_col(newTab)))
 oldTab <- round_coords(rm_accfasta_col(replace_acc_col(oldTab)))
-newAll <- round_coords(rm_accfasta_col(replace_acc_col(newAll)))
+#newAll <- round_coords(rm_accfasta_col(replace_acc_col(newAll)))
 
 # Set accessions as row names
 rownames(newTab) <- newTab$ACC_NUCCORE
@@ -115,7 +115,7 @@ for(rc_acc in rownames(rc_rm)){
     } else if( any( is_oldversion ) ){
         rc_rm[rc_acc, 'Reason'] <- sprintf(
             'old version of %s',
-            paste(newTab$ACC_NUCCORE[is_oldversionl], collapse=';')
+            paste(newTab$ACC_NUCCORE[is_oldversion], collapse=';')
         )
     } else if(rc_acc %in% newAll$ACC_NUCCORE){
         rc_rm[rc_acc, 'Reason'] <- 'removed during filtering'

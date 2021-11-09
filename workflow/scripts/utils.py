@@ -73,7 +73,7 @@ def str2timestamp(ts, ts_format='%Y-%m-%d %H:%M:%S'):
 ##################################################
 # TOOLS
 ##################################################
-def run_epost_split(df_file, ofile, header, cmd, df_col, split_size, split_str, **kwargs):
+def run_epost_split(df_file, ofile, header, cmd, df_col, split_size, split_str,log_file='pipeline.log', **kwargs):
     """
     To run epost queries by splitting the input IDs into chunks (as the max. number of IDs is limited).
     Checks for unexpected IDs
@@ -87,7 +87,7 @@ def run_epost_split(df_file, ofile, header, cmd, df_col, split_size, split_str, 
     :param **kwargs: key-word parameters for the CMD
     """
     import pandas, tqdm
-    logger = setup_logger(logging.INFO)
+    logger = setup_logger(logging.INFO,log_file)
 
     logger.info('CMD: {}'.format(cmd))
 
@@ -102,7 +102,6 @@ def run_epost_split(df_file, ofile, header, cmd, df_col, split_size, split_str, 
             ids_ = ids_.union(id_.split(split_str))
         ids = ids_
     logger.info('There are {} unique IDs'.format(len(ids)))
-
     with open(ofile, 'w') as ohandle:
         ohandle.write(header + '\n')
         for chunk in tqdm.tqdm(split_list(ids, split_size)):
@@ -179,7 +178,7 @@ def run_blastn_check(acc, obname, main_fasta, blastn_cmd, blastn_bin, blastn_hea
 def call_blaster(record, fasta, db_path, blast, cov, ident):
     import os
     from Bio import SeqIO
-    from blaster import Blaster
+    from scripts.blaster import Blaster
     tmp_fasta   = '%s.fasta.tmp' % record.id
     tmp_blaster = '%s.blaster.tmp' % record.id
 

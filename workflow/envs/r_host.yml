@@ -1,0 +1,10 @@
+name: r_host
+channels:
+    - defaults
+    - conda-forge
+dependencies:
+    - r-dplyr==1.0.7
+    - r-taxize==0.9.99
+    - r-tidytext== 0.3.1
+    - r-stringr==1.4.0
+    - r-purrr==0.3.4

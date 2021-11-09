@@ -1,0 +1,235 @@
+##################################################
+# Config
+##################################################
+CONFIG_JSON = "../config/config.json"
+configfile: CONFIG_JSON
+
+##################################################
+# Python modules
+##################################################
+import os
+import re
+import pandas
+import pickle
+import logging
+import datetime
+from tqdm import tqdm
+from Bio import SeqIO
+from collections import OrderedDict
+
+from scripts.utils import setup_logger, run_cmd, mkdir
+
+##################################################
+# Some settings
+##################################################
+
+# Update Timestamp
+timestamp = config['timestamp']
+
+# NCBI DBs
+dbs = OrderedDict()
+dbs['insd']   = 'INSDC'
+dbs['refseq'] = 'RefSeq'
+
+# conda path
+tmp_c, tmp_s, CONDA_PATH = run_cmd('conda info --base')
+assert tmp_s == 0
+CONDA_PATH = CONDA_PATH.rstrip()
+# conda env path
+#ENV_PATH = os.path.join(CONDA_PATH, 'envs', config['env_name'])
+ENV_PATH = os.environ["CONDA_PREFIX"]
+##################################################
+# Tools
+##################################################
+# BLAST
+BIN_MAKEBLASTDB = os.path.join(ENV_PATH, "bin/makeblastdb")
+BIN_BLASTN = os.path.join(ENV_PATH, "bin/blastn")
+
+# Mash
+BIN_MASH = os.path.join(ENV_PATH, "bin/mash")
+
+# Krona
+BIN_KRONA_XML = os.path.join(ENV_PATH, "bin/ktImportXML")
+
+# data for rMLST
+RMLST_FASTA = config['rmlst']['rmlst_fas']
+RMLST_DB = ['{}.{}'.format(RMLST_FASTA, ext) for ext in config['blast']['ext']]
+
+# data for ABRicate
+ABRICATE_UPDATE = 'data/abricate_update_%s.done' % timestamp
+
+# data for pMLST
+PMLST_UPDATE  = 'data/pmlst_update_%s.done' % timestamp
+PMLST_CLEAN   = os.path.join(ENV_PATH, 'db/pubmlst/cleanup.done')
+PMLST_ALLELES = os.path.join(ENV_PATH, 'db/pubmlst/download.done')
+PMLST_DB      = os.path.join(ENV_PATH, 'db/blast/mlst.fa')
+
+##################################################
+# Data
+##################################################
+# Table with plasmid records
+PLASMIDS                = [os.path.join(config['data']['odir']['reports'], '%s__%s__nuccore.txt' % (timestamp, db)) for db in dbs.keys()]
+PLASMIDS_ALL            = os.path.join(config['data']['odir']['reports'], '%s__nuccore.txt' % timestamp)
+# linked assemblies
+PLASMIDS_ALL_ASM        = os.path.join(config['data']['odir']['reports'], '%s__nuccore_assembly.txt' % timestamp)
+# linked biosamples
+PLASMIDS_ALL_BIOS       = os.path.join(config['data']['odir']['reports'], '%s__nuccore_biosample.txt' % timestamp)
+# assembly info
+PLASMIDS_ASM            = os.path.join(config['data']['odir']['reports'], '%s__assembly.txt' % timestamp)
+# biosample info
+PLASMIDS_BIOS           = os.path.join(config['data']['odir']['reports'], '%s__biosample.txt' % timestamp)
+# taxonomy info (processed)
+PLASMIDS_TAX            = os.path.join(config['data']['odir']['reports'], '%s__taxa.txt' % timestamp)
+PLASMIDS_TAXP           = os.path.join(config['data']['odir']['reports'], '%s__taxaproc.txt' % timestamp)
+# all info together
+PLASMIDS_FULL1          = os.path.join(config['data']['odir']['reports'], '%s__full1.txt' % timestamp)
+
+
+# filter1
+PLASMIDS_FILT1          = os.path.join(config['data']['odir']['reports'], '%s__filtered1.txt' % timestamp)
+#location infromation added
+PLASMIDS_FILT1_LOC      = os.path.join(config['data']['odir']['reports'], '%s__filtered1_loc.txt' % timestamp)
+
+# to find identical plasmids
+PLASMIDS_FILT1_FASTA    = os.path.join(config['data']['odir']['reports'], '%s__filtered1.fna' % timestamp)
+PLASMIDS_FILT1_SKETCH   = os.path.join(config['data']['odir']['reports'], '%s__filtered1.msh' % timestamp)
+PLASMIDS_FILT1_DIST0    = os.path.join(config['data']['odir']['reports'], '%s__filtered1.dist0' % timestamp)
+
+# filter 2
+PLASMIDS_FILT2          = os.path.join(config['data']['odir']['reports'], '%s__filtered2.txt' % timestamp)
+
+# to find putative chromosomes
+PLASMIDS_FILT2_FASTA    = os.path.join(config['data']['odir']['reports'], '%s__filtered2.fna' % timestamp)
+PLASMIDS_FILT2_RMLST    = os.path.join(config['data']['odir']['reports'], '%s__filtered2.rmlst' % timestamp)
+
+# filter 3
+PLASMIDS_FILT3          = os.path.join(config['data']['odir']['reports'], '%s__filtered3.txt' % timestamp)
+PLASMIDS_FILT3_FASTA    = os.path.join(config['data']['odir']['reports'], '%s__filtered3.fna' % timestamp)
+
+# filter 4
+PLASMIDS_FILT4          = os.path.join(config['data']['odir']['reports'], '%s__filtered4.txt' % timestamp)
+
+#Annotation fixing
+PLASMIDS_DIS_ONT        =os.path.join(config['data']['odir']['reports'], '%s__disease.txt' % timestamp)
+PLASMIDS_HOST           =os.path.join(config['data']['odir']['reports'], '%s__host.txt' % timestamp)
+
+##################################################
+# Data: "Master" files
+##################################################
+
+# Ontology
+DISEASE_ONT            = os.path.join(config['data']['odir']['master'], '%s__doid.owl' % timestamp)
+
+
+# Plasmid sequences
+MASTER_FASTA        = os.path.join(config["data"]["odir"]["master"], "%s.fna" % timestamp)
+
+# ABRicate
+MASTER_ABRICATE_DBS = expand(os.path.join(config["data"]["odir"]["master"], "%s.abr.{rdb}" % timestamp), rdb=config['abricate']['dbs'])
+MASTER_ABRICATE     = os.path.join(config["data"]["odir"]["master"], "%s.abr" % timestamp)
+
+# pMLST
+MASTER_PMLST        = os.path.join(config["data"]["odir"]["master"], "%s.pmlst" % timestamp)
+
+# mob
+MASTER_MOB        = os.path.join(config["data"]["odir"]["master"], "%s.mob" % timestamp)
+
+# BLASTdb from master FASTA
+MASTER_BLASTDB      = expand(os.path.join(config["data"]["odir"]["master"], "%s.fna.{ext}" % timestamp), ext=config['blast']['ext'])
+
+# Mash
+MASTER_MASH_SIG     = os.path.join(config["data"]["odir"]["master"], "%s.msh"  % timestamp)
+MASTER_MASH_DIST    = os.path.join(config["data"]["odir"]["master"], "%s.dist" % timestamp)
+MASTER_MASH_DISTS   = os.path.join(config["data"]["odir"]["master"], "%s.distS" % timestamp)
+
+# Similar records
+MASTER_SIM          = os.path.join(config["data"]["odir"]["master"], "%s.sim" % timestamp)
+
+# UMAP
+MASTER_MASH_UMAP    = os.path.join(config["data"]["odir"]["master"], "%s.umap" % timestamp)
+
+# Master info table
+MASTER_TAB          = os.path.join(config["data"]["odir"]["master"], "%s.tsv" % timestamp)
+
+# Krona plot
+MASTER_KRONA_XML    = os.path.join(config["data"]["odir"]["master"], "%s.xml" % timestamp)
+MASTER_KRONA_HTML   = os.path.join(config["data"]["odir"]["master"], "%s.html" % timestamp)
+
+# Other plots
+MASTER_SUM_PLOTS    = os.path.join(config["data"]["odir"]["master"], "%s_summary.pdf" % timestamp)
+MASTER_SUM_STATS    = os.path.join(config["data"]["odir"]["master"], "%s_summary.txt" % timestamp)
+
+# Compare created table to an old version
+MASTER_CHANGES      = os.path.join(config["data"]["odir"]["master"], "%s_changes.tsv" % timestamp)
+
+##################################################
+# Rule includes
+##################################################
+
+include:"rules/module_init.smk"
+include:"rules/module_query.smk"
+include:"rules/module_filter.smk"
+include:"rules/module_process.smk"
+include:"rules/module_downstream.smk"
+
+
+##################################################
+# Rules
+##################################################
+
+# ALL rule
+##################################################
+rule all:
+    input:
+        # NOTE Should be executed on the same day
+        #___# TODOS but not currently debugging
+        pmlstdb=[PMLST_UPDATE, PMLST_DB],
+        abricate=ABRICATE_UPDATE,
+        rmlst=RMLST_DB, # NOTE Requires an existing FASTA (see README.md)
+        # plasmids
+        #tmp1=PLASMIDS_FILT2_FASTA,
+        #tmp2=PLASMIDS_FILT1_FASTA,
+        #tmp3=PLASMIDS_FILT3,
+        #tmp4=PLASMIDS_FILT4,
+        query_plasmids=PLASMIDS_ALL,
+        
+        query_assemblies=[PLASMIDS_ALL_ASM, PLASMIDS_ASM],
+        query_biosamples=[PLASMIDS_ALL_BIOS,PLASMIDS_BIOS],
+        query_taxa=[PLASMIDS_TAX, PLASMIDS_TAXP],
+        
+        # plasmid filtering (1)
+        filter_plasmids1=PLASMIDS_FILT1,
+        # # plasmid filtering (2) should be executed on a server
+        filter_plasmids2=PLASMIDS_FILT2,
+        
+        # rmlst
+        run_rmlst=PLASMIDS_FILT2_RMLST, # NOTE One of the most time consuming steps (ca. 6 hours for ca. 17k records, 07.10.19: > 12h. Takes a lot of time!)
+        # plasmid filtering (3)
+        filter_plasmids3=PLASMIDS_FILT3, # NOTE One of the most time consuming steps (multiple hours, depends on the number of sequences)
+        filter_plasmids4=PLASMIDS_FILT4,
+        # NOTE Can be executed on other days (don't forget to set "timestamp" to a fixed value)
+        # master files
+        # fasta
+        master_fasta=MASTER_FASTA,
+        # abricate
+        master_abricate=MASTER_ABRICATE_DBS + [MASTER_ABRICATE], # NOTE Do not execute these rules in parallel (access to same tmp files) (around 2h in my last run)
+        # pmlst
+        pmlst=MASTER_PMLST,
+        # blastdb
+        master_blastdb=MASTER_BLASTDB,
+        # mash
+        master_sig=MASTER_MASH_SIG,
+        master_dist=[MASTER_MASH_DIST, MASTER_MASH_DISTS],
+        # similar records
+        master_sim=MASTER_SIM,
+        # umap
+        master_umap=MASTER_MASH_UMAP,
+        # table
+        master_tab=MASTER_TAB,
+        # krona plot
+        master_krona=[MASTER_KRONA_XML, MASTER_KRONA_HTML],
+        # other plots
+        master_summary=[MASTER_SUM_PLOTS, MASTER_SUM_STATS],
+        # # compare to older version
+        master_compare=MASTER_CHANGES
+

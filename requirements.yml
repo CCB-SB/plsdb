@@ -23,4 +23,5 @@ dependencies:
     - r-ggplot2==3.3.2 
     - r-scales==1.0.0
     - r-maps==3.3.0
+    - r-dplyr
     - entrez-direct==13.9 
