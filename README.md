@@ -1,3 +1,5 @@
+# News
+Our manuscript discussing the new features of PLSDB was accepted to the annual 2022 Nucleic Acid Research database Issue! The manuscript can be found [here](https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gkab1111/6439675).
 # Retrieving and processing plasmids from NCBI
 
 ## Requirements
@@ -228,10 +230,12 @@ of the comprehensive antibiotic resistance database.", B. Jia, A. R. Raphenya, B
 - **rMLST**: [rMLST at PubMLST](https://pubmlst.org/rmlst/)
 - **Jolley et al.**, Ribosomal multilocus sequence typing: universal characterization of bacteria from domain to strain, K. A. Jolley, C. M. Bliss, J .S. Bennett, H. B. Bratcher, C. Brehony, F. M. Colles, H. Wimalarathna, O. B. Harrison, S. K. Sheppard, A. J. Cody, M .C. Maiden, Microbiology, 2012, [paper link](http://www.ncbi.nlm.nih.gov/pubmed/22282518)
 - **Orlek et al.**: Ordering the mob: Insights into replicon and MOB typing schemes from analysis of a curated dataset of publicly available plasmids, A. Orlek, H. Phan, A. E. Sheppard, M. Doumith, M. Ellington, T. Peto, D. Crook, A. S. Walker, N. Woodford, M. F. Anjum, N. Stoesser, Plasmid, 2017, [paper link](https://www.ncbi.nlm.nih.gov/pubmed/28286183)
-- **Yutin et al.**: Distribution of ribosomal protein genes across bacterial genome partitions, N. Yutin, P. Puigbò, E. V. Koonin, Y. I. Wolf, PLoS One, 2012, [paper link]](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3353972/)
+- **Yutin et al.**: Distribution of ribosomal protein genes across bacterial genome partitions, N. Yutin, P. Puigbò, E. V. Koonin, Y. I. Wolf, PLoS One, 2012, [paper link](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3353972/)
 - **Villa et al.**: Replicon sequence typing of IncF plasmids carrying virulence and resistance determinants, L. Villa, A. García-Fernández, D. Fortini, A. Carattoli, Journal of Antimicrobial Chemotherapy, 2010, [paper link](https://www.ncbi.nlm.nih.gov/pubmed/20935300)
 - **CGE core module**: [repository link](https://bitbucket.org/genomicepidemiology/cge_core_module)
-
+- **fuzzywuzzy**:  [repository link](https://github.com/seatgeek/fuzzywuzzy)
+- **MOB-suite**:  “MOB-suite: software tools for clustering, reconstruction and typing of plasmids from draft assemblies.” Robertson, James, and John H E Nash.  Microbial genomics vol. 4,8 (2018) [paper link](https://www.microbiologyresearch.org/content/journal/mgen/10.1099/mgen.0.000206), [repository link](https://github.com/phac-nml/mob-suite)
+- **taxize**: "taxize: taxonomic search and retrieval in R." Chamberlain SA and Szöcs E. F1000Res. 2013;2:191. [paper link](https://f1000research.com/articles/2-191/v2), [repository link](https://github.com/ropensci/taxize)
 ## Notes
 
 This data processing pipeline makes use of the [PubMLST website](https://pubmlst.org/) developed by Keith Jolley ([Jolley & Maiden 2010, BMC Bioinformatics, 11:595](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-595)) and sited at the University of Oxford. The development of that website was funded by the Wellcome Trust.
