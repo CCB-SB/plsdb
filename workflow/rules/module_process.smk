@@ -637,7 +637,7 @@ rule infotable:
 
         mob['sample_id'] = mob['sample_id'].apply(lambda x: extract_id(x) )
         mob[mob=="-"]=""
-        mob.set_index("sample_id")
+        mob=mob.set_index("sample_id")
         logger.info('Read in {} Mobtyper records\n{}'.format(mob.shape[0], mob.head()))
 
         # process source strings

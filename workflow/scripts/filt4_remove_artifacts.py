@@ -150,7 +150,7 @@ def find_artifacts(blastn_results, ptable, output):
         
     pls.reset_index(inplace=True)
     pls.set_index('UID_NUCCORE', inplace=True)
-    pls.to_csv(output, sep='\t', index=False)
+    pls.to_csv(output, sep='\t', index=True)
     return(artifacts)
 
 
