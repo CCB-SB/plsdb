@@ -1,10 +1,8 @@
 
 Pipeline for data collection
 ==============================
-[[_TOC_]]
 
-
-# News
+## News
 Our manuscript discussing the new features of PLSDB was accepted to the annual 2022 Nucleic Acid Research database Issue! The manuscript can be found [here](https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gkab1111/6439675).
 
 ## Summary
