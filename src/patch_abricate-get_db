@@ -1,0 +1,832 @@
+#!/usr/bin/env perl
+
+use strict;
+use FindBin;
+use Bio::SeqIO;
+use Bio::Seq;
+use Path::Tiny;
+use File::Basename;
+use File::Spec;
+use File::Path qw(make_path remove_tree);
+use List::Util qw(first);
+use Cwd qw(abs_path);
+use Data::Dumper;
+use LWP::Simple;
+use JSON;
+
+#..............................................................................
+# Globals
+
+my $EXE = basename($0);
+my $ABX_SEP = ';';
+
+my %DATABASE = (
+  'resfinder'         => \&get_resfinder,
+  'plasmidfinder'     => \&get_plasmidfinder,
+  'megares'           => \&get_megares,
+  'argannot'          => \&get_argannot,
+  'card'              => \&get_card,
+#  'ncbibetalactamase' => \&get_ncbibetalactamase,
+  'ncbi'              => \&get_ncbi,
+  'vfdb'              => \&get_vfdb,
+  'ecoli_vf'          => \&get_ecoli_vf,  # https://github.com/phac-nml/ecoli_vf
+  'ecoh'              => \&get_ecoh,
+  'bacmet2'           => \&get_bacmet2,
+  'victors'           => \&get_victors,
+#  'serotypefinder'    => \&get_serotypefinder,
+);
+my $DATABASES = join(' ', sort keys %DATABASE);
+
+#..............................................................................
+# Command line options
+
+my(@Options, $debug, $outdir, $db, $force);
+setOptions();
+
+$db or err("Please choose a --db from: $DATABASES");
+exists $DATABASE{$db} or err("Unknown --db '$db', choose from: $DATABASES ");
+-d $outdir or err("--outdir '$outdir' does not exist");
+
+my $dir = abs_path( File::Spec->catdir($outdir, $db) );
+make_path($dir);
+msg("Setting up '$db' in '$dir'");
+#my $tmpdir = tempdir("$db-XXXXXXXX", DIR=>$dir, CLEANUP=>0);
+#my $tmpdir = "/home/tseemann/git/abricate/db/resfinder/resfinder-6Kuphtvv";
+my $tmpdir = "$dir/src";
+make_path($tmpdir);
+
+# run the specific function from --db
+chdir $tmpdir;
+my $seq = $DATABASE{$db}->();
+map { is_full_gene($_) } @$seq;  # doesn't do anything?
+$seq = dedupe_seq($seq);
+#print Dumper($seq);
+msg("Sorting sequences by ID");
+$seq = [ sort { $a->{ID} cmp $b->{ID} } @$seq ];
+save_fasta("$dir/sequences", $seq);
+
+msg("Formatting BLASTN database: $dir/sequences");
+my $logfile = "$tmpdir/makeblastdb.log";
+my $ec = system("makeblastdb -in '$dir/sequences' -title '$db' -dbtype nucl -hash_index -logfile $logfile");
+if ($ec != 0) {
+  system("tail '$logfile'");
+  err("Error with makign BLAST database. See $logfile");
+}
+#msg("Run 'abricate --setupdb' to format the database");
+
+msg("Done.");
+
+#..............................................................................
+
+sub download {
+  my($url, $dest) = @_;
+  if (-r $dest and not $force) {
+     msg("Won't re-download existing $dest (use --force)");
+     #exit(1);
+  }
+  else {
+    msg("Downloading: $url");
+    my $ec = mirror($url, $dest);
+    msg("HTTP Result: $ec");
+    ($ec==200 or $ec=304) or err("HTTP $ec | failed to download $url");  # is HTTP OK ?
+  }
+  msg("Destination: $dest");
+  msg("Filesize:", (-s $dest), "bytes");
+}
+
+#..............................................................................
+sub trim_spaces {
+  my($s) = @_;
+  $s =~ s/^\s+//;
+  $s =~ s/\s+$//;
+  return $s;
+}
+
+#..............................................................................
+sub get_resfinder {
+  my $name = "resfinder_db";
+  # FIXME - can we just get HEAD.zip like in plasmidfinder?
+  my $url = "https://bitbucket.org/genomicepidemiology/$name.git";
+
+  if (-r $name and not $force) {
+    msg("Won't overwrite existing $name (use --force)");
+#    exit(1);
+  }
+  else {
+    msg("Nuking existing folder: $name");
+    remove_tree("./$name");
+    msg("Cloning $url to $name");
+    system("git clone --quiet $url $name");
+  }
+
+  #<*.fsa>
+  #>aac(6')-Ib_2_M23634
+  #>blaNDM-19_1_MF370080
+  #>mcr-1.1_1_KP347127
+  #>fosB1_1_CP001903
+  #>fusB_1_AY373761
+  #>VanHAX_1_FJ866609
+  #>ere(A)_6_DQ157752
+  #>nimA_1_X71444
+  #>cfr_1_AM408573
+  #>catB3_2_U13880
+  #>qnrA1_1_AY070235
+  #>ARR-2_1_HQ141279
+  #>sul1_2_U12338
+  #>tet_1_M74049
+  #>dfrA19_1_EU855687
+  
+  #<notes.txt>
+  #aac(6')-Iv:Aminoglycoside resistance:
+  #aac(6')-Iw:Aminoglycoside resistance:Alternate name; aac(6')-Ix
+  #sul3:Sulphonamide resistance:
+  ##Tetracycline: 
+  #ort(B):Tetracycline resistance:
+  #blaCMY-59:Beta-lactam resistance:
+  
+  #<phenotypes.txt>
+  #Gene_accession no.      Class   Phenotype       PMID    Mechanism of resistance Notes Required_gene
+  #ant(2'')-Ia_1_X04555    Aminoglycoside  Gentamicin, Tobramycin  3024112 Enzymatic modification  Alternative name aadB
+  #ant(2'')-Ia_2_JF826500  Aminoglycoside  Gentamicin, Tobramycin  22271862        Enzymat
+
+  my $metafn = "$name/phenotypes.txt";
+  my @meta = path($metafn)->lines({chomp=>1});
+  my %anno;
+  foreach (@meta) {
+    next if m/^#/;
+    my @x = split m/\t/;
+    #msg("$metafn: @x");
+    my($gene) = ($x[0] =~ m/^(.*?)_\w+$/);
+    $anno{$gene}{ABX} = [ 
+      map { trim_spaces($_) }
+        grep { !m/(unknown|notes|^none)/i } 
+          split m/,\s*/, $x[2] 
+    ];
+    #msg("$metafn: $gene |", $anno{$gene}{ABX}->@*);
+  }
+  msg("get_resfinder: $metafn", scalar(keys %anno), "genes");
+  #print Dumper(\%anno);
+
+  my @seq;
+  for my $fasta (<$name/*.fsa>) {
+    # Issue #62 - repair broken fasta files like this:
+    # GCTTTAAATTGGAAAAAAGATAGTCAAACTCTTTAA>cmr_1_U43535
+    # inline replacement
+    system('sed', '-i.bak', 's/\([A-Z]\)>/\1\n>/gi', $fasta);
+    my $args = load_fasta($fasta);
+    # use name of fasta file as antibiotic name
+    #my $abx = basename($fasta, '.fsa');
+    #msg("$fasta: Assigning '$abx' to all genes");
+    #push @{$_->{ABX}}, $abx for (@$args);
+    push @seq, @$args;
+  }
+
+  # https://github.com/tseemann/abricate/issues/92
+  # mcr-9_1_NZ_NAAN01000063.1
+  #>mcr-9_1_NZ_NAAN01000063.1
+  # mcr-9.1:Colistin resistance:
+  
+  for my $seq (@seq) {
+    my($id,$copy,$acc) = $seq->{ID} =~ m/^(.*?)_(\d+)_(\S+)$/;
+    #msg("resfinder: $1 $2 $3", $anno{$1});
+    $seq->{ID}   = "${id}_${copy}";
+    $seq->{ACC}  = $acc;
+    $seq->{DESC} = $anno{$id}{DESC} || $id;;
+    push @{$seq->{ABX}},  @{$anno{$id}{ABX}} if $anno{$id}{ABX};;
+  }
+  
+  return \@seq;
+}
+
+#..............................................................................
+sub get_serotypefinder {
+  my $name = "serotypefinder_db";
+  my $url = "https://bitbucket.org/genomicepidemiology/$name.git";
+
+  if (-r $name and not $force) {
+    msg("Won't overwrite existing $name (use --force)");
+#    exit(1);
+  }
+  else {
+    msg("Nuking existing folder: $name");
+    remove_tree("./$name");
+    msg("Cloning $url to $name");
+    system("git clone --quiet $url $name");
+  }
+
+  my @seq;
+  for my $fasta (<$name/*.fsa>) {
+    push @seq, @{ load_fasta($fasta) };
+  }
+
+  # >fliC_44444_AY250028_H52
+  # FIXME - this is already in EcOH database!
+  for my $seq (@seq) {
+    my($id,$copy,$acc) = $seq->{ID} =~ m/^(.*)_(\d+)_(\w+)$/;
+    #msg("serotypefinder: $1 $2 $3", $anno{$1});
+    $seq->{ID}   = "${id}_${copy}";
+    $seq->{ACC}  = $acc;
+    #$seq->{DESC} = $anno{$id} || '';
+  }
+
+  return \@seq;
+}
+
+#..............................................................................
+sub get_tag {
+  my($f, $tag) = @_;
+  if ($f->has_tag($tag)) {
+    my($val) = $f->get_tag_values($tag);
+    return $val;
+  }
+  return '';
+}
+
+#..............................................................................
+sub get_ncbi {
+  my $AFP = "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/latest";
+  #my $src = "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/data/latest/AMR_CDS";
+  my $src = "$AFP/AMR_CDS";
+  my $name = "amr_cds.ffn";
+  #my $src2 = "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/data/latest/ReferenceGeneCatalog.txt";
+  my $src2 = "$AFP/ReferenceGeneCatalog.txt";
+  my $name2 = "amr_cds.tsv";
+  
+  if (-r $name and -r $name2 and not $force) {
+    msg("Won't overwrite existing $name/$name2 (use --force)");
+#    exit(1);
+  }
+  else {
+    download($src, $name);
+    download($src2, $name2);
+  }
+
+#1   allele
+#2   gene_family                   ble
+#3   whitelisted_taxa
+#4   product_name                  BLMA family bleomycin binding protein
+#5   scope                         core
+#6   type                          AMR
+#7   subtype                       AMR
+#8   class                         BLEOMYCIN
+#9   subclass                      BLEOMYCIN
+#10  refseq_protein_accession      WP_063842967.1
+#11  refseq_nucleotide_accession   NG_047554.1
+#12  curated_refseq_start          No
+#13  genbank_protein_accession     CAA02068.1
+#14  genbank_nucleotide_accession  A31900.1
+#15  genbank_strand_orientation    +
+#16  genbank_cds_start             6
+#17  genbank_cds_stop              374
+#18  pubmed_reference
+#19  blacklisted_taxa
+#20  db_version                    2019-08-27.1  
+
+  my $tsv = load_tabular($name2, 10);  # refseq_nucleotide_accession
+  msg("[$name2] Loaded", scalar keys %$tsv, "records");
+#  print Dumper($tsv);
+
+  # https://github.com/ncbi/amr/wiki/AMRFinderPlus-database#amrprot
+  #  0          1              2         3 4 5          6      7
+  # >1000909371|WP_061158039.1|NG_050200|1|1|blaTEM-156|blaTEM|class_A_beta-lactamase_TEM-156 NG_050200:101-961
+  my @seq;
+  my $in = Bio::SeqIO->new(-file=>$name, -format=>"fasta");
+  while (my $rec = $in->next_seq) {
+    # parse ID
+    my($gi,$pi,$acc,$fp,$fn,$gene,$fam,$prod) = split m/\|/, $rec->id;
+    # skip fusion genes
+    next unless $fp==1 and $fn==1;
+    # only keep true ARGs
+    $acc .= ".1" unless $acc =~ m/\.\d+$/;
+    my $t = $tsv->{$acc} or next;
+    next unless $t->{scope} eq 'core';
+    next unless $t->{type} eq 'AMR';
+    next unless $t->{subtype} eq 'AMR';    
+    # construct sequence record
+    $prod =~ s/_/ /g;
+    err("$pi: gene is empty") unless $gene;
+    err("$pi: product is empty") unless $prod;
+    my $s = { ID=>$gene, ACC=>$t->{refseq_nucleotide_accession}, 
+              DESC=>$prod, SEQ=>$rec->seq,
+              ABX=>[ split m'/', $t->{subclass} ]
+            };
+    push @seq, $s;
+    msg("[$name]", 0+@seq, "|", $s->{ID}, "|", $s->{ACC}, "|", $s->{DESC});
+    #msg(Dumper($s));
+    msg($s->{ID}, " is fusion $fp/$fn") if "$fp$fn" ne '11';
+  }
+  return \@seq;
+}
+
+#..............................................................................
+sub get_plasmidfinder {
+  my $name = "plasmidfinder";
+  my $zip = "$name.zip";
+#  download("https://cge.cbs.dtu.dk/cge/download_data.php?folder=$name&filename=$zip&submit=$zip", $zip);
+  download("https://bitbucket.org/genomicepidemiology/plasmidfinder_db/get/HEAD.zip", $zip);
+  system("unzip -j -u $zip");
+
+  my @seq;
+  for my $fasta (<*.fsa>) {
+    push @seq, @{ load_fasta($fasta) };
+  }
+
+  for my $seq (@seq) {
+    $seq->{DESC} = $seq->{ID};  # no desc, so use ORIGINAL ID as desc
+    my($id,$acc) = ($seq->{ID} =~ m/^(.*)_(([A-Z]+|NC_)\d+(\.\d+)?)$/);
+    $id =~ s/_+$//g;
+    $seq->{ID}   = $id || $seq->{ID};
+    $seq->{ACC}  = $acc || '';
+    wrn("Parsed empty ID:", $seq->{DESC}, 
+        "=> id='$id' acc='$acc' seq=".substr($seq->{SEQ},0,10)) if not $id;
+  }
+  
+  return \@seq;
+}
+
+#..............................................................................
+sub get_megares {
+  my $zip = "megares.zip";
+  download('https://megares.meglab.org/download/megares_v2.00.zip', $zip);
+  system("unzip -j -u $zip");
+  my $seqs = load_fasta( glob("megares_drugs_*.fasta") );
+  my @okseq;
+  # >MEG_372|Multi-compound|Drug_and_biocide_resistance|Drug_and_biocide_MATE_efflux_pumps|ABEM
+  # >MEG_411|Multi-compound|Drug_and_biocide_resistance|Drug_and_biocide_RND_efflux_regulator|ACRR|RequiresSNPConfirmation
+  # >MEG_7860|Drugs|betalactams|Class_B_betalactamases|ZOG
+  # >MEG_7439|Drugs|Glycopeptides|VanI-type_resistance_protein|VANI
+  # >MEG_7245|Drugs|Tetracyclines|Tetracycline_resistance_MFS_efflux_pumps|TETY
+  # >MEG_9|Drugs|Aminoglycosides|Aminoglycoside-resistant_16S_ribosomal_subunit_protein|A16S|RequiresSNPConfirmation
+
+  for my $s (@$seqs) {
+    my($id,$type,$class,$mech,$group,$note) = split m/\|/, $s->{ID};
+    if ($note) {
+      # "RequiresSNPConfirmation" is the common one; we can't do that
+      msg("Skipping $id due to: $note");
+      next;
+    }
+    $s->{ID} = $group;
+    $s->{ACC} = $id;
+    $s->{DESC} = join(':', $type, $class, $mech, $group);
+    push @okseq, $s;
+  }
+  return [ @okseq ];
+  #return $seqs;
+}
+
+#..............................................................................
+sub get_argannot {
+  my $fasta = 'arg-annot.fa';
+  download(
+#    'http://www.mediterranee-infection.com/arkotheque/client/ihumed/_depot_arko/articles/1425/argannot-aa-v3-march2017_doc.fasta',
+#    'http://www.mediterranee-infection.com/arkotheque/client/ihumed/_depot_arko/articles/691/argannot-nt_doc.fasta',
+    # 'https://www.mediterranee-infection.com/wp-content/uploads/2019/06/ARG_ANNOT_V5_Nt_JUNE2019.txt',
+    'https://www.mediterranee-infection.com/wp-content/uploads/2019/09/ARG-ANNOT_AA_V6_July2019.txt', # By LALEGM
+    $fasta
+  );
+  
+  # fix syntax errors in the FASTA file...
+  path($fasta)->edit( sub { s/\\//g; $_ } );
+
+  my $seqs = load_fasta($fasta);
+
+  #  0             1         2               3 
+  # >(AGly)Aac2-Ie:NC_011896:3039059-3039607:549
+  for my $s (@$seqs) {
+    my @x = split m/:/, $s->{ID};
+    $s->{ID} = $x[0];
+    $s->{ACC} = $x[1].':'.$x[2];
+    $s->{DESC} = '';
+  }
+
+  return $seqs;
+}
+
+#..............................................................................
+sub get_bacmet2 {
+  my $fasta = 'bacmet2.fa';
+  download(
+    'http://bacmet.biomedicine.gu.se/download/BacMet2_EXP_database.fasta',
+    $fasta
+  );
+  
+  # This is a PROTEIN file 
+  my $seqs = load_fasta($fasta);
+
+  #  0       1    2  3      4         ^ 
+  # >BAC0098|ctpC|sp|P0A502|CTPC_MYCTU Probable manganese/zinc-exporting
+  for my $s (@$seqs) {
+    my @x = split m/\|/, $s->{ID};
+    $s->{ID} = $x[1].'-'.$x[0];
+    $s->{ACC} = $x[2].':'.$x[3];
+  }
+
+  return $seqs;
+}
+
+#..............................................................................
+sub get_card {
+  # https://github.com/tseemann/abricate/issues/25
+  my $tarball = 'card.tar.bz2';
+  download(
+    #'https://card.mcmaster.ca/download/0/broadstreet-v2.0.2.tar.gz',
+    'https://card.mcmaster.ca/latest/data',
+    #'https://card.mcmaster.ca/latest/data/card-data.tar.bz2',
+    $tarball # yes, it's really BZ2 not GZ ...
+  );
+#  my $fasta = "./nucleotide_fasta_protein_homolog_model.fasta";
+  my $jsonfile = "./card.json";
+  system("tar", "xf", $tarball, $jsonfile)==0 or err("Problem with tar xf $tarball $jsonfile");
+  -r $jsonfile or err("Could not extract $jsonfile from $tarball");
+  # JSON
+  my $json = path($jsonfile)->slurp_utf8;
+  my $card = from_json( $json, { latin1=>1 } );
+  my @seq;
+  for my $g (values %$card) {
+    next unless ref($g) eq 'HASH';
+#    msg(Dumper($g));
+    next unless $g->{model_type} eq "protein homolog model";  # only 'acquired' genes
+    my $id =  $g->{model_name};
+    err("$id has {model_param}{snp}") if exists $g->{model_param}{snp};
+#    msg("CARD: $id");
+#    print STDERR Dumper($g);
+    my $dna =  $g->{model_sequences}{sequence} or err("$id: no {model_sequences}{sequence} found");
+    my($key) = sort keys %$dna;  # first key
+    $dna = $dna->{$key} or err("$id: invalid key '$key'"); 
+    $dna = $dna->{dna_sequence} or err("$id: no dna_sequence");
+#    msg(Dumper($dna)) if $id eq 'OXA-25';
+
+    # ARO_category => { 
+    #	'category_aro_name' => 'cephalosporin',
+    #	'category_aro_class_name' => 'Drug Class',
+    my $is_amr_gene = 0;
+    my @abx;
+    for my $key (keys $g->{ARO_category}->%*) {
+      my $c = $g->{ARO_category}{$key};
+      if ($c->{category_aro_class_name} eq 'Drug Class') {
+        my $abx = $c->{category_aro_name};
+        $abx =~ s/ antibiotic//;
+        $abx =~ s/\s/_/g;
+        push @abx, $abx;
+      }
+      if ($c->{category_aro_class_name} eq 'AMR Gene Family') {
+        $is_amr_gene++;
+      }
+    } 
+    #err("CARD | $id | ", Dumper($g->{ARO_category}) ) unless $is_amr_gene;
+    #msg("ABX=$_") for @abx;
+
+    # put coordinates into normal form
+    my($start,$stop) = $dna->{strand} eq '-'
+                     ? ($dna->{fmax}, $dna->{fmin})
+                     : ($dna->{fmin}, $dna->{fmax})
+                     ;
+
+    $id =~ s/\s+/_/g;
+    push @seq, {
+      ID   => $id,
+      ACC  => $dna->{accession}.":$start-$stop",
+      DESC => ($g->{ARO_description} || $g->{ARO_accession}),
+      SEQ  => $dna->{sequence},
+      ABX  => [ @abx ],
+    };
+#    msg(Dumper($seq[-1]));
+  }
+
+  return \@seq;
+}
+
+#..............................................................................
+sub get_victors {
+  # the CDS data is in .ffn and has source GI and coords
+  # the PROT data is in .faa and has the protein ref and /product
+
+  #>gi|115534241:2616-3152 Campylobacter jejuni plasmid pCJ01, complete sequence
+  download('http://www.phidias.us/victors/downloads/gen_downloads.php', 'victors.ffn');
+
+  #>gi|115534244|ref|YP_783826.1| hypothetical protein pCJ01p4 [Campylobacter jejuni]
+  download('http://www.phidias.us/victors/downloads/gen_downloads_protein.php', 'victors.faa');
+
+  my %gi;
+  open my $FAA, '<', 'victors.faa';
+  while (<$FAA>) {
+    #>gi|115534244|ref|YP_783826.1| hypothetical protein pCJ01p4 [Campylobacter jejuni]
+    next unless m"^>gi.(\d+).ref.([^|]+). ([^[]+)";
+    $gi{$1}{ACC} = $2;
+    $gi{$1}{DESC} = $3;
+  }
+
+  my $seqs = load_fasta("victors.ffn");
+
+  for my $s (@$seqs) {
+    #>gi|115534241:2616-3152 Campylobacter jejuni plasmid pCJ01, complete sequence
+    $s->{ID} =~ m/gi.(\d+):(\d+)-(\d+)/;
+    $s->{ACC} = $gi{$1}{ACC} || "gi|$1:$2-$3";
+    $s->{DESC} =~ $gi{$1}{DESC} || 'hypothetical protein';
+  }
+#  print Dumper($seqs); exit;
+
+  return $seqs;
+}
+
+#..............................................................................
+sub get_vfdb {
+  download('http://www.mgc.ac.cn/VFs/Down/VFDB_setA_nt.fas.gz', 'vfdb.fa.gz');
+  system("gzip -f -d -c vfdb.fa.gz > vfdb.fa");
+  my $seqs = load_fasta("vfdb.fa");
+
+  # >VFG000676(gb|AAD32411) (lef) anthrax toxin lethal factor precursor [Anthrax toxin (VF0142)] [Bacillus anthracis str. Sterne]
+  for my $s (@$seqs) {
+    # https://github.com/tseemann/abricate/issues/64#issuecomment-421895159 by @VGalata
+    $s->{ID} =~ m/^(\w+)\(\w+\|(\w+)(\.\d+)?\)$/; #
+    #$s->{ID} =~ m/^(\w+)\(\w+\|(\w+)\)$/;
+    $s->{ACC} = $2 if $2;
+    $s->{DESC} =~ m/^\((.*?)\)/;
+    $s->{ID}  = $1 if $1;
+#    print STDERR Dumper($s); exit;
+  }
+
+  return $seqs;
+}
+
+#..............................................................................
+sub get_ncbibetalactamase {
+  my $fasta = "ncbi.fa";
+  download('ftp://ftp.ncbi.nlm.nih.gov/pathogen/betalactamases/Allele-dna.fa', $fasta);
+  my $tab = "ncbi.tab";
+  download('ftp://ftp.ncbi.nlm.nih.gov/pathogen/betalactamases/Allele.tab', $tab);
+
+  # >ACD12694.1 EU650653.1:1-1173
+  my $seqs = load_fasta($fasta);
+  
+  # ACC-1 ACD12694.1 EU650653.1 blaACC-1 1 1173 + cephalosporin-hydrolyzing class C beta-lactamase ACC-1
+  my %anno;
+  my @anno = grep { ! m/^#/ } path($tab)->lines({chomp=>1});
+  msg("Read", 0+@anno, "annotations");
+  foreach (@anno) {
+    my($name,$id,$acc,$gene,$begin,$end,undef,$product) = split m/\t/;
+    $anno{$id} = {
+      ID => $gene,
+      DESC => $product,
+      ACC => "$acc:$begin-$end",
+    };
+  }
+#  print Dumper(\%anno);
+
+  for my $s (@$seqs) {
+    my $id = $s->{ID};
+    next unless exists $anno{$id};
+    $s->{ID} = $anno{$id}{ID};
+    $s->{ACC} = $anno{$id}{ACC};
+    $s->{DESC} = $anno{$id}{DESC};
+  }
+#  print Dumper($seqs);
+
+  return $seqs;
+}
+
+#..............................................................................
+sub get_ecoh {
+  my $fasta = "EcOH.fa";
+  download('https://raw.githubusercontent.com/katholt/srst2/master/data/EcOH.fasta', $fasta);
+
+  # https://github.com/katholt/srst2#generating-srst2-compatible-clustered-database-from-raw-sequences
+  # [clusterID]__[gene]__[allele]__[seqID] [other stuff]
+  # >1__fliC__fliC-H1__1 AB028471.1;flagellin;H1
+  # >8__wzx__wzx-O41__246 AB811617.1;O antigen flippase;O41
+  # >9__wzy__wzy-OgN31__597 LC125932.1;O antigen polyermase;OgN31
+  my $seqs = load_fasta($fasta);
+
+  for my $s (@$seqs) {
+    my @id = split m/__/, $s->{ID};
+    my @desc = split m';', $s->{DESC};
+    $s->{ID} = $id[2];
+    $s->{ACC} = shift(@desc);
+    $s->{DESC} = join(' ', @desc);
+  }
+#  print Dumper($seqs);
+  return $seqs;
+}
+
+#..............................................................................
+sub get_ecoli_vf {
+  my $fasta = "ecoli_vf.ffn";
+  download('https://github.com/phac-nml/ecoli_vf/raw/master/data/repaired_ecoli_vfs_shortnames.ffn', $fasta);
+  my $seqs = load_fasta($fasta);
+
+  # >VFG000748(gi:2865308) (espF) EspF [EspF (VF0182)] [Escherichia coli O127:H6 str. E2348/69]
+  # >VFG000749(gi:6009379) (bfpA) Bundlin [BFP (VF0174)] [Escherichia coli B171]
+  # >SPG000142 (cvac) Escherichia coli cvi cvaC operon. [X57525 434-745]
+  # >SPG000143 (iss2) Escherichia coli Iss (iss) gene, complete cds. [AF042279 292-600]
+
+  for my $s (@$seqs) {
+    #print STDERR Dumper("IN", $s);
+    $s->{ID} =~ m/ ^ (\w+) (?: \( (.*?) \) )? $ /x or die "Can't parse $fasta at ".Dumper($s);
+    $s->{ID}  = $1 if $1;
+    $s->{ACC} = $2 || $1;
+    $s->{DESC} =~ s/\s\[.*?\]$//g; # remove strain name
+    $s->{DESC} =~ m/^(?:\((.*?)\)\s+)?(.*?)$/;
+    $s->{ID}  = $1 if $1;
+    $s->{DESC} = $2;
+    #print STDERR Dumper("OUT", $s);
+    #print STDERR "="x60, "\n";
+  }
+#  print Dumper($seqs);
+  return $seqs;
+}
+
+#..............................................................................
+sub is_full_gene {
+  my($s) = @_;
+  my $has_ambig=0;
+
+  my $id = $s->{ID};
+  my $L = length($s->{SEQ});
+  if ($L % 3 != 0) {
+    wrn("$id - length $L bp is not multiple of 3");
+    return;
+  }
+  if ($s->{SEQ} !~  m/^[AGCT]+$/) {
+    wrn("$id - has non-AGTC bases");
+    return;
+  }
+
+  my $seq = Bio::Seq->new( -id=>$s->{ID}, -seq=>$s->{SEQ} );
+
+  my $aa = $seq->translate->seq;
+
+  if ($aa =~ m/\*./) {
+    wrn("$id - has internal stop codons, trying revcom");
+    $aa = $seq->revcom->translate->seq;
+    if ($aa =~ m/\*./) {
+      wrn("$id - revcom has internal stop codons too");
+      return;
+    }
+    else {
+      msg("$id - revcom resolves problem, hooray!");
+      $s->{SEQ} = $seq->revcom->seq;
+    }
+  }
+
+  return $L;
+}
+
+#..............................................................................
+sub dedupe_seq {
+  my($seq) = @_;
+  my %seen;
+  my $good = [];
+  for my $s (@$seq) {
+    if ($seen{ $s->{SEQ} }) {
+      wrn("duplicate", length($s->{SEQ}), "bp sequence:", 
+        $s->{ID}, '~', $seen{$s->{SEQ}} );
+    }
+    else {
+      push @$good, $s;
+    }
+    $seen{ $s->{SEQ} } .= ' '.$s->{ID};
+  }
+  msg( "dedupe_seq: read", scalar(@$seq), "/ kept", scalar(@$good) );
+  return $good;
+}
+
+#..............................................................................
+sub load_tabular {
+  my($fname, $keycol, $sep) = @_;
+  $keycol //= 0;
+  $sep //= "\t";
+  my $hash = {};
+  my @hdr;
+  my $row=0;
+  open my $TSV, '<', $fname or err("Can't read TSV file: $fname");
+  while (<$TSV>) {
+    chomp;
+    my @col = split m/$sep/;
+    $row++;
+    if (@hdr) {
+      @hdr==@col or err("Header and row $row differ in column count");
+      #my $key = $col[$keycol] or wrn("Empty key column $keycol: $_");
+      #exists{$hash->{$col[$key}} and wrn("WARNING: dupe key $key at row: $_");
+      my $key = $col[$keycol];
+      $hash->{ $key } ||= { map { ($hdr[$_] => $col[$_]) } (0..$#hdr) };
+    }
+    else {
+      @hdr = @col;
+    }
+  }
+  close $TSV;
+  return $hash;
+}
+
+#..............................................................................
+sub load_fasta {
+  my($fasta) = @_;
+  my %seen;
+  my $list;
+  my $dbtype = 'unknown';
+  msg("load_fasta: $fasta");
+  my $in = Bio::SeqIO->new(-file=>$fasta, -format=>'fasta');
+  while (my $seq = $in->next_seq) {
+    my $id = $seq->id or err("Empty ID in $fasta");
+    if ($seen{$id}) {
+      wrn("Duplicate ID '$id' in $fasta");
+      $id = $id.'_dupe';
+    }
+    $seen{$id}++;
+    my $s = uc($seq->seq);
+    $dbtype = $seq->alphabet eq 'dna' ? 'nucl' : 'prot';
+    $dbtype eq 'nucl' ? $s =~ s/[^AGTC]/N/g : $s =~ s/[^A-Z]/X/g ;
+    push @$list, {
+      ID   => $id,
+      ACC  => '',
+      DESC => $seq->desc,
+      SEQ  => $s,
+      TYPE => $dbtype,
+    }
+  }
+  msg("load_fasta: read", scalar(@$list), "$dbtype sequences");
+  return $list;
+}
+
+#..............................................................................
+sub save_fasta {
+  my($fasta, $seq) = @_;
+  msg("save_fasta: $fasta");
+  my %seen;
+  my $out = Bio::SeqIO->new(-file=>">$fasta", -format=>'fasta');
+  for my $s (@$seq) {
+    $seen{$s->{ID}}++;
+    my $freq = $seen{$s->{ID}};
+    #wrn("seen $s->{ID} now $freq times") if $freq > 1;
+#    print Dumper($s);
+    my $ABX = defined($s->{ABX}) ? join($ABX_SEP, sort @{$s->{ABX}}) : '';
+    $ABX =~ s/\s+/_/g; # remove spaces!
+    my $obj = Bio::Seq->new(
+      -id   => join('~~~', $db, $s->{ID}, $s->{ACC}, $ABX),
+      -desc => ($s->{DESC} || $s->{ID}),
+      -seq  => $s->{SEQ},
+    );
+#    $obj->desc( hash_encode($s) );
+    $out->write_seq($obj);
+#    $seen{ $s->{ID} }++;
+  }
+  msg("save_fasta: wrote", scalar(@$seq), "sequences");
+}
+
+#----------------------------------------------------------------------
+sub msg {
+  print STDERR "@_\n";
+}
+
+#----------------------------------------------------------------------
+sub wrn {
+  msg("WARNING:", @_) if $debug;
+}
+
+#----------------------------------------------------------------------
+sub err {
+  msg("ERROR:", @_);
+  exit(1);
+}
+
+#----------------------------------------------------------------------
+# Option setting routines
+
+sub setOptions {
+  use Getopt::Long;
+
+  @Options = (
+    {OPT=>"help",    VAR=>\&usage,             DESC=>"This help"},
+    {OPT=>"debug!",  VAR=>\$debug, DEFAULT=>0, DESC=>"Verbose debug output"},
+    {OPT=>"dbdir=s", VAR=>\$outdir, DEFAULT=>abs_path("$FindBin::RealBin/../db"), DESC=>"Parent folder"},
+    {OPT=>"db=s",    VAR=>\$db, DEFAULT=>"",  DESC=>"Choices: $DATABASES" },
+    {OPT=>"force!",  VAR=>\$force, DEFAULT=>0, DESC=>"Force download even if exists"},
+  );
+
+  &GetOptions(map {$_->{OPT}, $_->{VAR}} @Options) || usage(1);
+
+  # Now setup default values.
+  foreach (@Options) {
+    if (defined($_->{DEFAULT}) && !defined(${$_->{VAR}})) {
+      ${$_->{VAR}} = $_->{DEFAULT};
+    }
+  }
+}
+
+sub usage {
+  my($exitcode) = @_;
+  $exitcode = 0 if $exitcode eq 'help'; # what gets passed by getopt func ref
+  $exitcode ||= 0;
+  select STDERR if $exitcode; # write to STDERR if exitcode is error
+  
+  print "SYNOPIS\n  Download databases for abricate to use\n";
+  print "USAGE\n  $EXE [options] --db DATABASE\n";
+  print "OPTIONS\n";
+  foreach (@Options) {
+    printf "  --%-13s %s%s.\n",$_->{OPT},$_->{DESC},
+           defined($_->{DEFAULT}) ? " (default '$_->{DEFAULT}')" : "";
+  }
+  exit($exitcode);
+}
+ 
+#----------------------------------------------------------------------

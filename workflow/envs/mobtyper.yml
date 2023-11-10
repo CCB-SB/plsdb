@@ -1,6 +1,0 @@
-name: plsdb_mobtyper
-channels:
-    - defaults
-    - bioconda
-dependencies:
-    - mob_suite==3.0.3

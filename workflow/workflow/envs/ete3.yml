@@ -1,0 +1,16 @@
+name: ete3
+channels:
+    - etetoolkit
+    - conda-forge
+    - bioconda
+    - anaconda
+    - defaults
+dependencies:
+  - python==3.6.15
+  - ete3==3.1.3
+  - ete_toolchain==3.0.0
+  - pandas==1.1.5
+  - numpy==1.19.5
+  - requests
+  - entrez-direct==16.2
+  - rapidfuzz

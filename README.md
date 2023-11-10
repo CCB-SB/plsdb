@@ -1,211 +1,203 @@
+
 # News
 Our manuscript discussing the new features of PLSDB was accepted to the annual 2022 Nucleic Acid Research database Issue! The manuscript can be found [here](https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gkab1111/6439675).
 # Retrieving and processing plasmids from NCBI
 
-## Requirements
+Pipeline for data collection
+==============================
+[[_TOC_]]
 
-### Python
 
-#### Miniconda
+## Summary
+![pipeline graph](workflow/dag.svg)
+
+- `retrieve_plasmid`: Retrieve plasmid data from NCBI database
+    - - `esearch` query from **Orlek et al.** 
+    - Used databases: nucleotide, biosample, assembly, and taxonomy database. NCBI database sources:
+        - INSDC (DDBJ, EMBL/ENA, GenBank): [International Nucleotide Sequence Database Collaboration](https://www.ncbi.nlm.nih.gov/genbank/collab/)
+        - RefSeq
+- `filter_metadata`: To remove incomplete or nonbacterial records these are filtered by metadata attributes:
+    - Duplicated entry (NUCCORE_DuplicatedEntry)
+    - Record description (regular expression from **Orlek et al.**)
+    - Assembly Lastest (True)
+    - Assembly Completeness (Complete)
+        - If no assembly: Completeness status of the nuccore record has to be `complete`
+        - Has assembly: assembly status of the latest version has to be `Complete genome`
+            - [NCBI assembly help page](https://www.ncbi.nlm.nih.gov/assembly/help/)
+    - By taxonomy: superkingdom taxon should be Bacteria
+- `filter_sequences`: To remove identical records
+    - Group plasmids with identical sequences
+    - Among these groups select one record
+        - Prefer the one from RefSeq
+        - Prefer the one with location information
+        - Prefer the one with an assembly
+        - Prefer the most recent assembly release date
+        - Prefer the one with a biosample
+        - Prefer the newewst nuccore creation date
+        - Prefer the one with the highest coverage
+        - If all equals, choose the first one
+- `filter_rmlst`: To remove putative chromosomal sequences
+    - Obtain rMLST database
+    - Create a local NCBI chromosomal sequences database
+    - The plasmid sequences are aligned against the rMLST allele sequences and local NCBI-db
+    - Records having more than 5 unique rMLST loci are searched in NCBI chromosomal sequences using BLASTn (remote access)
+    - Records with hits are removed
+- `filter_artifacts`: Remove possible artifacts sequences
+- `process_abricate`: Annotate antimicrobial resistance or virulence genes.
+    - BLASTn search in DBs provided by ABRicate
+        - Blaster from [CGE core module](https://bitbucket.org/genomicepidemiology/cge_core_module) is used for search and pre-processing
+        - Filtering:
+            - Identity and coverage cutoffs
+            - Overlapping matches are removed
+        - All hits are ollected into one file
+- `process_pmslt`: Annotate using pMLST
+    - For each found replicon use the associated pMLST scheme (if available)
+    - Use `mlst` to perform the pMLST analysis
+    - Process the results
+        - Set IncF ST according to the FAB formula (**Villa et al.**)
+    - Create BLAST database file from plasmid FASTA
+    - Create sketches from plasmid FASTA using Mash
+- `dstream_sim_records`: List of similar plasmids
+    - Use Mash do compute pairwise distances (use a distance cutoff)
+    - Create a list of unique pairs
+- `dstream_umap`: Embedding
+    - Compute pairwise distances between plasmids using Mash
+    - Compute embedding using UMAP
+- `process_infotable`: Create info table
+    - Record information
+    - Embedding coordinates
+    - PlasmidFinder hits
+    - pMLST hits
+- `dstream_compare`: Compare created table to an older version
+    - Which plasmid records were removed
+    - Which plasmid records were added
+    - Which plasmid records changed
+
+## Preparations
+
+### PubMLST data
+This data processing pipeline makes use of the [PubMLST website](https://pubmlst.org/) developed by Keith Jolley ([Jolley & Maiden 2010, BMC Bioinformatics, 11:595](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-595)) and sited at the University of Oxford. The development of that website was funded by the Wellcome Trust.
+#### rMLST data
+*Note: requires a PubMLST account*
+*Note: requires graphical interface*
+*Note: PubMLST account needs to request access to Ribosomal MLST locus/sequence definitions database from rMLST admin. Access is normally granted within a day. *
+*Error: `Message: 'chromedriver' executable needs to be in PATH` : Make sure that chromedriver is installed. 
+As `chromium` already comes with a `chromedriver` installation, you can try: `sudo pacman -Syyu` followed by `sudo pacman -S chromium`*
+
+To remove putative chromosomal sequences rMLST analysis is performed which requires rMLST sequences from [PubMLST](https://pubmlst.org/rmlst/). There is an API for the PubMLST services, however using it seems to require much more effort than downloading the data through a web browser. Thus, there is a rule ([retrieve_rmlst_data](workflow/rules/module_retrival.smk)) that downloads the sequences automatically (given the login data). **This rule needs a graphical interface**, please, run this rule locally in your computer.
+  
+Here, a login and password are required. **Please, create and account and specify your credentials in `config.yml`**.
+
+*Note: Cookie agreement might cause problems. Requires minor changes if "Got it!" is changed to different link text.*
+
+#### pMLST
+There is a mapping from PlasmidFinder IDs to pMLST profile names in `pipeline.json` (`pmlst/map`).
+It may require an update depending on which pMLST schemes are available from PubMLST and which IDs are currently in the PlasmidFinder database.
+- *Note: Information on pMLST schemes is shown in: https://pubmlst.org/plasmid/*
+
+- Path to installed pMLST schemes: `~/miniconda3/envs/plsdb/db/pubmlst/`
+    - Each scheme is one directory (also listed in the log file when created)
+- Path to installed PlasmidFinder DB: `~/miniconda3/envs/plsdb/db/plasmidfinder/sequences`
+
+### ABRicate
+Please, if the most recent version of ABRicate contains the most recent database links [abricate-get_db](https://github.com/tseemann/abricate/blob/master/bin/abricate-get_db).
+- [VFDB](http://www.mgc.ac.cn/VFs/download.htm)
+- [CARD](https://card.mcmaster.ca/download)
+- [ARG-ANNOT](https://www.mediterranee-infection.com/acces-ressources/base-de-donnees/arg-annot-2/)
+- [Plasmidfinder](https://bitbucket.org/genomicepidemiology/plasmidfinder_db/src/master/)
+- [Resfinder](https://bitbucket.org/genomicepidemiology/resfinder_db/src/master/)
+
+**IMPORTANT**: Currently, ABRicate (version `1.0.1`) does not update some databases correctly:
+- ARG-ANNOT: The URL changed
+The file `patch_abricate-get_db` (`abricate: getdb_bin` param in [config.yml](workflow/config.yml)) should resolve these issues. It is a copy of the `abricate-get_db`, but changing the URL of ARG-ANNOT.  If you also find some deprecated links, please substitute them and set the param `abricate: replace_getdb: True` in [config.yml](workflow/config.yml).
+
+### API keys
+#### NCBI data
+To retrieve data from NCBI, please obtain an [API](https://support.nlm.nih.gov/knowledgebase/article/KA-05317/en-us) and specify it in the [`config.yml`](workflow/config.yml).
+#### Location queries
+To map location names to coordinates the Nominatim API and Google API are used. Google API is only used for comparative purposes, as their policy doesn't allow the 
+storage of google's content (more [here](https://developers.google.com/maps/documentation/geocoding/policies)).Google requires API key, please which requires you register ([more info](https://support.google.com/googleapi/answer/6158862?hl=en)).
+
+### BIOSAMPLE_Host
+Already known hosts are in [hosts_version.csv](src/hosts_20231101.csv).
+Run the rule [`process_create_host_mapping`](workflow/rules/module_process.smk) and manually check the new versions of `host` mapping. Find more details at the end of the log file of the rule (`logs/process_create_host_mapping.log`) or in the rule [`process_manually_inspect_hosts`](workflow/rules/module_process.smk).
+
+### BIOSAMPLE_Location
+Already known locations are in [locations_version.csv](src/locations_20231101_v2.csv) and corrections to find some specific locations are display in [location_correction_version.csv](src/location_corrections_20231101_v2.csv)
+
+Run the rule [`process_parse_locations`](workflow/rules/module_process.smk) and manually check the new versions of `location` and `location_corrections`. Find more details in the rule [`process_manually_inspect_locations`](workflow/rules/module_process.smk).
+
+
+### Conda & Snakemake
+If needed, install (mini-)conda
 ```bash
 cd ~
 # get miniconda (for linux)
 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
 # install
 bash Miniconda3-latest-Linux-x86_64.sh
-# set path to binaries
+# set path to binaries in your ~/.bashrc
 export PATH=$HOME/miniconda3/bin:$PATH
 ```
 
-Current `conda` version: `4.6.14`
-
-#### Conda environment
-Create the main environment and install needed packages:
+If needed, install [snakemake](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html)
 ```bash
-# create env
-conda env create --name plsdb python=3 --file requirements.yml
-# activate env
-source activate plsdb
+# If required, install mamba package manager in you base env
+conda install  -c conda-forge mamba
+# Install snakemake
+mamba create -c conda-forge -c bioconda -n snakemake snakemake
 ```
 
-**IMPORTANT**: Currently, ABRicate (version `0.8.13`) does not update some databases correctly:
-- PlasmidFinder: Should be downloaded from the BitBucket repository ([see this issue](https://github.com/tseemann/abricate/issues/66))
-- ARG-ANNOT: The URL changed
-The file `patch_abricate-get_db` should resolve these issues.
-Replace `abricate-get_db` by this file before running the pipeline.
+Current versions:  
+    - conda==23.7.3
+    - snakemake==7.32.4
 
-```bash
-# "patch" created for version 0.8.13 (same as in requirements.yml)
-rsync -av patch_abricate-get_db $HOME/miniconda3/envs/plsdb/bin/abricate-get_db
-```
 
-### R packages
-Use `install.packages()` to install missing packages:
-- `testit`
-- `argparse`
-- `ggplot2`
-- `scales`
-- `maps`
+### Comparing new and old versions
+The last rule in the pipeline requires a "master" table from an older version.
+The path has to be set in `config.yml` (attribute `previous_table`) and the file must exist.
 
-### Other tools
-Other tools installed by the pipeline (in the local folder `tools/`):
-- [edirect/eutils](https://www.ncbi.nlm.nih.gov/books/NBK179288/)
-- [Mash](https://github.com/marbl/Mash)
-- [BLAST+](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+)
-- [Krona](https://github.com/marbl/Krona/archive/xl2.5.zip)
+## Running the pipeline
 
-### Datasets
-The pipeline will automatically update the following databases/datasets:
-- pMLST data is downloaded from [PubMLST](https://pubmlst.org/plasmid/)
-- ABRicate data is updated using the built-in function
+- Do **not ignore** log files. They contain timestamps and useful information to detect possible errors. Add more information if necessary.
+- Take notes: Write down what was changed: version updates, big fixes etc.
+- Do **not** run the pipeline on the first day of a month (usually many requests fail or return nothing)
+- Do **not** execute the complete pipeline: use `snakemake --use-conda -c {CORES} --force target_rule` to run groups of rules
+- Before running something, **list the commands** to be executed: `snakemake -np`. See [Section](#groups-of-execution-sequentially)
+- If a step where some data is fetched from NCBI **fails** try to **re-run** the step
+    - Sometimes NCBI return an empty result or the request fails
+    - Re-running the command usually solves the problem
+- The **longest steps** are:
+    - Automatic rules:
+        - retrieve_nuccoredb_seqs: Download of putative chromosomes from NCBI server to create local db (2023-10-06: ~7h)
+        - process_rmlst_blastn: BLASTn search against rmlst database (2023-10-05: ~16h)
+        - filtering_rmlst: filter plasmid data using information form nuccoredb and rmlst_blastn (2023-10-06: ~2h)
+    - Manual curation rules:
+        - process_manually_inspect_hosts: Depends on the number of unknown hosts, but save at least 2 days (16h)
+        - process_manually_inspect_locations: Depends on the number of unknown locations, but save at least 1 day (8h)
+- Other steps require usually only a few minutes and should run under one hour
+- Try to run all steps requiring updated data on the **same day**
+    - I.e. getting new data for rMLST, `abricate`, pMLST, NCBI data (retrieve rules)
 
-**IMPORTANT**: The rMLST sequences from PubMLST are **NOT** downloaded by the pipeline as the access to the sequences requires a login.
-The pipeline expects a single FASTA file with all sequences (its path should be set in the config file `pipeline.json`, see `rmlst/fas`).
-
-### API key for location queries
-To map location names to coordinates the [OpenCageData](https://opencagedata.com/) API is used which requires an API key (you can register for a free trial account).
-The key should be stored in a local file specified in the pipeline config (`pipeline.json`, see `data/api_keys`).
-Also, a file with some of the already retrieved locations is included (`locs.tsv`) and will be updated with newly retrieved locations if you run the pipeline.
-
-### Settings
-Some settings which you may need to change:
-- Date (in `pipeline.snake`, variable `today`)
-    - E.g. if you re-run/start some pipeline steps on the next day
-- Path to an older version of the final plasmid table to compare it to the created one (in `pipeline.json`, value `old_tab`)
-- Paths:
-    - Paths to data (in `pipeline.json`, value `data/odir`)
-    - Paths to tools (in `pipeline.json`, value `dir` for each tool)
-
---------------------------------------------------
-
-## Pipeline
-To print all rules to be executed run:
-
-```bash
-snakemake -s pipeline.snake -np
-```
-
-Call the pipeline using
-```bash
-snakemake -s pipeline.snake
-```
-
-**IMPORTANT**: It is better to run the pipeline step by step to perform manual checking of the created files and the logger output:
-- Install the tools
-- Run required data updates: pMLST, ABRicate
-    - ABRicate updates: Check the created log file because an update can fail easily if anything changed in one of the dependencies, e.g. different URL or ID format
-- Collect plasmid data
-    - If any BioSample or assembly IDs are not found stop the pipeline and start again later (probably the NCBI database is being updated right now)
-    - If new locations are added they should be checked manually (the coordinates can be wrong depending on the query string)
-- The 3rd filtering step may run for a couple of hours (BLAST search for rMLST analysis)
-
-### Steps
-- Used NCBI nucleotide database sources:
-    - INSDC (DDBJ, EMBL/ENA, GenBank): [International Nucleotide Sequence Database Collaboration](https://www.ncbi.nlm.nih.gov/genbank/collab/)
-    - RefSeq
-- Tools/data:
-    - Install Mash
-    - Install BLAST+
-    - Install edirect/eutils
-    - Install KronaTools
-    - Get and process pMLST data from PubMLST DB
-    - Update data for ABRicate
-    - Create a BlastDB of rMLST allele sequences
-- Plasmid records:
-    - Query for plasmids in the NCBI nucleotide database
-        - `esearch` query from **Orlek et al.**
-- Plasmid meta data
-    - Retrieve linked assemblies and relevant meta data
-    - Retrieve linked BioSamples and relevant meta data
-    - Retrieve taxonomic information
-        - Process: extract queried taxon (ID, name, rank), complete lineage, and taxa/IDs for relevant ranks (from species to superkingdom)
-    - Add all new meta data to the table
-    - Process location information of the BioSamples and add it to the table
-        - Use coordinates if available, otherwise location
-        - Use OpenCageData API
-- Filtering (1): To remove incomplete or nonbacterial records these are filtered by
-    - Record description (regular expression from **Orlek et al.**)
-    - (Assembly) completeness
-        - If no assembly: Completeness status of the nuccore record has to be `complete`
-        - Has assembly: assembly status of the latest version has to be `Complete genome`
-            - [NCBI assembly help page](https://www.ncbi.nlm.nih.gov/assembly/help/)
-    - By taxonomy: superkingdom taxon ID should be `2` (i.e. Bacteria)
-- Filtering (2): To remove identical records
-    - Download nucl. sequences of plasmid records
-    - Compute the sketches using Mash
-    - Get pairs of plasmids with distance of 0 using Mash
-    - Group plasmids with identical sequences
-    - Among these groups select one record
-        - Prefer RefSeq records and those with more information
-    - Group plasmids by accession (without version number) and select only one record
-- Filtering (3): To remove putative chromosomal sequences
-    - The plasmid sequences are aligned against the rMLST allele sequences
-    - Records having more than 5 unique rMLST loci are searched in NCBI chromosomal sequences using BLASTn (remote access)
-    - Records with hits are removed
-- Plasmid nucleotide sequences:
-    - Create a new FASTA with nucl. sequences of remained plasmids
-    - Annotate using ABRicate:
-        - BLASTn search in DBs provided by ABRicate
-            - Blaster from [CGE core module](https://bitbucket.org/genomicepidemiology/cge_core_module) is used for search and pre-processing
-        - Filtering:
-            - Identity and coverage cutoffs
-            - Overlapping matches are removed
-        - All hits are ollected into one file
-    - Annotate using pMLST:
-        - For each found replicon use the associated pMLST scheme (if available)
-        - Use `mlst` to perform the pMLST analysis
-        - Process the results
-            - Set IncF ST according to the FAB formula (**Villa et al.**)
-    - Create BLAST database file from plasmid FASTA
-    - Create sketches from plasmid FASTA using Mash
-- List of similar plasmids:
-    - Use Mash do compute pairwise distances (use a distance cutoff)
-    - Create a list of unique pairs
-- Embedding:
-    - Compute pairwise distances between plasmids using Mash
-    - Compute embedding using UMAP
-- Create info table:
-    - Record information
-    - Embedding coordinates
-    - PlasmidFinder hits
-    - pMLST hits
-- Compare created table to an olrder version
-    - Which plasmid records were removed
-    - Which plasmid records were added
-    - Which plasmid records changed
-
-#### Notes
-
-##### Finding putative chromosomal sequences
-The candidates for putative chromosomal sequences are determined by searching for the rps genes - ribosome protein subunits which are used in the rMLST scheme (containing 53 rps genes) introduced by **Jolley et al.**:
-
-    "The rps loci are ideal targets for a universal characterization scheme as they are:
-      (i) present in all bacteria;
-     (ii) distributed around the chromosome; and
-    (iii) encode proteins which are under stabilizing selection for functional conservation."
-
-However, some of the rps genes can also be found on plasmids as described by **Yutin et al.**:
-
-    "In 68 of the 995 analyzed bacterial genomes, r-protein genes are
-    distributed across two or more genome partitions. In some cases,
-    paralogous proteins are encoded in different chromosomes or plasmids."
-
-Thus, the presence of (some) rps genes alone cannot be always used as an indicator for chromosomal sequences.
-Therefore, the records containing more than 5 rps genes are searched in the NCBI sequences using BLAST.
-
-##### Performing pMLST with the tool "mlst"
-As pMLST is not yet supported by `mlst` the data needs to be dowloaded and pre-processed before it can be used by the tool.
-However, some things need to be considered:
-- No profiles:
-    - A scheme may have no profiles (e.g. IncF) but `pmlst` requires a non-empty file
-    - Thus, a dummy profile needs to be created and the hits to this profile need to be processed accordingly (i.e. by removing the dummy ST)
-- Problematic profile file formatting:
-    - `mlst` requires an ST column with numeric values and one column per locus
-    - E.g. IncA/C cgMLST has "cgST" instead of "ST" and STs in the format "number.number"
-    - In such cases the column is renamed and STs are mapped to 1..N (the original values are saved in a separate file)
-    - Here, the results need to be processed to map the ST back to the original ST value
-
-Also make sure to provide a mapping for each downloaded pMLST scheme to a Python regular expression. These are used to match PlasmidFinder hits and pMLST scheme names (see `pmlst/map` in `pipeline.json`).
+### Groups of execution (sequentially)
+- RETRIVAL
+    - Plasmid NCBI retrival: `retrieve_plasmid_metadata retrieve_plasmid_taxid filter_metadata retrieve_fasta`
+    - NCBI chromosomal sequences retrival: `retrieve_nuccoredb_ids retrieve_nuccoredb_seqs process_make_nuccoredb_blastdb`
+    - ABRicate retrival: `retrieve_abricate_getdb retrieve_abricatedb`
+    - pmlst retrival: `retrieve_pmlst_data process_make_pmlst_blastdb`
+    - rmlst retrival (graphical interface): `retrieve_rmlst_data process_make_rmlst_blastdb`
+    - human disease ontology: `retrieve_disease_ont`
+- FILTERING:
+    - `filter_sequences process_rmlst_blastn filter_rmlst filter_artifacts`
+- PROCESSING:
+    - `process_calculate_GC process_abricate process_join_abricate process_pmlst`
+    - `process_mash_sketch process_mash_dist process_umap process_mash_dist_sim process_dstream_sim_records`
+- MANUAL_CURATION:
+    - `process_create_host_mapping process_manually_inspect_hosts process_infer_host`
+    - `process_disease_ont` (intermediate step, not manual curation)
+    - `process_parse_locations process_manually_inspect_locations`
+- DSTREAM:
+    - `process_infotable dstream_krona_xml dstream_krona_html dstream_summary dstream_compare`
 
 # References
 

@@ -1,6 +1,0 @@
-name: plsdb_eutils
-channels:
-    - defaults
-    - bioconda
-dependencies:
-    - entrez-direct==13.9

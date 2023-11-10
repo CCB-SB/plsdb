@@ -1,0 +1,47 @@
+##################################################
+# Config
+##################################################
+configfile: "config/config.yml"
+
+##################################################
+# Python modules
+##################################################
+import sys
+from os.path import join, basename, dirname, exists, splitext 
+
+# Adding scripts folder to system path
+sys.path.insert(0, "scripts")
+##################################################
+# Some settings
+##################################################
+NCBI_API_KEY = config["eutils"]["ncbi_api_key"]
+OUTDIR = config['outdir']
+CORES = config['cores']
+
+OUTDIR_retrival = join(OUTDIR, "data_retrival")
+OUTDIR_filtering = join(OUTDIR, "data_filtering")
+OUTDIR_process = join(OUTDIR, "data_process")
+OUTDIR_dstream = join(OUTDIR, "data_downstream")
+OUTDIR_logs = join(OUTDIR, "logs")
+
+##################################################
+# Rule includes
+##################################################
+include:"rules/module_retrival.smk"
+include: "rules/module_filtering.smk"
+include: "rules/module_process.smk"
+include: "rules/module_downstream.smk"
+
+
+##################################################
+# ALL rule
+##################################################
+rule all:
+    input:
+        # Downstream analyses
+        rules.dstream_summary.output,
+        rules.dstream_krona_html.output,
+        rules.dstream_sim_records.output,
+        rules.dstream_compare.output
+
+

@@ -1,0 +1,14 @@
+name: plsdb_r_env
+channels:
+    - conda-forge
+    - bioconda
+    - r
+    - defaults
+dependencies:
+    - r==4.3
+    - r-tidyverse==2.0.0
+    - r-taxize==0.9.100
+    - r-tidytext==0.4.1
+    - r-stringr==1.5.0
+    - r-logger==0.2.2
+    - r-argparse==2.2.2
