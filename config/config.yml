@@ -94,7 +94,7 @@ blast:
   ext: ["nin", "nhr", "nsq"]
 
 location_mapping:
-  google_api: "AIzaSyCtJW88JUfJ3ZnmjyvpuBYRi25iB2mzERk" # Check
+  google_api: # Check
   mapping: "../src/locations_20231103.csv" # Check
   corrections: "../src/location_corrections_20231103.csv" # Check
 
