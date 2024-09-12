@@ -1,0 +1,69 @@
+BIOSAMPLE_attribute,synonyms,description
+age,,"age at the time of sampling; relevant scale depends on species and study, e.g. could be seconds for amoebae or centuries for trees"
+animal_env,{'animal_env'},"The environment from which the animal sample was taken, e.g., veterinary clinic"
+beta_lactamase_family,{'beta_lactamase_family'},Specify the beta-lactamase family for this gene.
+bio_material,"{'biomaterial', 'bio_material'}",Identifier for the biological material from which the nucleic acid sequenced was obtained.
+biol_stat,{'biol_stat'},"The level of genome modification, e.g., wild, natural, semi-natural, inbred line, breeder's line, hybrid, clonal selection, mutant"
+biotic_regm,{'biotic_regm'},"Information about treatment(s) involving use of biotic factors, such as bacteria, viruses or fungi"
+biotic_relationship,{'biotic_relationship'},Free-living or from host (define relationship)
+biovar,,A biovar is a variant prokaryotic strain that differs physiologically and/or biochemically from other strains in a particular species.
+breed,,breed name - chiefly used in domesticated animals or plants
+carbapenemase,,"Does the enzyme exhibit carbapenemase activity? If the enzyme does exhibit carbapenemase activity, the response should be ""yes"", otherwise ""no."""
+cell_type,"{'tissue/cell_type', 'disease/cell_type', 'developmental_stage/cell_type', 'cell_type', 'celltype'}",Type of cell of the sample or from which the sample was obtained.
+coll_site_geo_feat,{'coll_site_geo_feat'},"Text or terms that describe the geographic feature where the food sample was obtained by the researcher. This field encourages selected terms listed under the following ontologies: anthropogenic geographic feature (http://purl.obolibrary.org/obo/ENVO_00000002), for example agricultural fairground [ENVO:01000986]; garden [ENVO:00000011} or any of its subclasses; market [ENVO:01000987]; water well [ENVO:01000002]; or human construction (http://purl.obolibrary.org/obo/ENVO_00000070), e.g., grocery store [GENEPIO:0001020]"
+cur_vegetation,{'cur_vegetation'},"vegetation classification from one or more standard classification systems, or agricultural crop"
+description,"{'description', 'sample_description'}",
+disease,"{'disease', 'disease_stat', 'diseases', 'disease_state', 'disease_status'}","list of diseases diagnosed; can include multiple diagnoses. the value of the field depends on host; for humans the terms should be chosen from DO (Disease Ontology), free text for non-human. For DO terms, please see http://gemina.svn.sourceforge.net/viewvc/gemina/trunk/Gemina/ontologies/gemina_symptom.obo?view=log"
+edta_inhibitor_tested,{'edta_inhibitor_tested'},"Was carbapenemase activity tested in the presence of EDTA? If carbapenemase activity was tested in the presence of EDTA, the response should be ""yes"", otherwise ""noâ."
+encoded_traits,,Traits like antibiotic resistance/xenobiotic degration phenotypes/converting phage genes
+env_broad_scale,"{'env_broad_range', 'env_broad_scale', 'biome', 'environment_(biome)', 'env_biome', 'environment_biome', 'broad_scale_environmental_context'}",Add terms that identify the major environment type(s) where your sample was collected. Recommend subclasses of biome [ENVO:00000428]. Multiple terms can be separated by one or more pipes e.g.: Â mangrove biome [ENVO:01000181]|estuarine biome [ENVO:01000020]
+env_local_scale,"{'environment_feature', 'env_local_scale', 'environment_(feature)', 'env_feature', 'local_scale_environmental_context', 'feature', 'env_local_range'}","Add terms that identify environmental entities having causal influences upon the entity at time of sampling, multiple terms can be separated by pipes, e.g.: Â shoreline [ENVO:00000486]|intertidal zone [ENVO:00000316]"
+env_medium,"{'env_material', 'environment_(material)', 'env_medium', 'material', 'environment_material'}",Add terms that identify the material displaced by the entity at time of sampling. Recommend subclasses of environmental material [ENVO:00010483]. Multiple terms can be separated by pipes e.g.: estuarine water [ENVO:01000301]|estuarine mud [ENVO:00002160]
+ethnicity,"{'ethnicity', 'ihmc_ethnicity'}",ethnicity of the subject
+extrachrom_elements,{'extrachrom_elements'},Plasmids that have significance phenotypic consequence
+extreme_event,"{'history/extreme_events', 'extreme_event'}",unusual physical events that may have affected microbial populations
+extreme_salinity,"{'extreme_salinity', 'extreme_unusual_properties/salinity'}",measured salinity
+fao_class,"{'fao_classification', 'fao_class', 'soil_taxonomic/fao_classification'}",soil classification from the FAO World Reference Database for Soil Resources
+genotype,"{'genotype', 'genetic_variation', 'genotype/variation'}",observed genotype
+geo_loc_name,"{'geolocname', 'geographic_location_(country:region,area)', 'geographical_location', 'geographic_location_(country)', 'geographical_location_(country:region,_location)', 'geographic_location_(country_and/or_sea_region)', 'geo_loc_name', 'geographic_location_(country_and/or_sea)', 'geographic_location_(locality)', 'country', 'geographic_location_(country_and/or_sea,region)', 'geographic_origin', 'geographic_location_(country_and/or_sea,_region)', 'geographic_locations', 'geographic_location_country_and_or_sea'}","Geographical origin of the sample; use the appropriate name from this list http://www.insdc.org/documents/country-qualifier-vocabulary. Use a colon to separate the country or ocean from more detailed information about the location, eg ""Canada: Vancouver"" or ""Germany: halfway down Zugspitze, Alps"""
+health_state,"{'health_state', 'health_disease_stat', 'health_disease_status'}",Health or disease status of sample at time of collection
+host,"{'host_name', 'host_(scientific_name)', 'host_species', 'specific_host', 'nathost', 'specifichost', 'host_scientific_name', 'host', 'host_speciess', 'host_organism', 'nat_host'}","The natural (as opposed to laboratory) host to the organism from which the sample was obtained. Use the full taxonomic name, eg, ""Homo sapiens""."
+host_age,,Age of host at the time of sampling
+host_animal_breed,,"The animal breed of the host organism.  Used mainly for animal hosts, e.g., duroc, angus, mixed breed"
+host_body_habitat,,original body habitat where the sample was obtained from
+host_common_name,,"The natural language (non-taxonomic) name of the host organism, e.g., mouse"
+host_dependence,,"Type of host dependence for the symbiotic host organism to its host., e.g., facultative, obligate"
+host_description,,Additional information not included in other defined vocabulary fields
+host_diet,,"type of diet depending on the sample for animals omnivore, herbivore etc., for humans high-fat, meditteranean etc.; can include multiple diet types"
+host_disease,"{'host_disease_stat', 'host_disease'}","Name of relevant disease, e.g. Salmonella gastroenteritis. Controlled vocabulary, http://bioportal.bioontology.org/ontologies/1009 or http://www.ncbi.nlm.nih.gov/mesh"
+host_disease_outcome,,"Final outcome of disease, e.g., death, chronic disease, recovery"
+host_disease_stage,,Stage of disease at the time of sampling
+host_health_state,"{'host_health_state', 'host_status'}",Information regarding health state of the individual sampled at the time of sampling
+host_life_stage,,description of host life stage
+host_sex,"{'host_gender', 'host_sex'}",Gender or physical sex of the host
+host_taxid,"{'host_specificity_or_range', 'host_taxonomy_id', 'host_id', 'host_taxid', 'host_spec_range', 'host_ids', 'host_taxon_id', 'host_tax_id'}","NCBI taxonomy ID of the host, e.g. 9606"
+host_tissue_sampled,"{'host_tissue_sampled', 'host_body_site'}","name of body site where the sample was obtained from, such as a specific organ or tissue, e.g., tongue, lung. For foundational model of anatomy ontology (fma) (v 4.11.0) or Uber-anatomy ontology (UBERON) (v releases/2014-06-15) terms, please see http://purl.bioontology.org/ontology/FMA or http://purl.bioontology.org/ontology/UBERON"
+ifsac_category,"{'ifsac+_category', 'ifsac_category', 'interagency_food_safety_analytics_collaboration_(ifsac)_category'}","The IFSAC food categorization scheme has five distinct levels to which foods can be assigned, depending upon the type of food. First, foods are assigned to one of four food groups (aquatic animals, land animals, plants, and other). Food groups include increasingly specific food categories; dairy, eggs, meat and poultry, and game are in the land animal food group, and the category meat and poultry is further subdivided into more specific categories of meat (beef, pork, other meat) and poultry (chicken, turkey, other poultry). Finally, foods are differentiated by differences in food processing (such as pasteurized fluid dairy products, unpasteurized fluid dairy products, pasteurized solid and semi-solid dairy products, and unpasteurized solid and semi-solid dairy products. An IFSAC food category chart is available from https://www.cdc.gov/foodsafety/ifsac/projects/food-categorization-scheme.html PMID: 28926300, e.g., Plants:Produce:Vegetables:Herbs:Dried Herbs"
+isol_growth_condt,{'isol_growth_condt'},PMID or url for isolation and growth condition specifications
+isolate,"{'isolate_name', 'isolate'}",identification or description of the specific individual from which this sample was obtained
+isolate_name_alias,"{'isolate_name_alias', 'strain_name_alias'}",Other IDs associated with this isolate or strain. Separate with '; ' if more than one
+isolation_source,"{'isolationsource', 'isolate_source', 'isolation_source', 'source_of_isolate'}","Describes the physical, environmental and/or local geographical source of the biological sample from which the sample was derived."
+lab_host,"{'lab_host', 'labhost'}","Scientific name and description of the laboratory host used to propagate the source organism or material from which the sample was obtained, e.g., Escherichia coli DH5a, or Homo sapiens HeLa cells"
+lat_lon,"{'lat_lon', 'latlon', 'geogr aphic_location_(latitude_and_longitude)', 'geographical_location_(longitude_and_longitude)', 'geographic_location_(latitude,_longitude)', 'geographical_location_(lat_lon)'}","The geographical coordinates of the location where the sample was collected. Specify as degrees latitude and longitude in format ""d[d.dddd] N|S d[dd.dddd] W|E"", eg, 38.98 N 77.11 W"
+local_class,"{'soil_taxonomic/local_classification', 'local_class'}",soil classification based on local soil classification system
+metagenome_source,,"describes the original source of a metagenome assembled genome (MAG). Examples: soil metagenome, gut metagenome"
+num_replicons,{'num_replicons'},Number of replicons in nuclear genome
+pathogenicity,"{'pathogenicity', 'known_pathogenicity'}",To what is the entity pathogenic
+pathotype,,"Some bacterial specific pathotypes (example Eschericia coli - STEC, UPEC)"
+pathovar,,"Taxonomy below subspecies; a variety (in bacteria, fungi or virus) usually based on its pathogenic properties. Sometimes used as equivalent to subspecies."
+phenotype,,"Phenotype of sampled organism. For Phenotypic quality Ontology (PATO) (v1.269) terms, please see http://bioportal.bioontology.org/visualize/44601"
+plant_body_site,,"name of body site that the sample was obtained from. For Plant Ontology (PO) (v 20) terms, see http://purl.bioontology.org/ontology/PO"
+propagation,,phage: lytic/lysogenic/temperate/obligately lytic; plasmid: incompatibility group; eukaryote: asexual/sexual
+rel_to_oxygen,{'rel_to_oxygen'},"Is this organism an aerobe, anaerobe? Please note that aerobic and anaerobic are valid descriptors for microbial environments, eg, aerobe, anaerobe, facultative, microaerophilic, microanaerobe, obligate aerobe, obligate anaerobe, missing, not applicable, not collected, not provided, restricted access"
+samp_mat_type,{'samp_mat_type'},"The type of material from which the sample was obtained. For the Hydrocarbon package, samples include types like core, rock trimmings, drill cuttings, piping section, coupon, pigging debris, solid deposit, produced fluid, produced water, injected water, swabs, etc. For the Food Package, samples are usually categorized as food, body products or tissues, or environmental material. This field accepts terms listed under environmental specimen (http://purl.obolibrary.org/obo/GENEPIO_0001246)"
+sample_type,,"Sample type, such as cell culture, mixed culture, tissue sample, whole organism, single cell, metagenomic assembly"
+sex,"{'sample_sex', 'sex', 'experimental_factor:_sex', 'sample_gender', 'donor_sex', 'gender'}",physical sex of sampled organism
+soil_type,"{'soil_type', 'soil_type_name'}",soil series name or other lower-level classification
+source_type,,"Controlled vocabulary describing the isolation_source.  Choose the best fit term: Human, Animal, Food, Environmental, Other, e.g., Food"
+tissue,"{'tissue', 'tissue_type', 'organismpart', 'tisssue', 'tissuetype', 'body_site', 'organism_part', 'source_tissue', 'organ', 'tissue_origin'}",Type of tissue the sample was taken from.
+wastewater_type,,"the origin of wastewater such as human waste, rainfall, storm drains, etc."

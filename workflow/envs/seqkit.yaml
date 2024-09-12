@@ -1,0 +1,10 @@
+name: seqkit
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+dependencies:
+    - bioconda::seqkit==2.8.1
+    - pip
+    - pip:
+        - git+https://meta:glpat-YwMVAVL3bf5vVbFpXeN5@ccb-gitlab.cs.uni-saarland.de/metagenomics/pipelines/utils.git

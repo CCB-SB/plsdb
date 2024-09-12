@@ -1,36 +1,52 @@
+from snakemake.utils import min_version
+min_version("8.9.0")
+
 ##################################################
 # Config
 ##################################################
-configfile: "config/config.yml"
+configfile: "config.yml"
 
 ##################################################
 # Python modules
 ##################################################
-import sys
-from os.path import join, basename, dirname, exists, splitext 
+from os.path import join, basename, dirname, exists, splitext , abspath
+from tempfile import gettempdir
 
-# Adding scripts folder to system path
-sys.path.insert(0, "scripts")
 ##################################################
 # Some settings
 ##################################################
-NCBI_API_KEY = config["eutils"]["ncbi_api_key"]
 OUTDIR = config['outdir']
-CORES = config['cores']
-
-OUTDIR_retrival = join(OUTDIR, "data_retrival")
-OUTDIR_filtering = join(OUTDIR, "data_filtering")
-OUTDIR_process = join(OUTDIR, "data_process")
-OUTDIR_dstream = join(OUTDIR, "data_downstream")
-OUTDIR_logs = join(OUTDIR, "logs")
+OUTDIR_filtering = join(config['outdir'], "filtering")
 
 ##################################################
 # Rule includes
 ##################################################
-include:"rules/module_retrival.smk"
-include: "rules/module_filtering.smk"
-include: "rules/module_process.smk"
+
+# Data collection
+include: "rules/data_collection.smk"
+include: "rules/metadata.smk"
+include: "rules/fasta.smk"
+include: "rules/deduplication.smk"
+
+# Filtering
+include: "rules/chromosomal.smk"
+
+# Sequence annotation
+include: "rules/viral.smk"
+include: "rules/bgc.smk"
+include: "rules/amr.smk"
+include: "rules/features.smk"
+# include: "rules/typing.smk"
+
+# Metadata annotation
+include: "rules/ecosystem.smk"
+include: "rules/disease.smk"
+include: "rules/locations.smk"
+
+## Downstream analysis
+include: "rules/krona.smk"
 include: "rules/module_downstream.smk"
+
 
 
 ##################################################
@@ -38,10 +54,57 @@ include: "rules/module_downstream.smk"
 ##################################################
 rule all:
     input:
-        # Downstream analyses
-        rules.dstream_summary.output,
-        rules.dstream_krona_html.output,
-        rules.dstream_sim_records.output,
-        rules.dstream_compare.output
+        ### Data Collection
+        rules.nuccore_queries.output,
+        rules.biosample_queries.output,
+        rules.biosample_extraction.output,
+        rules.join_NABT.output,
+        rules.nuccorechr_queries.output,
+        rules.nuccorechr_fasta_join.output,
+        rules.deduplication.output,
+        rules.fasta_queries.output,
+        rules.rmlst_api.output,
+        ### Filtering
+        rules.rmlst_blastn.output,
+        rules.chr_putative_ids.output,
+        ### VIRAL
+        # rules.virsorter2_2.output,
+        # rules.dramv_annotate.output,
+        # rules.dramv_summarize.output,
+        # rules.viral_curation.output,
+        ### BGC
+        # rules.bgc_split.output,
+        # rules.antismash_join.output,
+        ### AMR
+        # rules.seqkit_split_amr.output,
+        # rules.AMRFinderPlus_getdb.output,
+        # rules.AMRFinderPlus_join.output,
+        # rules.rgi_getdb.output,
+        # rules.rgi_run.output,
+        # rules.hamronize.output,
+        ### Features
+        # rules.features_gbk.output,
+        # rules.features_json.output,
+        ### Typing
+        # rules.mob_typer.output,
+        # rules.pmlst_join.output,
+        # ### Ecosystem
+        rules.ecosystem_taxid.output,
+        ### Disease Ontology
+        rules.disease_infer_check.output,
+        ### Location
+        rules.locations_infer.output,
+        ### Downstream analyses
+        rules.bio_table.output,
+        rules.taxid_table.output,
+        rules.final_fasta.output,
+        rules.ecopaths_table.output,
+        rules.krona_taxonomy.output,
+        rules.createmash.output,
+        # rules.nucc_table.output,
+        # rules.dstream_summary.output,
+        # rules.dstream_compare.output,
+        # rules.dstream_server_data.output,
+        # rules.dstream_blastndb.output
 
 

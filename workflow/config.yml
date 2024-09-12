@@ -1,0 +1,150 @@
+###############################################################################
+## Data Collection
+###############################################################################
+previous_version: "20231103_v2"
+version : "2024" 
+timestamp: "20240531"
+date_collection_range: ["0001/01/01", "2024/05/31"]
+
+outdir: "../../results/"
+api_key_file: ".api_keys.cfg"
+
+#~~~~~~~~~~~~~~~
+## Data collection
+#~~~~~~~~~~~~~~~
+eutils:
+  api_key: "NCBI"
+
+nuccore:
+  esearch:
+    batches: 3 # adjusted based on rules.nuccore_queries.log
+    query: 'biomol_genomic[PROP] AND plasmid[FILT] AND (bacteria[FILT] OR archaea[FILT]) NOT complete cds[TITL] NOT gene[TITL] NOT genes[TITL] NOT contig[TITL] NOT scaffold[TITL] NOT whole genome map[TITL] NOT partial sequence[TITL] NOT (partial[TITL] AND plasmid[TITL]) NOT locus[TITL] NOT region[TITL] NOT fragment[TITL] NOT integron[TITL] NOT transposon[TITL] NOT insertion sequence[TITL] NOT insertion element[TITL] NOT phage[TITL] NOT operon[TITL]'
+  fasta:
+    batches: 10 # adjusted based on rules.fasta_queries.log
+  chromosomal:
+    esearch:
+      batches: 378 # adjusted based on rules.nuccorechr_queries.log
+      batches_size: 8000
+      query: '(Bacteria OR Archaea) NOT plasmid [FILT] NOT complete cds[TITL] NOT gene[TITL] NOT genes[TITL] NOT contig[TITL] NOT scaffold[TITL] NOT whole genome map[TITL] NOT partial sequence[TITL] NOT locus[TITL] NOT region[TITL] NOT fragment[TITL] NOT integron[TITL] NOT transposon[TITL] NOT insertion sequence[TITL] NOT insertion element[TITL] NOT phage[TITL] NOT operon[TITL] NOT whole genome shotgun[TITL] NOT assembly[TITL]'
+
+biosample:
+  batches: 25 # adjusted based on rules.biosample_queries.log
+  attributes: "../src/biosample_attributes_plsdb_2024.csv"
+
+pubmlst:
+  rmlst:
+    api_key: "rmlst"
+    default_chrome_dw_dir: "/home/alejandra/Downloads" # Check
+  pmlst:
+    db: "pubmlst_plasmid_seqdef"
+    url: "http://rest.pubmlst.org" # Check
+    url_schemes: "http://rest.pubmlst.org/db/pubmlst_plasmid_isolates/schemes" # Check
+#~~~~~~~~~~~~~~~
+## Filtering
+#~~~~~~~~~~~~~~~
+
+filter:
+  description_regex: 'contig|\sgene(?!tic|ral|rat|ric)|integron|transposon|scaffold|insertion sequence|insertion element|phage|operon|partial sequence|partial plasmid|region|fragment|locus|complete (?!sequence|genome|plasmid|\.|,)|(?<!complete sequence, )whole genome shotgun|artificial|synthetic|vector'
+
+virsorter2:
+  min_length: 5000
+  min_score: 0.5
+  groups: "dsDNAphage,ssDNA"
+
+checkv:
+  db_link: https://portal.nersc.gov/CheckV/checkv-db-v1.5.tar.gz #Check for possible updates
+  db_version: checkv-db-v1.5
+
+dramv:
+  min_contig_size: 1000
+#~~~~~~~~~~~~~~~
+## PubMLST
+#~~~~~~~~~~~~~~~
+pmlst:
+  db: "pubmlst_plasmid_seqdef"
+  url: "http://rest.pubmlst.org" # Check
+  url_schemes: "http://rest.pubmlst.org/db/pubmlst_plasmid_isolates/schemes" # Check
+
+rmlst:
+  api_key: "rmlst"
+  default_chrome_dw_dir: "/home/lalegm/Downloads" # Check
+  rmlst_ident: 100
+  rmlst_cov: 100
+  rmlst_evalue: 1E-20
+  rmlst_header: ["qseqid", "qstart", "qend", "qlen", "qcov","qcovhsp", "sseqid", "sgi", "sacc", "sstart", "send", "slen", "stitle", "evalue", "pident", "length", "gaps"]
+  rmlst_max_loci: 5
+  blastn_header: ["qseqid", "qlen", "sseqid", "stitle", "slen", "evalue", "bitscore", "length", "gaps", "pident", "qcovs", "qcovhsp"]
+  blastn_pident: 99
+  blastn_qcovs: 80
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## ECOSYSTEM
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ecosystem:
+  paths: "../src/ecopaths_2024.csv"
+  previous_mapping: "../src/ecosystem_tags_20231103_v2.csv" # Check
+  thresholds:
+    wratio_gold: 90.1
+    wratio_ncbi: 90.1 # token_set_ratio
+    tsr_gold: 95 # token_set_ratio
+    tsr_ncbi: 95 # token_set_ratio
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Human Disease Ontology
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Automatic download from "http://purl.obolibrary.org/obo/doid.obo"
+disease_ontology:  
+  DO: "doid.obo" # Disease Ontology reference
+  SYMP: "symp.obo" # Symptom Ontology reference
+  threshold_wratio_do: 90.1
+  threshold_wratio_symp: 95 # token_set_ratio
+  threshold_tsr_do: 95 # token_set_ratio
+  threshold_tsr_symp: 95 # token_set_ratio
+  previous_mapping: "../src/disease_tags_2024_checked.csv"
+  checked_mapping: "mapping_checked.csv"
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## LOCATIONS
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+locations:
+  api_key: "bing" # Check
+  mapping: "../src/locations_20231103_v2.csv" # Check
+  corrections: "../src/location_corrections_20231103_v2.csv" # Check
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## ANTIMICROBIAL RESISTANCES (AMR)
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~
+amrfinderplus:
+  ident_min: 95
+  coverage_min: 90
+
+amr_tools:
+  amrfinderplus:
+    analysis_software_version: "3.12.8"
+    reference_database_version: "2024-01-31.1"
+  rgi:
+    analysis_software_version: "6.0.3"
+    reference_database_version: "3.2.9"
+amr:
+  batches: 400
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Protein prediction
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~
+eggnog:
+  hmm_db:
+    taxid:
+      Bacteria: 2
+      Archaea: 2157
+  evalue: 0.001
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Comparison IMG/PR
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+imgpr:
+  fasta: "../../IMG_PR/IMG_VR_2023-08-08_1/IMGPR_nucl.fna.gz"
+  blastn_header: ["qseqid", "qlen", "sseqid", "stitle", "slen", "evalue", "bitscore", "length", "gaps", "pident", "qcovs", "qcovhsp"]
+  blastn_qcovs: 80
+  blastn_pident: 90

@@ -1,0 +1,43 @@
+TERM,ONTID
+artery disease,DOID:0050828
+fever,SYMP:0000613
+tooth disease,DOID:1091
+bacterial infection,DOID:104
+kidney disease,DOID:557
+disease inf agent,DOID:0050117
+septic shock,SYMP:0000451
+pneumonia,DOID:552
+septicemia,SYMP:0019148
+brain disease,DOID:936
+lung disease,DOID:850
+lung infection,"DOID:850,DOID:0050117"
+chronic kidney disease,DOID:784
+respiratory failure,DOID:11162
+uti,DOID:0080784
+food poisoning,DOID:96
+hus,DOID:12554
+abscess,SYMP:0000672
+lower respiratory tract disease,DOID:0050161
+gastrointestinal system disease,DOID:77
+prostate disease,DOID:47
+cerebrovascular disease,DOID:6713
+muscular disease,DOID:0080000
+liver disease,DOID:409
+diarrhea,DOID:13250
+mrsa,encoded_trait
+etec,encoded_trait
+crab,encoded_trait
+cancer,DOID:162
+COPD,DOID:3083
+PVD,DOID:341
+CHD,DOID:3393
+HBP,SYMP:0020064
+DM,DOID:9351
+acetinobacter infection,DOID:3091
+skin disease,DOID:37
+intestinal disease,DOID:5295
+enteritis,DOID:5295
+septicemia,"SYMP:0019148,DOID:0050117"
+leukemia,DOID:1240
+diabetes,DOID:9351
+kidney stone,DOID:585

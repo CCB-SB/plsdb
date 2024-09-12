@@ -1,0 +1,11 @@
+name: prodigal
+channels:
+    - conda-forge
+    - bioconda
+    - r
+    - defaults
+dependencies:
+    - bioconda::eggnog-mapper==2.1.12
+    - biopython
+    - numpy==1.26.0
+    - pandas==2.1.1

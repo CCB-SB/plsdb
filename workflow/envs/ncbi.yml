@@ -1,0 +1,15 @@
+name: ncbi
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+dependencies:
+    - conda-forge::biopython==1.81
+    - conda-forge::numpy==1.26.3
+    - conda-forge::pandas==2.2.0
+    - conda-forge::pyarrow==15.0.0 # pandas dependency
+    - conda-forge::xmltodict==0.13.0
+    - conda-forge::lxml==5.1.0
+    - bioconda::entrez-direct=16.2
+    - bioconda::seqkit==2.6.1
+    - conda-forge::requests==2.31.0

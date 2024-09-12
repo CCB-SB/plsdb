@@ -1,0 +1,687 @@
+query,ontology,match,term,term_id,match_final,term_final,term_final_id,score,method,group,version
+lyme borreliosis,Disease Ontology,lyme borreliosis,lyme disease,DOID:11729,,,,100,wratio,exact_synonym,2024
+cerebral hemorrhage,Symptom Ontology,cerebral hemorrhage,cerebrovascular accident,SYMP:0020056,,,,100,wratio,exact_synonym,2024
+diabetes,Disease Ontology,diabetes,diabetes mellitus,DOID:9351,,,,100,wratio,exact_synonym,2024
+nasopharyngeal carcinoma,Disease Ontology,nasopharyngeal carcinoma,nasopharynx carcinoma,DOID:9261,,,,100,wratio,exact_synonym,2024
+chlamydial infection,Disease Ontology,chlamydial infection,chlamydia,DOID:11263,,,,100,wratio,exact_synonym,2024
+erythema,Symptom Ontology,erythema,rash,SYMP:0000487,,,,100,wratio,exact_synonym,2024
+difficulty in breathing,Symptom Ontology,difficulty breathing,dyspnea,SYMP:0019153,,,,100,wratio,exact_synonym,2024
+stroke,Disease Ontology,stroke,cerebrovascular disease,DOID:6713,,,,100,wratio,exact_synonym,2024
+hyperbilirubinemia,Disease Ontology,hyperbilirubinemia,bilirubin metabolic disorder,DOID:2741,,,,100,wratio,exact_synonym,2024
+acute appendicitis,Disease Ontology,acute appendicitis,appendicitis,DOID:8337,,,,100,wratio,exact_synonym,2024
+gastrointestinal disorders,Disease Ontology,gastrointestinal disorder,gastrointestinal system disease,DOID:77,,,,100,wratio,exact_synonym,2024
+cirrhosis,Disease Ontology,cirrhosis,liver cirrhosis,DOID:5082,,,,100,wratio,exact_synonym,2024
+copd,Disease Ontology,copd,chronic obstructive pulmonary disease,DOID:3083,,,,100,wratio,exact_synonym,2024
+infectious diarrhea,Disease Ontology,infectious diarrhea,dysentery,DOID:12384,,,,100,wratio,exact_synonym,2024
+coronary heart disease,Disease Ontology,coronary heart disease,coronary artery disease,DOID:3393,,,,100,wratio,exact_synonym,2024
+esophagus cancer,Disease Ontology,esophagus cancer,esophageal cancer,DOID:5041,,,,100,wratio,exact_synonym,2024
+acute pneumonia,Disease Ontology,acute pneumonia,pneumonia,DOID:552,,,,100,wratio,exact_synonym,2024
+gastric cancer,Disease Ontology,gastric cancer,stomach cancer,DOID:10534,,,,100,wratio,exact_synonym,2024
+skin abscess,Symptom Ontology,skin abscess,dermal abscess,SYMP:0000251,,,,100,wratio,exact_synonym,2024
+uti,Disease Ontology,uti,urinary tract infection,DOID:0080784,,,,100,wratio,exact_synonym,2024
+low back pain,Symptom Ontology,low back pain,low backache,SYMP:0000635,,,,100,wratio,exact_synonym,2024
+ozena,Disease Ontology,ozena,atrophic rhinitis,DOID:4731,,,,100,wratio,exact_synonym,2024
+acne vulgaris,Disease Ontology,acne vulgaris,acne,DOID:6543,,,,100,wratio,exact_synonym,2024
+typhoid,Disease Ontology,typhoid,typhoid fever,DOID:13258,,,,100,wratio,exact_synonym,2024
+diarrhoea,Symptom Ontology,diarrhoea,diarrhea,SYMP:0000570,,,,100,wratio,exact_synonym,2024
+haemophagocytic lymphohistiocytosis,Disease Ontology,hemophagocytic lymphohistiocytosis,hemophagocytic lymphohistiocytosis,DOID:0050120,,,,98.5507246376812,wratio,term,2024
+tick borne relapsing fever,Disease Ontology,tickborne relapsing fever,tickborne relapsing fever,DOID:13036,,,,98.0392156862745,wratio,term,2024
+nterstitial lung disease,Disease Ontology,interstitial lung disease,interstitial lung disease,DOID:3082,,,,97.9591836734694,wratio,term,2024
+hemolytic uremic syndrome,Disease Ontology,hemolyticuremic syndrome,hemolyticuremic syndrome,DOID:12554,,,,97.9591836734694,wratio,term,2024
+klebsiella pneumoniae,Disease Ontology,klebsiella pneumonia,klebsiella pneumonia,DOID:13272,,,,97.5609756097561,wratio,term,2024
+chlamydia infection,Disease Ontology,chlamydial infection,chlamydia,DOID:11263,,,,97.4358974358974,wratio,exact_synonym,2024
+gasteroenteritis,Disease Ontology,gastroenteritis,gastroenteritis,DOID:2326,,,,96.7741935483871,wratio,term,2024
+gatroenteritis,Disease Ontology,gastroenteritis,gastroenteritis,DOID:2326,,,,96.551724137931,wratio,term,2024
+haemolytic uremic syndrome,Disease Ontology,hemolyticuremic syndrome,hemolyticuremic syndrome,DOID:12554,,,,96,wratio,term,2024
+non-insulin-dependent diabets mellitus,Disease Ontology,non-insulin-dependent diabetes mellitus,type 2 diabetes mellitus,DOID:9352,,,,96,wratio,exact_synonym,2024
+pneumonia due to klebsiella pneumoniae,Disease Ontology,pneumonia due to klebsiella pneumoniae,klebsiella pneumonia,DOID:13272,,,,95.8904109589041,wratio,exact_synonym,2024
+hematological malignancy,Disease Ontology,hematologic malignancy,hematologic cancer,DOID:2531,,,,95.6521739130435,wratio,exact_synonym,2024
+septicaemia,Symptom Ontology,septicemia,septicemia,SYMP:0019148,,,,95.2380952380952,wratio,term,2024
+malignant neoplasm of brain stem,Disease Ontology,malignant neoplasm of brain stem,brain stem cancer,DOID:4203,,,,95.0819672131147,wratio,exact_synonym,2024
+mac lung disease,Disease Ontology,lung disease,lung disease,DOID:850,,,,95,wratio,term,2024
+"pulmonary disease, chronic obstructive",Disease Ontology,chronic obstructive pulmonary disease,chronic obstructive pulmonary disease,DOID:3083,,,,95,wratio,term,2024
+acute toxic encephalopathy,Disease Ontology,toxic encephalopathy,toxic encephalopathy,DOID:3602,,,,95,wratio,term,2024
+interstitial pneumonia,Disease Ontology,lymphoid interstitial pneumonia,lymphoid interstitial pneumonia,DOID:0050159,,,,95,wratio,term,2024
+clostridium difficile,Disease Ontology,clostridium difficile colitis,clostridium difficile colitis,DOID:0060185,,,,95,wratio,term,2024
+vaginitis nos,Disease Ontology,vaginitis,vaginitis,DOID:2170,,,,95,wratio,term,2024
+recurrent urinary tract infection,Disease Ontology,urinary tract infection,urinary tract infection,DOID:0080784,,,,95,wratio,term,2024
+lgv proctitis,Disease Ontology,proctitis,proctitis,DOID:3127,,,,95,wratio,term,2024
+bile duct perforation,Disease Ontology,perforation bile duct,perforation bile duct,DOID:13409,,,,95,wratio,term,2024
+"infection, urinary tract",Disease Ontology,urinary tract infection,urinary tract infection,DOID:0080784,,,,95,wratio,term,2024
+bladder cancer,Disease Ontology,bladder dome cancer,bladder dome cancer,DOID:11820,,,,95,wratio,term,2024
+"chronic kidney disease, stage5",Disease Ontology,chronic kidney disease,chronic kidney disease,DOID:784,,,,95,wratio,term,2024
+biliary acute pancreatitis,Disease Ontology,acute pancreatitis,acute pancreatitis,DOID:2913,,,,95,wratio,term,2024
+cardiovascular disease,Disease Ontology,cardiovascular system disease,cardiovascular system disease,DOID:1287,,,,95,wratio,term,2024
+fever,Disease Ontology,q fever,q fever,DOID:11100,,,,95,wratio,term,2024
+"fasciitis, necrotizing",Disease Ontology,necrotizing fasciitis,necrotizing fasciitis,DOID:9602,,,,95,wratio,term,2024
+respiratory distress syndrome,Disease Ontology,newborn respiratory distress syndrome,newborn respiratory distress syndrome,DOID:12716,,,,95,wratio,term,2024
+malignant neoplasm of rectosigmoid junction,Disease Ontology,rectosigmoid junction neoplasm,rectosigmoid junction neoplasm,DOID:2780,,,,95,wratio,term,2024
+urinary infection tract,Disease Ontology,urinary tract infection,urinary tract infection,DOID:0080784,,,,95,wratio,term,2024
+acute gastroenteritis,Disease Ontology,gastroenteritis,gastroenteritis,DOID:2326,,,,95,wratio,term,2024
+acute otitis externa,Disease Ontology,otitis externa,otitis externa,DOID:9463,,,,95,wratio,term,2024
+laryngeal neoplasm,Disease Ontology,laryngeal benign neoplasm,laryngeal benign neoplasm,DOID:2598,,,,95,wratio,term,2024
+acute myeloid leukemia m2,Disease Ontology,acute myeloid leukemia,acute myeloid leukemia,DOID:9119,,,,95,wratio,term,2024
+aortic dissection surgery,Disease Ontology,aortic dissection,aortic dissection,DOID:0080685,,,,95,wratio,term,2024
+acute cholecystitis,Disease Ontology,cholecystitis,cholecystitis,DOID:1949,,,,95,wratio,term,2024
+acute severe pancreatitis,Disease Ontology,acute pancreatitis,acute pancreatitis,DOID:2913,,,,95,wratio,term,2024
+urinary infection,Disease Ontology,urinary tract infection,urinary tract infection,DOID:0080784,,,,95,wratio,term,2024
+traumatic injuries,Disease Ontology,traumatic brain injury,traumatic brain injury,DOID:0081292,,,,95,wratio,term,2024
+etec gastroenteritis,Disease Ontology,gastroenteritis,gastroenteritis,DOID:2326,,,,95,wratio,term,2024
+malignant tumor,Disease Ontology,malignant triton tumor,malignant triton tumor,DOID:6707,,,,95,wratio,term,2024
+acute respiratory failure,Disease Ontology,respiratory failure,respiratory failure,DOID:11162,,,,95,wratio,term,2024
+neonatal bacterial meningitis,Disease Ontology,bacterial meningitis,bacterial meningitis,DOID:9470,,,,95,wratio,term,2024
+infectious disease,Disease Ontology,disease infectious agent,disease infectious agent,DOID:0050117,,,,95,wratio,term,2024
+s. typhi infective endocarditis,Disease Ontology,infective endocarditis,infective endocarditis,DOID:0060000,,,,95,wratio,term,2024
+human campylobacteriosis,Disease Ontology,campylobacteriosis,campylobacteriosis,DOID:13622,,,,95,wratio,term,2024
+"thoracic aortic aneurysm, ruptured",Disease Ontology,thoracic aortic aneurysm,thoracic aortic aneurysm,DOID:14004,,,,95,wratio,term,2024
+respiratory disease,Disease Ontology,respiratory system disease,respiratory system disease,DOID:1579,,,,95,wratio,term,2024
+human relapsing fever,Disease Ontology,relapsing fever,relapsing fever,DOID:13034,,,,95,wratio,term,2024
+urinary tract infection (uti),Disease Ontology,urinary tract infection,urinary tract infection,DOID:0080784,,,,95,wratio,term,2024
+blood infection,Symptom Ontology,blood vessel infection,blood vessel infection,SYMP:0000227,,,,95,wratio,term,2024
+end stage renal disease (esrd),Disease Ontology,end stage renal disease,end stage renal disease,DOID:783,,,,95,wratio,term,2024
+acute lymphocytic leukemia,Disease Ontology,adult acute lymphocytic leukemia,adult acute lymphocytic leukemia,DOID:5604,,,,95,wratio,term,2024
+acute otitis media,Disease Ontology,acute serous otitis medium,acute serous otitis medium,DOID:11557,,,,95,wratio,term,2024
+chronic respiratory failure,Disease Ontology,respiratory failure,respiratory failure,DOID:11162,,,,95,wratio,term,2024
+infectious diseases,Disease Ontology,disease infectious agent,disease infectious agent,DOID:0050117,,,,95,wratio,term,2024
+acute typhoid fever,Disease Ontology,typhoid fever,typhoid fever,DOID:13258,,,,95,wratio,term,2024
+necrotizing enterocolitis,Disease Ontology,perinatal necrotizing enterocolitis,perinatal necrotizing enterocolitis,DOID:8677,,,,95,wratio,term,2024
+chronic renal failure,Disease Ontology,renal failure - chronic,chronic kidney disease,DOID:784,,,,95,wratio,exact_synonym,2024
+acute and chronic respiratory failure,Disease Ontology,acute and chronic respiratory failure,respiratory failure,DOID:11162,,,,95,wratio,exact_synonym,2024
+infection,Disease Ontology,hiv infection,human immunodeficiency virus infectious disease,DOID:526,,,,95,wratio,exact_synonym,2024
+lung infection,Disease Ontology,lung fluke infection,paragonimiasis,DOID:10699,,,,95,wratio,exact_synonym,2024
+inflammation,Disease Ontology,skin inflammation,dermatitis,DOID:2723,,,,95,wratio,exact_synonym,2024
+klebsiella pneumoniae pneumonia,Disease Ontology,pneumonia due to klebsiella pneumoniae,klebsiella pneumonia,DOID:13272,,,,95,wratio,exact_synonym,2024
+systemic salmonella infection,Disease Ontology,salmonella infection,salmonellosis,DOID:0060859,,,,95,wratio,exact_synonym,2024
+ear infection,Disease Ontology,inner ear infection,otitis interna,DOID:3930,,,,95,wratio,exact_synonym,2024
+bile duct obstruction,Disease Ontology,obstruction of bile duct,cholestasis,DOID:13580,,,,95,wratio,exact_synonym,2024
+"borreliosis, lyme",Disease Ontology,lyme borreliosis,lyme disease,DOID:11729,,,,95,wratio,exact_synonym,2024
+gonorrhoea,Disease Ontology,gonorrhea,gonorrhea,DOID:7551,,,,94.7368421052632,wratio,term,2024
+pneumoniae,Disease Ontology,pneumonia,pneumonia,DOID:552,,,,94.7368421052632,wratio,term,2024
+diarrhear,Disease Ontology,diarrhea,diarrhea,DOID:13250,,,,94.1176470588235,wratio,term,2024
+haemolytic uraemic syndrome,Disease Ontology,hemolyticuremic syndrome,hemolyticuremic syndrome,DOID:12554,,,,94.1176470588235,wratio,term,2024
+diseased,Disease Ontology,disease,disease,DOID:4,,,,93.3333333333333,wratio,term,2024
+gestroenteritis,Disease Ontology,gastroenteritis,gastroenteritis,DOID:2326,,,,93.3333333333333,wratio,term,2024
+guillain barré syndrome,Disease Ontology,guillainbarre syndrome,guillainbarre syndrome,DOID:12842,,,,93.3333333333333,wratio,term,2024
+neonatal necrotizing enterocolitis,Disease Ontology,perinatal necrotizing enterocolitis,perinatal necrotizing enterocolitis,DOID:8677,,,,92.7536231884058,wratio,term,2024
+non-atrophic gastritis,Disease Ontology,atrophic gastritis,atrophic gastritis,DOID:8929,gastritis,gastritis,DOID:4029,0,manual,manual,2024
+non-hodgkin lymfoma,Disease Ontology,nonhodgkin lymphoma,nonhodgkin lymphoma,DOID:0060060,,,,91.8918918918919,wratio,term,2024
+urine tract infections,Disease Ontology,urinary tract infection,urinary tract infection,DOID:0080784,,,,90.9090909090909,wratio,term,2024
+chronic gastritis,Disease Ontology,chronic antritis,chronic maxillary sinusitis,DOID:10792,gastritis,gastritis,DOID:4029,0,manual,manual,2024
+bacterial cholangitis,Disease Ontology,cholangitis,cholangitis,DOID:9446,,,,100,token_set_ratio,term,2024
+borrelia miyamotoi disease (hard tick-borne relapsing fever),Disease Ontology,disease,disease,DOID:4,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+"foot lacerations, dog bite wounds and urinary tract infections",Disease Ontology,urinary tract infection,urinary tract infection,DOID:0080784,,,,100,token_set_ratio,term,2024
+campylobacter gastroenteritis,Disease Ontology,gastroenteritis,gastroenteritis,DOID:2326,,,,100,token_set_ratio,term,2024
+bloody diarrhea complicated hemolytic uremic syndrome (hus),Disease Ontology,disease,disease,DOID:4,hemolyticuremic syndrome,hemolyticuremic syndrome,DOID:12554,0,manual,manual,2024
+pneumonia (fatal),Disease Ontology,pneumonia,pneumonia,DOID:552,,,,100,token_set_ratio,term,2024
+downer cow syndrome,Disease Ontology,syndrome,syndrome,DOID:225,,,,100,token_set_ratio,term,2024
+"abomasitis, enteritis, peritonitis",Disease Ontology,peritonitis,peritonitis,DOID:8283,,,,100,token_set_ratio,term,2024
+"postoperative esophageal atresia, pneumonia",Disease Ontology,esophageal atresia,esophageal atresia,DOID:10485,,,,100,token_set_ratio,term,2024
+"urinary tract infection, left hydronephrosis after surgery",Disease Ontology,urinary tract infection,urinary tract infection,DOID:0080784,,,,100,token_set_ratio,term,2024
+asymptomatic,Disease Ontology,asymptomatic neurosyphilis,asymptomatic neurosyphilis,DOID:10035,,,,0,manual,manual,2024
+acute pancreatitis and catheter related blood stream infection,Disease Ontology,acute pancreatitis,acute pancreatitis,DOID:2913,,,,100,token_set_ratio,term,2024
+cepacia syndrome,Disease Ontology,syndrome,syndrome,DOID:225,pneumonia,pneumonia,DOID:552,0,manual,manual,2024
+dyskinesia,Disease Ontology,primary ciliary dyskinesia 39,primary ciliary dyskinesia 39,DOID:0111854,primary ciliary dyskinesia,primary ciliary dyskinesia,DOID:9562,0,manual,manual,2024
+"bacteremia, intraabdominal abscess",Symptom Ontology,abscess,abscess,SYMP:0000672,,,,100,token_set_ratio,term,2024
+"diarrhea, enteritis",Disease Ontology,diarrhea,diarrhea,DOID:13250,,,,100,token_set_ratio,term,2024
+disease carrier,Disease Ontology,disease,disease,DOID:4,,,,100,token_set_ratio,term,2024
+ascites to be examined,Symptom Ontology,ascites,ascites,SYMP:0000526,,,,100,token_set_ratio,term,2024
+pancreatitis (colonization),Disease Ontology,pancreatitis,pancreatitis,DOID:4989,,,,100,token_set_ratio,term,2024
+"cancer, immunosuppressed",Disease Ontology,cancer,cancer,DOID:162,,,,100,token_set_ratio,term,2024
+neck abscess,Symptom Ontology,abscess,abscess,SYMP:0000672,,,,100,token_set_ratio,term,2024
+healthcare-associated pneumonia,Disease Ontology,pneumonia,pneumonia,DOID:552,,,,100,token_set_ratio,term,2024
+enterococcal urinary tract infection,Disease Ontology,urinary tract infection,urinary tract infection,DOID:0080784,,,,100,token_set_ratio,term,2024
+mediastinal abscess,Symptom Ontology,abscess,abscess,SYMP:0000672,,,,100,token_set_ratio,term,2024
+bronchitis acuta,Disease Ontology,bronchitis,bronchitis,DOID:6132,,,,100,token_set_ratio,term,2024
+nonspecific fever,Symptom Ontology,fever,fever,SYMP:0000613,,,,100,token_set_ratio,term,2024
+uterus cancer,Disease Ontology,cancer,cancer,DOID:162,uterine cancer,uterine cancer,DOID:363,0,manual,manual,2024
+unspecified hematuria,Symptom Ontology,hematuria,hematuria,SYMP:0000040,,,,100,token_set_ratio,term,2024
+idiopathic acute pancreatitis,Disease Ontology,acute pancreatitis,acute pancreatitis,DOID:2913,,,,100,token_set_ratio,term,2024
+"neonatal intestinal obstruction, lower respiratory infection",Disease Ontology,intestinal obstruction,intestinal obstruction,DOID:8437,,,,100,token_set_ratio,term,2024
+blood disease of banana,Disease Ontology,disease,disease,DOID:4,,,,100,token_set_ratio,term,2024
+pneumococcal septicemia,Symptom Ontology,septicemia,septicemia,SYMP:0019148,,,,100,token_set_ratio,term,2024
+yellow disease,Disease Ontology,disease,disease,DOID:4,yellow fever,yellow fever,DOID:9682,0,manual,manual,2024
+leptospirosis latitude,Disease Ontology,leptospirosis,leptospirosis,DOID:2297,,,,100,token_set_ratio,term,2024
+community-acquired urinary tract infection,Disease Ontology,urinary tract infection,urinary tract infection,DOID:0080784,,,,100,token_set_ratio,term,2024
+acute hepatopancreatic necrosis disease,Disease Ontology,acute necrotizing pancreatitis,acute necrotizing pancreatitis,DOID:0080998,,,,0,manual,manual,2024
+"fracture, pulmonary embolism (pe), atrial fibrillation (af), chronic renal failure (crf) and acute respiratory failure (arf)",Disease Ontology,pulmonary embolism,pulmonary embolism,DOID:9477,,,,100,token_set_ratio,term,2024
+acinetobacter baumannii osteomyelitis,Disease Ontology,osteomyelitis,osteomyelitis,DOID:1019,,,,100,token_set_ratio,term,2024
+hip abscess,Symptom Ontology,abscess,abscess,SYMP:0000672,,,,100,token_set_ratio,term,2024
+health,Disease Ontology,developmental disorder mental health,developmental disorder mental health,DOID:0060037,,,,0,manual,manual,2024
+"hemorrhagic colitis, hus",Disease Ontology,colitis,colitis,DOID:0060180,,,,100,token_set_ratio,term,2024
+42,Disease Ontology,hereditary spastic paraplegia 42,hereditary spastic paraplegia 42,DOID:0110794,,,,0,manual,manual,2024
+elbow abscess,Symptom Ontology,abscess,abscess,SYMP:0000672,,,,100,token_set_ratio,term,2024
+buruli ulcer,Disease Ontology,buruli ulcer disease,buruli ulcer disease,DOID:0050456,,,,100,token_set_ratio,term,2024
+edema disease,Disease Ontology,disease,disease,DOID:4,edema,edema,SYMP:0000538,0,manual,manual,2024
+"pneumonia, septicemia",Disease Ontology,pneumonia,pneumonia,DOID:552,,,,100,token_set_ratio,term,2024
+hospital-acquired pneumonia,Disease Ontology,pneumonia,pneumonia,DOID:552,,,,100,token_set_ratio,term,2024
+hemorrhagic colitis,Disease Ontology,colitis,colitis,DOID:0060180,,,,100,token_set_ratio,term,2024
+pelvic cancer,Disease Ontology,cancer,cancer,DOID:162,,,,100,token_set_ratio,term,2024
+borrelia miyamotoi disease,Disease Ontology,disease,disease,DOID:4,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+pyometra and cystitis,Disease Ontology,cystitis,cystitis,DOID:1679,,,,100,token_set_ratio,term,2024
+bovine mastitis,Disease Ontology,mastitis,mastitis,DOID:10690,,,,100,token_set_ratio,term,2024
+respiratory,Disease Ontology,respiratory allergy,respiratory allergy,DOID:0060496,,,,100,token_set_ratio,term,2024
+escherichia coli [e. coli] as the cause of diseases classified elsewhere,Disease Ontology,disease,disease,DOID:4,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+brain congestion,Symptom Ontology,congestion,congestion,SYMP:0000237,,,,100,token_set_ratio,term,2024
+"acute leukemia, pneumonia",Disease Ontology,leukemia,leukemia,DOID:1240,,,,100,token_set_ratio,term,2024
+wound infection (abscess),Symptom Ontology,abscess,abscess,SYMP:0000672,,,,100,token_set_ratio,term,2024
+invasive,Disease Ontology,invasive malignant thymoma,invasive malignant thymoma,DOID:3283,,,,0,manual,manual,2024
+salmonella gastroenteritis.,Disease Ontology,gastroenteritis,gastroenteritis,DOID:2326,salmonellosis,salmonellosis,DOID:0060859,0,manual,manual,2024
+myelodysplasia syndrome (mds) and acute myeloblastic leukemia (aml-m2),Disease Ontology,leukemia,leukemia,DOID:1240,,,,100,token_set_ratio,term,2024
+"severe sepsis, urinary tract infection and lung infection",Disease Ontology,urinary tract infection,urinary tract infection,DOID:0080784,,,,100,token_set_ratio,term,2024
+pneumonia and bacteremia,Disease Ontology,pneumonia,pneumonia,DOID:552,,,,100,token_set_ratio,term,2024
+soft-shelled disease,Disease Ontology,disease,disease,DOID:4,,,,100,token_set_ratio,term,2024
+"diarrhea, colitis",Disease Ontology,diarrhea,diarrhea,DOID:13250,,,,100,token_set_ratio,term,2024
+pulmonary,Disease Ontology,pulmonary artery choriocarcinoma,pulmonary artery choriocarcinoma,DOID:5547,lung disease,lung disease,DOID:850,0,manual,manual,2024
+secondary tuberculosis,Disease Ontology,tuberculosis,tuberculosis,DOID:399,,,,100,token_set_ratio,term,2024
+gastritis and duodenitis,Disease Ontology,gastritis,gastritis,DOID:4029,,,,100,token_set_ratio,term,2024
+end-stage liver disease,Disease Ontology,liver disease,liver disease,DOID:409,,,,100,token_set_ratio,term,2024
+presumptive gonorrhea,Disease Ontology,gonorrhea,gonorrhea,DOID:7551,,,,100,token_set_ratio,term,2024
+erythrodermic psoriasis,Disease Ontology,psoriasis,psoriasis,DOID:8893,,,,100,token_set_ratio,term,2024
+parvovirus hemorrhagic enteritis,Symptom Ontology,enteritis,enteritis,SYMP:0000039,,,,100,token_set_ratio,term,2024
+"gastroenteritis, diarrhea, uti, pneumonia, food poisoning",Disease Ontology,diarrhea,diarrhea,DOID:13250,,,,100,token_set_ratio,term,2024
+headache and dizziness,Symptom Ontology,headache,headache,SYMP:0000504,,,,100,token_set_ratio,term,2024
+"sepsis, meningitis and urinary system infection",Disease Ontology,meningitis,meningitis,DOID:9471,,,,100,token_set_ratio,term,2024
+normal,Disease Ontology,normal pressure hydrocephalus,normal pressure hydrocephalus,DOID:1572,,,,0,manual,manual,2024
+"cerebral hemorrhage, pulmonary infection",Symptom Ontology,hemorrhage,hemorrhage,SYMP:0000041,lung disease,lung disease,DOID:850,0,manual,manual,2024
+wound,Disease Ontology,wound botulism,wound botulism,DOID:0050353,,,,0,manual,manual,2024
+primary upper tibial osteomyelitis and bacteremia,Disease Ontology,osteomyelitis,osteomyelitis,DOID:1019,,,,100,token_set_ratio,term,2024
+"aspiration pneumonia, respiratory failure, cerebral infarction",Disease Ontology,cerebral infarction,cerebral infarction,DOID:3526,,,,100,token_set_ratio,term,2024
+anthrax,Disease Ontology,inhalation anthrax,inhalation anthrax,DOID:0050160,,,,100,token_set_ratio,term,2024
+chronic kidney failure associated with gout,Disease Ontology,gout,gout,DOID:13189,kidney failure,kidney failure,DOID:1074,0,manual,manual,2024
+human,Disease Ontology,human monocytic ehrlichiosis,human monocytic ehrlichiosis,DOID:0050026,,,,100,token_set_ratio,term,2024
+chronic obstructive pneumonia,Disease Ontology,pneumonia,pneumonia,DOID:552,,,,100,token_set_ratio,term,2024
+skin and soft tissue infection purulent abscess,Symptom Ontology,abscess,abscess,SYMP:0000672,,,,100,token_set_ratio,term,2024
+perisplenic abscess,Symptom Ontology,abscess,abscess,SYMP:0000672,,,,100,token_set_ratio,term,2024
+respiratory distress,Disease Ontology,newborn respiratory distress syndrome,newborn respiratory distress syndrome,DOID:12716,respiratory failure,respiratory failure,DOID:11162,0,manual,manual,2024
+purulent skin infection (skin necrosis),Symptom Ontology,necrosis,necrosis,SYMP:0000132,,,,100,token_set_ratio,term,2024
+right-sided infective endocarditis,Disease Ontology,infective endocarditis,infective endocarditis,DOID:0060000,,,,100,token_set_ratio,term,2024
+"breast cancer, pneumonia, sepsis",Disease Ontology,pneumonia,pneumonia,DOID:552,,,,100,token_set_ratio,term,2024
+adeno carcinoma ascending colon,Disease Ontology,carcinoma,carcinoma,DOID:305,,,,100,token_set_ratio,term,2024
+diarrhea caused by clostridium difficile,Disease Ontology,diarrhea,diarrhea,DOID:13250,,,,100,token_set_ratio,term,2024
+urine,Disease Ontology,maple syrup urine disease,maple syrup urine disease,DOID:9269,,,,100,token_set_ratio,term,2024
+"meningitis, septic arthritis",Disease Ontology,arthritis,arthritis,DOID:848,,,,100,token_set_ratio,term,2024
+lyme disease with erythema migrans,Disease Ontology,lyme disease,lyme disease,DOID:11729,,,,100,token_set_ratio,term,2024
+"epilepsy, coma, and pulmonary infection",Disease Ontology,epilepsy,epilepsy,DOID:1826,,,,100,token_set_ratio,term,2024
+cirrhosis and hepatitis,Disease Ontology,hepatitis,hepatitis,DOID:2237,,,,100,token_set_ratio,term,2024
+bacillary necrosis,Symptom Ontology,necrosis,necrosis,SYMP:0000132,,,,100,token_set_ratio,term,2024
+fever of unknown origin,Symptom Ontology,fever,fever,SYMP:0000613,,,,100,token_set_ratio,term,2024
+fracture,Disease Ontology,"osteogenesis imperfecta opalescent teeth , blue sclerae wormian bone without fracture","osteogenesis imperfecta opalescent teeth , blue sclerae wormian bone without fracture",DOID:0110335,,,,0,manual,manual,2024
+"diarrhea, pneumonia",Disease Ontology,diarrhea,diarrhea,DOID:13250,,,,100,token_set_ratio,term,2024
+premature,Disease Ontology,premature menopause,premature menopause,DOID:10787,,,,0,manual,manual,2024
+"pneumonia, acute kidney injury, cerebral infarction",Disease Ontology,cerebral infarction,cerebral infarction,DOID:3526,,,,100,token_set_ratio,term,2024
+yellow spot disease,Disease Ontology,disease,disease,DOID:4,yellow fever,yellow fever,DOID:9682,0,manual,manual,2024
+diverticular disease of intestine,Disease Ontology,disease,disease,DOID:4,diverticulitis,diverticulitis,DOID:7475,0,manual,manual,2024
+nasal inflammation,Symptom Ontology,inflammation,inflammation,SYMP:0000061,,,,100,token_set_ratio,term,2024
+catarrhal enteritis and hepatosplenomegaly,Symptom Ontology,enteritis,enteritis,SYMP:0000039,,,,100,token_set_ratio,term,2024
+urologic sepsis syndrome,Disease Ontology,syndrome,syndrome,DOID:225,,,,100,token_set_ratio,term,2024
+diarrhea/bloody diarrhea,Disease Ontology,diarrhea,diarrhea,DOID:13250,,,,100,token_set_ratio,term,2024
+severe pneumonia,Disease Ontology,pneumonia,pneumonia,DOID:552,,,,100,token_set_ratio,term,2024
+sepsis shock,Symptom Ontology,shock,shock,SYMP:0000450,,,,100,token_set_ratio,term,2024
+mink hemorrhagic pneumonia,Disease Ontology,pneumonia,pneumonia,DOID:552,,,,100,token_set_ratio,term,2024
+anemic syndrome,Disease Ontology,syndrome,syndrome,DOID:225,anemia,anemia,DOID:2355,0,manual,manual,2024
+uncertain,Disease Ontology,monoclonal gammopathy uncertain significance,monoclonal gammopathy uncertain significance,DOID:7442,,,,100,token_set_ratio,term,2024
+urinary tract infection seconday to prostatic hyperplasia,Disease Ontology,urinary tract infection,urinary tract infection,DOID:0080784,,,,100,token_set_ratio,term,2024
+perianal abscess,Symptom Ontology,abscess,abscess,SYMP:0000672,,,,100,token_set_ratio,term,2024
+hard tick-borne relapsing fever (borrelia miyamotoi disease),Disease Ontology,disease,disease,DOID:4,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+pneumonia; cerebral hemorrhage,Disease Ontology,pneumonia,pneumonia,DOID:552,,,,100,token_set_ratio,term,2024
+diffusal diarrhea,Disease Ontology,diarrhea,diarrhea,DOID:13250,,,,100,token_set_ratio,term,2024
+canine pyoderma,Disease Ontology,pyoderma,pyoderma,DOID:4223,,,,100,token_set_ratio,term,2024
+invasive non-typhoidal salmonellosis,Disease Ontology,salmonellosis,salmonellosis,DOID:0060859,,,,100,token_set_ratio,term,2024
+septicaemia due to fowl cholera,Disease Ontology,cholera,cholera,DOID:1498,,,,100,token_set_ratio,term,2024
+abscess neck,Symptom Ontology,abscess,abscess,SYMP:0000672,,,,100,token_set_ratio,term,2024
+lymph node,Disease Ontology,lymph node disease,lymph node disease,DOID:9942,,,,100,token_set_ratio,term,2024
+enteric fever,Symptom Ontology,fever,fever,SYMP:0000613,,,,100,token_set_ratio,term,2024
+cervical and waist syndrome,Disease Ontology,syndrome,syndrome,DOID:225,,,,100,token_set_ratio,term,2024
+"bloody diarrhea, pneumonia, septicemia",Disease Ontology,diarrhea,diarrhea,DOID:13250,,,,100,token_set_ratio,term,2024
+"severe pneumonia, acute respiratory failure",Disease Ontology,pneumonia,pneumonia,DOID:552,,,,100,token_set_ratio,term,2024
+unspecified infectious diseases,Disease Ontology,disease,disease,DOID:4,disease infectious agent,disease infectious agent,DOID:0050117,0,manual,manual,2024
+"mac pneumonia, hiv",Disease Ontology,pneumonia,pneumonia,DOID:552,,,,100,token_set_ratio,term,2024
+intra-abdominal infection (splenic abscess),Disease Ontology,splenic abscess,splenic abscess,DOID:2530,,,,100,token_set_ratio,term,2024
+liver abscess,Symptom Ontology,abscess,abscess,SYMP:0000672,,,,100,token_set_ratio,term,2024
+pyogenic liver abscess and bacteremia,Symptom Ontology,abscess,abscess,SYMP:0000672,,,,100,token_set_ratio,term,2024
+"diabetes, hypertension",Disease Ontology,hypertension,hypertension,DOID:10763,,,,100,token_set_ratio,term,2024
+drainage,Disease Ontology,epiphora due insufficient drainage,epiphora due insufficient drainage,DOID:13756,,,,100,token_set_ratio,term,2024
+ulcer,Disease Ontology,gastrojejunal ulcer,gastrojejunal ulcer,DOID:10927,,,,100,token_set_ratio,term,2024
+"multiple injuries, traumatic brain herniation",Disease Ontology,traumatic brain injury,traumatic brain injury,DOID:0081292,,,,100,token_set_ratio,term,2024
+carrier,Disease Ontology,mitochondrial pyruvate carrier deficiency,mitochondrial pyruvate carrier deficiency,DOID:0080363,,,,0,manual,manual,2024
+aortitis infection,Disease Ontology,aortitis,aortitis,DOID:519,,,,100,token_set_ratio,term,2024
+gastroenteritis escherichia coli,Disease Ontology,gastroenteritis,gastroenteritis,DOID:2326,,,,100,token_set_ratio,term,2024
+liver failure,Disease Ontology,transient infantile liver failure,transient infantile liver failure,DOID:0080778,liver disease,liver disease,DOID:409,0,manual,manual,2024
+"septic shock, multiple organ failure",Symptom Ontology,multiple organ failure,multiple organ failure,SYMP:0000724,,,,100,token_set_ratio,term,2024
+intra-abdominal abscess,Symptom Ontology,abscess,abscess,SYMP:0000672,,,,100,token_set_ratio,term,2024
+neonatal purulent meningitis,Disease Ontology,meningitis,meningitis,DOID:9471,,,,100,token_set_ratio,term,2024
+klebsiella pneumoniae [k. pneumoniae] as the cause of diseases classified elsewhere,Disease Ontology,disease,disease,DOID:4,klebsiella pneumonia,klebsiella pneumonia,DOID:13272,0,manual,manual,2024
+wound infection (abscess lymph node),Symptom Ontology,abscess,abscess,SYMP:0000672,,,,100,token_set_ratio,term,2024
+ventilator-associated pneumonia,Disease Ontology,pneumonia,pneumonia,DOID:552,,,,100,token_set_ratio,term,2024
+symptoms consistent with a urinary tract infection,Disease Ontology,urinary tract infection,urinary tract infection,DOID:0080784,,,,100,token_set_ratio,term,2024
+chronic purulent sinusitis,Disease Ontology,sinusitis,sinusitis,DOID:0050127,,,,100,token_set_ratio,term,2024
+salmonella gastroenteritis,Disease Ontology,gastroenteritis,gastroenteritis,DOID:2326,salmonellosis,salmonellosis,DOID:0060859,0,manual,manual,2024
+"liver cirrhosis, cholecystitis",Disease Ontology,liver cirrhosis,liver cirrhosis,DOID:5082,,,,100,token_set_ratio,term,2024
+swine dysentery,Disease Ontology,dysentery,dysentery,DOID:12384,,,,100,token_set_ratio,term,2024
+gastric remnant cancer,Disease Ontology,cancer,cancer,DOID:162,stomach cancer,stomach cancer,DOID:10534,0,manual,manual,2024
+aortic dissecting aneurysm,Disease Ontology,aortic aneurysm,aortic aneurysm,DOID:3627,,,,100,token_set_ratio,term,2024
+abdominal abscess,Symptom Ontology,abscess,abscess,SYMP:0000672,,,,100,token_set_ratio,term,2024
+sepsis,Disease Ontology,bacterial sepsis,bacterial sepsis,DOID:0040085,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+fistulated udder abscess,Symptom Ontology,abscess,abscess,SYMP:0000672,,,,100,token_set_ratio,term,2024
+bacterial pustule of soybean,Symptom Ontology,pustule,pustule,SYMP:0019167,,,,100,token_set_ratio,term,2024
+"pneumonia, digestive disorders",Disease Ontology,pneumonia,pneumonia,DOID:552,,,,100,token_set_ratio,term,2024
+"blood-stream infection, septic shock, and severe pneumonia",Disease Ontology,pneumonia,pneumonia,DOID:552,,,,100,token_set_ratio,term,2024
+mycobacteriosis,Disease Ontology,familial atypical mycobacteriosis x-linked 2,immunodeficiency 34,DOID:0112000,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+brain abscess,Disease Ontology,tuberculous abscess of brain,central nervous system tuberculosis,DOID:1638,,,,100,token_set_ratio,exact_synonym,2024
+asymptomatic uti,Disease Ontology,uti,urinary tract infection,DOID:0080784,,,,100,token_set_ratio,exact_synonym,2024
+cardiac failure,Disease Ontology,cardiac failure congestive,congestive heart failure,DOID:6000,,,,100,token_set_ratio,exact_synonym,2024
+fecal carriage,Symptom Ontology,fecal,feces droppings symptom,SYMP:0000146,,,,0,manual,manual,2024
+chd&amp;hbp&amp;dm,Disease Ontology,chd,coronary artery disease,DOID:3393,,,,100,token_set_ratio,exact_synonym,2024
+respiratory infection,Disease Ontology,respiratory insufficiency due to sars-cov-2 viral infection,xlinked immunodeficiency 74,DOID:0112063,,,,100,token_set_ratio,exact_synonym,2024
+aml,Disease Ontology,aml - acute myeloid leukemia,acute myeloid leukemia,DOID:9119,,,,100,token_set_ratio,exact_synonym,2024
+clinical,Disease Ontology,anophthalmia clinical with micrognathia malformed ears digital anomalies and abnormal external genitalia,syndromic microphthalmia 6,DOID:0111805,,,,0,manual,manual,2024
+infertile,Disease Ontology,hearing impairment infertile male syndrome,autosomal recessive nonsyndromic deafness 32,DOID:0110491,infertility,infertility,DOID:5223,0,manual,manual,2024
+post-hepatitis cirrhosis,Disease Ontology,cirrhosis,liver cirrhosis,DOID:5082,,,,100,token_set_ratio,exact_synonym,2024
+food poisoning,Disease Ontology,staphylococcal food poisoning,staphyloenterotoxemia,DOID:96,toxemia,toxemia,SYMP:0019149,0,manual,manual,2024
+trauma,Disease Ontology,pulmonary insufficiency following trauma and surgery,pulmonary valve insufficiency,DOID:14265,,,,0,manual,manual,2024
+empyema thoracis,Disease Ontology,empyema,pleural empyema,DOID:3798,,,,100,token_set_ratio,exact_synonym,2024
+ischemic stroke,Disease Ontology,stroke,cerebrovascular disease,DOID:6713,,,,100,token_set_ratio,exact_synonym,2024
+salmonella,Disease Ontology,salmonella infection,salmonellosis,DOID:0060859,,,,100,token_set_ratio,exact_synonym,2024
+subarachnoid hemorrhage,Disease Ontology,familial aneurysmal subarachnoid hemorrhage,intracranial berry aneurysm,DOID:0060228,,,,100,token_set_ratio,exact_synonym,2024
+cholera,Disease Ontology,cholera,cholera,DOID:1498,,,,100,exact,term,2024
+hepatocellular carcinoma,Disease Ontology,hepatocellular carcinoma,hepatocellular carcinoma,DOID:684,,,,100,exact,term,2024
+gingivitis,Disease Ontology,gingivitis,gingivitis,DOID:3087,,,,100,exact,term,2024
+kidney failure,Disease Ontology,kidney failure,kidney failure,DOID:1074,,,,100,exact,term,2024
+cervical cancer,Disease Ontology,cervical cancer,cervical cancer,DOID:4362,,,,100,exact,term,2024
+diphtheria,Disease Ontology,diphtheria,diphtheria,DOID:11405,,,,100,exact,term,2024
+cholangitis,Disease Ontology,cholangitis,cholangitis,DOID:9446,,,,100,exact,term,2024
+pneumonia,Disease Ontology,pneumonia,pneumonia,DOID:552,,,,100,exact,term,2024
+cellulitis,Disease Ontology,cellulitis,cellulitis,DOID:3488,,,,100,exact,term,2024
+relapsing fever,Disease Ontology,relapsing fever,relapsing fever,DOID:13034,,,,100,exact,term,2024
+salmonellosis,Disease Ontology,salmonellosis,salmonellosis,DOID:0060859,,,,100,exact,term,2024
+brain infarction,Disease Ontology,brain infarction,brain infarction,DOID:3454,,,,100,exact,term,2024
+biliary tract diseases,Disease Ontology,biliary tract disease,biliary tract disease,DOID:9741,,,,100,exact,term,2024
+chronic obstructive pulmonary disease,Disease Ontology,chronic obstructive pulmonary disease,chronic obstructive pulmonary disease,DOID:3083,,,,100,exact,term,2024
+endocarditis,Disease Ontology,endocarditis,endocarditis,DOID:10314,,,,100,exact,term,2024
+acute enteritis,Symptom Ontology,acute enteritis,acute enteritis,SYMP:0000676,,,,100,exact,term,2024
+urethral stricture,Disease Ontology,urethral stricture,urethral stricture,DOID:1829,,,,100,exact,term,2024
+crohn disease,Disease Ontology,crohn disease,crohn disease,DOID:8778,,,,100,exact,term,2024
+no disease,Disease Ontology,disease,disease,DOID:4,,,,100,exact,term,2024
+infant botulism,Disease Ontology,infant botulism,infant botulism,DOID:0050354,,,,100,exact,term,2024
+infective endocarditis,Disease Ontology,infective endocarditis,infective endocarditis,DOID:0060000,,,,100,exact,term,2024
+septicemia,Symptom Ontology,septicemia,septicemia,SYMP:0019148,,,,100,exact,term,2024
+lung abscess,Disease Ontology,lung abscess,lung abscess,DOID:0060317,,,,100,exact,term,2024
+cerebral infarction,Disease Ontology,cerebral infarction,cerebral infarction,DOID:3526,,,,100,exact,term,2024
+gastroenteritis,Disease Ontology,gastroenteritis,gastroenteritis,DOID:2326,,,,100,exact,term,2024
+guillain-barre syndrome,Disease Ontology,guillainbarre syndrome,guillainbarre syndrome,DOID:12842,,,,100,exact,term,2024
+wound discharge,Symptom Ontology,wound discharge,wound discharge,SYMP:0000652,,,,100,exact,term,2024
+tickborne relapsing fever,Disease Ontology,tickborne relapsing fever,tickborne relapsing fever,DOID:13036,,,,100,exact,term,2024
+pain,Symptom Ontology,pain,pain,SYMP:0000099,,,,100,exact,term,2024
+gonorrhea,Disease Ontology,gonorrhea,gonorrhea,DOID:7551,,,,100,exact,term,2024
+mastitis,Disease Ontology,mastitis,mastitis,DOID:10690,,,,100,exact,term,2024
+gastric ulcer,Disease Ontology,gastric ulcer,gastric ulcer,DOID:10808,,,,100,exact,term,2024
+stomach cancer,Disease Ontology,stomach cancer,stomach cancer,DOID:10534,,,,100,exact,term,2024
+duodenal ulcer,Disease Ontology,duodenal ulcer,duodenal ulcer,DOID:1724,,,,100,exact,term,2024
+pyoderma,Disease Ontology,pyoderma,pyoderma,DOID:4223,,,,100,exact,term,2024
+meningiomas,Disease Ontology,meningioma,meningioma,DOID:3565,,,,100,exact,term,2024
+leukemia,Disease Ontology,leukemia,leukemia,DOID:1240,,,,100,exact,term,2024
+otitis,Symptom Ontology,otitis,otitis,SYMP:0000873,,,,100,exact,term,2024
+endometritis,Disease Ontology,endometritis,endometritis,DOID:1002,,,,100,exact,term,2024
+chronic kidney disease,Disease Ontology,chronic kidney disease,chronic kidney disease,DOID:784,,,,100,exact,term,2024
+cystitis,Disease Ontology,cystitis,cystitis,DOID:1679,,,,100,exact,term,2024
+dermatitis,Disease Ontology,dermatitis,dermatitis,DOID:2723,,,,100,exact,term,2024
+vascular dementia,Disease Ontology,vascular dementia,vascular dementia,DOID:8725,,,,100,exact,term,2024
+tuberculosis,Disease Ontology,tuberculosis,tuberculosis,DOID:399,,,,100,exact,term,2024
+cystic fibrosis,Disease Ontology,cystic fibrosis,cystic fibrosis,DOID:1485,,,,100,exact,term,2024
+toxic shock syndrome,Disease Ontology,toxic shock syndrome,toxic shock syndrome,DOID:14115,,,,100,exact,term,2024
+enteritis,Symptom Ontology,enteritis,enteritis,SYMP:0000039,,,,100,exact,term,2024
+multiple organ failure,Symptom Ontology,multiple organ failure,multiple organ failure,SYMP:0000724,,,,100,exact,term,2024
+bacterial infectious disease,Disease Ontology,bacterial infectious disease,bacterial infectious disease,DOID:104,,,,100,exact,term,2024
+hemolytic-uremic syndrome,Disease Ontology,hemolyticuremic syndrome,hemolyticuremic syndrome,DOID:12554,,,,100,exact,term,2024
+intestinal obstruction,Disease Ontology,intestinal obstruction,intestinal obstruction,DOID:8437,,,,100,exact,term,2024
+legionnaires disease,Disease Ontology,legionnaire disease,legionnaire disease,DOID:10457,,,,100,exact,term,2024
+peritonitis,Disease Ontology,peritonitis,peritonitis,DOID:8283,,,,100,exact,term,2024
+bloody diarrhea,Symptom Ontology,bloody diarrhea,bloody diarrhea,SYMP:0020011,,,,100,exact,term,2024
+diabetes mellitus,Disease Ontology,diabetes mellitus,diabetes mellitus,DOID:9351,,,,100,exact,term,2024
+bacterial pneumonia,Disease Ontology,bacterial pneumonia,bacterial pneumonia,DOID:874,,,,100,exact,term,2024
+nocardiosis,Disease Ontology,nocardiosis,nocardiosis,DOID:2312,,,,100,exact,term,2024
+melioidosis,Disease Ontology,melioidosis,melioidosis,DOID:5052,,,,100,exact,term,2024
+eczema herpeticum,Disease Ontology,eczema herpeticum,eczema herpeticum,DOID:9123,,,,100,exact,term,2024
+typhoid fever,Disease Ontology,typhoid fever,typhoid fever,DOID:13258,,,,100,exact,term,2024
+gastrointestinal system disease,Disease Ontology,gastrointestinal system disease,gastrointestinal system disease,DOID:77,,,,100,exact,term,2024
+hepatitis,Disease Ontology,hepatitis,hepatitis,DOID:2237,,,,100,exact,term,2024
+cholecystitis,Disease Ontology,cholecystitis,cholecystitis,DOID:1949,,,,100,exact,term,2024
+respiratory failure,Disease Ontology,respiratory failure,respiratory failure,DOID:11162,,,,100,exact,term,2024
+urinary tract infection,Disease Ontology,urinary tract infection,urinary tract infection,DOID:0080784,,,,100,exact,term,2024
+uremia,Disease Ontology,uremia,uremia,DOID:4676,,,,100,exact,term,2024
+lemierres syndrome,Disease Ontology,lemierres syndrome,lemierres syndrome,DOID:11337,,,,100,exact,term,2024
+myelodysplastic syndrome,Disease Ontology,myelodysplastic syndrome,myelodysplastic syndrome,DOID:0050908,,,,100,exact,term,2024
+q fever,Disease Ontology,q fever,q fever,DOID:11100,,,,100,exact,term,2024
+necrotizing fasciitis,Disease Ontology,necrotizing fasciitis,necrotizing fasciitis,DOID:9602,,,,100,exact,term,2024
+liver disease,Disease Ontology,liver disease,liver disease,DOID:409,,,,100,exact,term,2024
+otitis media,Disease Ontology,otitis medium,otitis medium,DOID:10754,,,,100,exact,term,2024
+diarrhea,Disease Ontology,diarrhea,diarrhea,DOID:13250,,,,100,exact,term,2024
+bacteriuria,Disease Ontology,bacteriuria,bacteriuria,DOID:1412,,,,100,exact,term,2024
+hydrocephalus,Disease Ontology,hydrocephalus,hydrocephalus,DOID:10908,,,,100,exact,term,2024
+dysentery,Disease Ontology,dysentery,dysentery,DOID:12384,,,,100,exact,term,2024
+abortion,Symptom Ontology,abortion,abortion,SYMP:0000197,,,,100,exact,term,2024
+stomach diseases,Disease Ontology,stomach disease,stomach disease,DOID:76,,,,100,exact,term,2024
+anthrax disease,Disease Ontology,anthrax disease,anthrax disease,DOID:7427,,,,100,exact,term,2024
+osteomyelitis,Disease Ontology,osteomyelitis,osteomyelitis,DOID:1019,,,,100,exact,term,2024
+bartonellosis,Disease Ontology,bartonellosis,bartonellosis,DOID:11102,,,,100,exact,term,2024
+urinary retention,Symptom Ontology,urinary retention,urinary retention,SYMP:0000557,,,,100,exact,term,2024
+arthritis,Disease Ontology,arthritis,arthritis,DOID:848,,,,100,exact,term,2024
+pleurisy,Disease Ontology,pleurisy,pleurisy,DOID:10247,,,,100,exact,term,2024
+secretory diarrhea,Disease Ontology,secretory diarrhea,secretory diarrhea,DOID:0050129,,,,100,exact,term,2024
+brucellosis,Disease Ontology,brucellosis,brucellosis,DOID:11077,,,,100,exact,term,2024
+periodontitis,Disease Ontology,periodontitis,periodontitis,DOID:824,,,,100,exact,term,2024
+crohn's disease,Disease Ontology,crohn disease,crohn disease,DOID:8778,,,,100,exact,term,2024
+cough,Symptom Ontology,cough,cough,SYMP:0000614,,,,100,exact,term,2024
+appendicitis,Disease Ontology,appendicitis,appendicitis,DOID:8337,,,,100,exact,term,2024
+heart disease,Disease Ontology,heart disease,heart disease,DOID:114,,,,100,exact,term,2024
+disease,Disease Ontology,disease,disease,DOID:4,,,,100,exact,term,2024
+opportunistic bacterial infectious disease,Disease Ontology,opportunistic bacterial infectious disease,opportunistic bacterial infectious disease,DOID:0050340,,,,100,exact,term,2024
+choledocholithiasis,Disease Ontology,choledocholithiasis,choledocholithiasis,DOID:11755,,,,100,exact,term,2024
+plague,Disease Ontology,plague,plague,DOID:3482,,,,100,exact,term,2024
+hemiplegia,Disease Ontology,hemiplegia,hemiplegia,DOID:10969,,,,100,exact,term,2024
+acute cholangitis,Disease Ontology,acute cholangitis,acute cholangitis,DOID:14271,,,,100,exact,term,2024
+acute pyelonephritis,Disease Ontology,acute pyelonephritis,acute pyelonephritis,DOID:559,,,,100,exact,term,2024
+abdominal pain,Symptom Ontology,abdominal pain,abdominal pain,SYMP:0000457,,,,100,exact,term,2024
+gastritis,Disease Ontology,gastritis,gastritis,DOID:4029,,,,100,exact,term,2024
+gastrointestinal bleeding,Symptom Ontology,gastrointestinal bleeding,gastrointestinal bleeding,SYMP:0000867,,,,100,exact,term,2024
+leptospirosis,Disease Ontology,leptospirosis,leptospirosis,DOID:2297,,,,100,exact,term,2024
+botulism,Disease Ontology,botulism,botulism,DOID:11976,,,,100,exact,term,2024
+legionnaires' disease,Disease Ontology,legionnaire disease,legionnaire disease,DOID:10457,,,,100,exact,term,2024
+meningitis,Disease Ontology,meningitis,meningitis,DOID:9471,,,,100,exact,term,2024
+bronchiectasis,Disease Ontology,bronchiectasis,bronchiectasis,DOID:9563,,,,100,exact,term,2024
+skin disease,Disease Ontology,skin disease,skin disease,DOID:37,,,,100,exact,term,2024
+pyelonephritis,Disease Ontology,pyelonephritis,pyelonephritis,DOID:11400,,,,100,exact,term,2024
+ulcerative colitis,Disease Ontology,ulcerative colitis,ulcerative colitis,DOID:8577,,,,100,exact,term,2024
+chronic cystitis,Disease Ontology,chronic cystitis,chronic cystitis,DOID:1680,,,,100,exact,term,2024
+bubonic plague,Disease Ontology,bubonic plague,bubonic plague,DOID:10773,,,,100,exact,term,2024
+pancreatitis,Disease Ontology,pancreatitis,pancreatitis,DOID:4989,,,,100,exact,term,2024
+campylobacteriosis,Disease Ontology,campylobacteriosis,campylobacteriosis,DOID:13622,,,,100,exact,term,2024
+acute lymphoblastic leukemia,Disease Ontology,acute lymphoblastic leukemia,acute lymphoblastic leukemia,DOID:9952,,,,100,exact,term,2024
+covid-19,Disease Ontology,covid19,covid19,DOID:0080600,,,,100,exact,term,2024
+pasteurellosis,Disease Ontology,pasteurellosis,pasteurellosis,DOID:11055,,,,100,exact,term,2024
+eye disease,Disease Ontology,eye disease,eye disease,DOID:5614,,,,100,exact,term,2024
+rash,Symptom Ontology,rash,rash,SYMP:0000487,,,,100,exact,term,2024
+abscess,Symptom Ontology,abscess,abscess,SYMP:0000672,,,,100,exact,term,2024
+septic shock,Symptom Ontology,septic shock,septic shock,SYMP:0000451,,,,100,exact,term,2024
+urinary tract infections,Disease Ontology,urinary tract infection,urinary tract infection,DOID:0080784,,,,100,exact,term,2024
+dental caries,Disease Ontology,dental caries,dental caries,DOID:216,,,,100,exact,term,2024
+bacterial sepsis,Disease Ontology,bacterial sepsis,bacterial sepsis,DOID:0040085,,,,100,exact,term,2024
+prostate cancer,Disease Ontology,prostate cancer,prostate cancer,DOID:10283,,,,100,exact,term,2024
+lyme disease,Disease Ontology,lyme disease,lyme disease,DOID:11729,,,,100,exact,term,2024
+gallbladder carcinoma,Disease Ontology,gallbladder carcinoma,gallbladder carcinoma,DOID:4948,,,,100,exact,term,2024
+primary bacterial infectious disease,Disease Ontology,primary bacterial infectious disease,primary bacterial infectious disease,DOID:0050338,,,,100,exact,term,2024
+shigellosis,Disease Ontology,shigellosis,shigellosis,DOID:12385,,,,100,exact,term,2024
+cholelithiasis,Disease Ontology,cholelithiasis,cholelithiasis,DOID:10211,,,,100,exact,term,2024
+trachoma,Disease Ontology,trachoma,trachoma,DOID:11265,,,,100,exact,term,2024
+atherosclerosis,Disease Ontology,atherosclerosis,atherosclerosis,DOID:1936,,,,100,exact,term,2024
+listeriosis,Disease Ontology,listeriosis,listeriosis,DOID:11573,,,,100,exact,term,2024
+acute cystitis,Disease Ontology,acute cystitis,acute cystitis,DOID:13148,,,,100,exact,term,2024
+acute pancreatitis,Disease Ontology,acute pancreatitis,acute pancreatitis,DOID:2913,,,,100,exact,term,2024
+traumatic brain injury,Disease Ontology,traumatic brain injury,traumatic brain injury,DOID:0081292,,,,100,exact,term,2024
+hematuria,Symptom Ontology,hematuria,hematuria,SYMP:0000040,,,,100,exact,term,2024
+paraplegia,Disease Ontology,paraplegia,paraplegia,DOID:607,,,,100,exact,term,2024
+gastric ulcers,Disease Ontology,gastric ulcer,gastric ulcer,DOID:10808,,,,100,exact,term,2024
+asthma,Disease Ontology,asthma,asthma,DOID:2841,,,,100,exact,term,2024
+congenital heart disease,Disease Ontology,congenital heart disease,congenital heart disease,DOID:1682,,,,100,exact,term,2024
+lung disease,Disease Ontology,lung disease,lung disease,DOID:850,,,,100,exact,term,2024
+atrophic gastritis,Disease Ontology,atrophic gastritis,atrophic gastritis,DOID:8929,,,,100,exact,term,2024
+dyspnea,Symptom Ontology,dyspnea,dyspnea,SYMP:0019153,,,,100,exact,term,2024
+bacteroides infections,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+colibacillosis,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+keratohelcosis,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+http://id.nlm.nih.gov/mesh/d000070197,,,,,,,,0,manual,manual,2024
+bacterial leaf spot of lettuce,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+intestinal fistula,,,,,intestinal disease,intestinal disease,DOID:1285,0,manual,manual,2024
+pulmonary infection,,,,,lung disease,lung disease,DOID:850,0,manual,manual,2024
+none/screening,,,,,,,,0,manual,manual,2024
+urine infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+the central nervous system infection,,,,,central nervous system disease,central nervous system disease,DOID:331,0,manual,manual,2024
+leukemia/pancreatitis,,,,,leukemia,leukemia,DOID:1240,0,manual,manual,2024
+skin ulceration,,,,,skin ulcer,skin ulcer,SYMP:0000136,0,manual,manual,2024
+cvl infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+gut colonization,,,,,,,,0,manual,manual,2024
+multiple injuries,,,,,disease,disease ,DOID:4,0,manual,manual,2024
+cre colonization,,,,,,,,0,manual,manual,2024
+mrsa infection,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+t12 vertebral compression fracture,,,,,,,,0,manual,manual,2024
+screening sample,,,,,,,,0,manual,manual,2024
+localized adiposity,,,,,,,,0,manual,manual,2024
+aural infection,,,,,auditory system disease,auditory system disease,DOID:2742,0,manual,manual,2024
+non clinical,,,,,,,,0,manual,manual,2024
+respiratory tract infection,,,,,respiratory system disease,respiratory system disease,DOID:1579,0,manual,manual,2024
+"surgical procedures, operative",,,,,,,,0,manual,manual,2024
+unknown infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+"aids, disseminated mac",,,,,mycobacterium avium complex disease,mycobacterium avium complex disease,DOID:2755,0,manual,manual,2024
+infection of the central nervous system,,,,,central nervous system disease,central nervous system disease,DOID:331,0,manual,manual,2024
+wound (hand),,,,,,,,0,manual,manual,2024
+encephalorrhagia,,,,,cerebrovascular disease,cerebrovascular disease,DOID:4372,0,manual,manual,2024
+intraabdominal infections,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+grapevine yellows,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+blackleg,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+early childhood caries,,,,,dental caries,dental caries,DOID:216,0,manual,manual,2024
+enterococcus infection,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+sepsis due to salmonella,,,,,bacterial sepsis,bacterial sepsis,DOID:0040085,0,manual,manual,2024
+klebsiella pneumoniae infection,,,,,klebsiella pneumonia,klebsiella pneumonia,DOID:13272,0,manual,manual,2024
+salmonella gastroenteretis,,,,,salmonellosis,salmonellosis,DOID:0060859,0,manual,manual,2024
+prom,,,,,female reproductive system disease,female reproductive system disease,DOID:0111144,0,manual,manual,2024
+fire blight,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+urinary system infection,,,,,urinary tract infection,urinary tract infection,DOID:0080784,0,manual,manual,2024
+partial right hepatectomy,,,,,liver disease,liver disease,DOID:409,0,manual,manual,2024
+homo sapiens,,,,,,,,0,manual,manual,2024
+blood stream infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+suspected or confirmed neurosurgical device related infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+acute white blood cell,,,,,,,,0,manual,manual,2024
+enteric colibacillosis,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+non-pathogenic,,,,,,,,0,manual,manual,2024
+"infection, burkholderia",,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+bovine spirochetosis,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+chronic rhinosinusitis without nasal polyps,,,,,rhinitis,rhinitis,DOID:4483,0,manual,manual,2024
+bronchial granuloma,,,,,lung disease,lung disease,DOID:850,0,manual,manual,2024
+premature delivery,,,,,female reproductive system disease,female reproductive system disease,DOID:0111144,0,manual,manual,2024
+skin infection,,,,,skin disease,skin disease,DOID:37,0,manual,manual,2024
+site-operative infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+would infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+lung infections and asphyxia,,,,,lung disease,lung disease,DOID:850,0,manual,manual,2024
+nosocomial infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+multiple trauma,,,,,,,,0,manual,manual,2024
+septic shoulder arthrtitis,,,,,arthritis,arthritis,DOID:848,0,manual,manual,2024
+ralstonia solanacearum,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+infected c-section,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+edwardsiella ictaluri infection,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+central venous line infection/ colonization,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+bacterial infection,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+e. coli yolk sac infection,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+escherichia coli infection,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+blood stream,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+systemic anthrax-like infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+escherichia coli,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+urosepsis,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+bacterial infections,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+enterococcus faecium infection,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+breast implant associated infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+carbapenem resistant klebsiella pneumoniae infection,,,,,klebsiella pneumonia,klebsiella pneumonia,DOID:13272,0,manual,manual,2024
+contaminant,,,,,,,,0,manual,manual,2024
+infenction,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+febrile ilness after i. scapularis tick-bite,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+aesthetic urinary tract effection,,,,,urinary tract infection,urinary tract infection,DOID:0080784,0,manual,manual,2024
+"healthy cattle, sheep, goats, swine, and horses",,,,,,,,0,manual,manual,2024
+hyperplasia of the prostate gland,,,,,prostate disease,prostate disease,DOID:47,0,manual,manual,2024
+prosthesis related infections,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+concussion,,,,,traumatic brain injury,traumatic brain injury,DOID:0081292,0,manual,manual,2024
+medical device-related infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+avian colibacillosis,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+kidney transplant,,,,,kidney disease,kidney disease,DOID:557,0,manual,manual,2024
+facial abscessus,,,,,abscess,abscess,SYMP:0000672,0,manual,manual,2024
+traumatic urethral rupture,,,,,urethral disease,urethral disease,DOID:732,0,manual,manual,2024
+infection with burkholderia multivorans,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+edwardsiellosis,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+bloodstream infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+multiple injury,,,,,disease,disease ,DOID:4,0,manual,manual,2024
+pulmonary infections,,,,,lung disease,lung disease,DOID:850,0,manual,manual,2024
+compound ulcer,,,,,,,,0,manual,manual,2024
+urine track infection,,,,,urinary tract infection,urinary tract infection,DOID:0080784,0,manual,manual,2024
+enterohemorrhagic escherichia coli,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+human bacteremia with s. aureus,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+shothole,,,,,fungal infectious disease,fungal infectious disease,DOID:1564,0,manual,manual,2024
+uti/colonization,,,,,urinary tract infection,urinary tract infection,DOID:0080784,0,manual,manual,2024
+a. baumannii infection,,,,,acinetobacter infectious disease,acinetobacter infectious disease,DOID:3091,0,manual,manual,2024
+foreign body,,,,,,,,0,manual,manual,2024
+gaslrointestinal perforation,,,,,intestinal perforation,intestinal perforation,DOID:2074,0,manual,manual,2024
+ahpnd,,,,,acute necrotizing pancreatitis,acute necrotizing pancreatitis,DOID:0080998,0,manual,manual,2024
+purulent skin infection (necrotic skin on tights),,,,,skin disease,skin disease,DOID:37,0,manual,manual,2024
+different infections,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+haemorrhagic septicaemia,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+infection control,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+post operation,,,,,,,,0,manual,manual,2024
+intracranial infection,,,,,central nervous system disease,central nervous system disease,DOID:331,0,manual,manual,2024
+colonization,,,,,,,,0,manual,manual,2024
+apparent health,,,,,,,,0,manual,manual,2024
+hip replacement,,,,,,,,0,manual,manual,2024
+staphylococcal infection,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+colonised,,,,,,,,0,manual,manual,2024
+rat-bite fever/bite wound,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+peritoneal fluid infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+human carrier,,,,,,,,0,manual,manual,2024
+wound infection post surgery,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+intra-abdominal infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+infected joint,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+tick bite lesion perianal,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+none in pigs,,,,,,,,0,manual,manual,2024
+central nervous system infection,,,,,central nervous system disease,central nervous system disease,DOID:331,0,manual,manual,2024
+focal infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+mycobacteriaceae,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+carriage,,,,,,,,0,manual,manual,2024
+streptococcosis,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+yersiniosis,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+enterobacter bacteremia,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+chronic rhinosinusitis with nasal polyps,,,,,chronic frontal sinusitis,chronic frontal sinusitis,DOID:10790,0,manual,manual,2024
+acinetobacter infections,,,,,acinetobacter infectious disease,acinetobacter infectious disease,DOID:3091,0,manual,manual,2024
+asymptomatic carriage,,,,,,,,0,manual,manual,2024
+burn injury,,,,,disease,disease ,DOID:4,0,manual,manual,2024
+vibriosis,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+diabetic foot infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+surgical wound infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+vibrio infection,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+bacterial leaf streak,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+hepatolithiasis,,,,,hepatobiliary disease,hepatobiliary disease,DOID:3118,0,manual,manual,2024
+exudative epidermitis,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+vre,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+cerebral contusin,,,,,brain disease,brain disease,DOID:936,0,manual,manual,2024
+hip joint infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+klebsiella infection,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+soft tissue infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+unkonwn,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+healthy,,,,,,,,0,manual,manual,2024
+ralstonia pseudosolanacearum,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+healthy volunteer,,,,,,,,0,manual,manual,2024
+asymptomatic carrier,,,,,,,,0,manual,manual,2024
+eneterococcus faecalis,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+colonized,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+caked bag,,,,,,,,0,manual,manual,2024
+coronary graft,,,,,coronary artery disease,coronary artery disease,DOID:3393,0,manual,manual,2024
+surgical site infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+craniocerebral trauma,,,,,brain disease,brain disease,DOID:936,0,manual,manual,2024
+a. baumannii bacteremia,,,,,acinetobacter infectious disease,acinetobacter infectious disease,DOID:3091,0,manual,manual,2024
+klebsiella colonization,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+bacterimia,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+erythrococcosis,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+hospital-acquired infection after surgery,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+rti,,,,,respiratory system disease,respiratory system disease,DOID:1579,0,manual,manual,2024
+screening,,,,,,,,0,manual,manual,2024
+intestinal colonization,,,,,intestinal infectious disease,intestinal infectious disease,DOID:100,0,manual,manual,2024
+cutaneous infection,,,,,skin disease,skin disease,DOID:37,0,manual,manual,2024
+bone marrow transplant,,,,,bone marrow disease,bone marrow disease,DOID:4961,0,manual,manual,2024
+endotracheal aspirates,,,,,,,,0,manual,manual,2024
+lower respiratory infection,,,,,lower respiratory tract disease,lower respiratory tract disease,DOID:0050161,0,manual,manual,2024
+extra-intestinal infection,,,,,intestinal infectious disease,intestinal infectious disease,DOID:100,0,manual,manual,2024
+double kidney seeper,,,,,,,,0,manual,manual,2024
+post-renal transplantation,,,,,kidney disease,kidney disease,DOID:557,0,manual,manual,2024
+chronic renal insufficiency,,,,,kidney failure,kidney failure,DOID:1074,0,manual,manual,2024
+multiple fracture,,,,,musculoskeletal system disease,musculoskeletal system disease,DOID:17,0,manual,manual,2024
+diarheal,,,,,diarrhea,diarrhea,DOID:13250,0,manual,manual,2024
+other ent surgery (not chronic rhinosinusitis),,,,,upper respiratory tract disease,upper respiratory tract disease,DOID:974,0,manual,manual,2024
+tick bite lesion in nose,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+nosocomial infections,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+anoxic brain damage,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+colonisation,,,,,brain disease,brain disease,DOID:936,0,manual,manual,2024
+bacteremia,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+benign prostatic hyperplasia,,,,,prostate disease,prostate disease,DOID:47,0,manual,manual,2024
+enterococcus faecium,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+skin and soft tissue infection,,,,,skin disease,skin disease,DOID:37,0,manual,manual,2024
+gastrointestinal illnes,,,,,gastrointestinal system disease,gastrointestinal system disease,DOID:77,0,manual,manual,2024
+uropathogenic escherichia coli,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+etec infection,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+hematopoietic stem cell transplantation,,,,,bone marrow disease,bone marrow disease,DOID:4961,0,manual,manual,2024
+bacteremia vs contaminant,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+sepsis/meningeal involvement,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+tick bite lesion,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+septic arthritis/cellulitis,,,,,arthritis,arthritis,DOID:848,0,manual,manual,2024
+avian spirochetosis,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+screen,,,,,,,,0,manual,manual,2024
+rectal swab,,,,,,,,0,manual,manual,2024
+bloodstream infections,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+insufficiency of a bicuspid valve,,,,,bicuspid aortic valve disease,bicuspid aortic valve disease,DOID:0080332,0,manual,manual,2024
+acinetobacter blood infections,,,,,acinetobacter infectious disease,acinetobacter infectious disease,DOID:3091,0,manual,manual,2024
+riemerella anatipestifer infection,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+pnuemonia,,,,,pneumonia,pneumonia,DOID:552,0,manual,manual,2024
+respiratory tract infections,,,,,respiratory system disease,respiratory system disease,DOID:1579,0,manual,manual,2024
+wound infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+severe pulmonary infection,,,,,lung disease,lung disease,DOID:850,0,manual,manual,2024
+surgical site infections,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+kidney transplantation,,,,,kidney disease,kidney disease,DOID:557,0,manual,manual,2024
+wounded,,,,,,,,0,manual,manual,2024
+lumbar vertebrae fracture,,,,,musculoskeletal system disease,musculoskeletal system disease,DOID:17,0,manual,manual,2024
+mycetoma pedis,,,,,eumycotic mycetoma,eumycotic mycetoma,DOID:13078,0,manual,manual,2024
+bacterial canker,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+blood stream infections,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+multiple infections,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+brain damage,,,,,brain disease,brain disease,DOID:936,0,manual,manual,2024
+multiple edematous lesions,,,,,disease,disease ,DOID:4,0,manual,manual,2024
+infect,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+gallstone,,,,,gallbladder disease,gallbladder disease,DOID:0060262,0,manual,manual,2024
+bsi,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+shihelosis,,,,,shigellosis,shigellosis,DOID:12385,0,manual,manual,2024
+intracranial injury,,,,,traumatic brain injury,traumatic brain injury,DOID:0081292,0,manual,manual,2024
+biliary tract infection,,,,,biliary tract disease,biliary tract disease,DOID:9741,0,manual,manual,2024
+acinetobacter colonization,,,,,acinetobacter infectious disease,acinetobacter infectious disease,DOID:3091,0,manual,manual,2024
+rectal carriage,,,,,,,,0,manual,manual,2024
+commensale,,,,,,,,0,manual,manual,2024
+hus,,,,,hemolyticuremic syndrome,hemolyticuremic syndrome,DOID:12554,0,manual,manual,2024
+infection with peptoclostridium difficile,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+stec infection,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+trachaeal secretion,,,,,tracheal disease,tracheal disease,DOID:3225,0,manual,manual,2024
+verification for resistant bacteria,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+infection with streptococcus equinus,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+"infections, nosocomial",,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+renal transplantation,,,,,kidney disease,kidney disease,DOID:557,0,manual,manual,2024
+food-poisoning,,,,,,,,0,manual,manual,2024
+klebsiella respiratory infection,,,,,klebsiella pneumonia,klebsiella pneumonia,DOID:13272,0,manual,manual,2024
+klebsiella infections,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+pancreatic occupied lesions,,,,,pancreas disease,pancreas disease,DOID:26,0,manual,manual,2024
+non-tuberculosis mycobacteria (ntm) infection,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+removal of ureteral d-j tube,,,,,respiratory system disease,respiratory system disease,DOID:1579,0,manual,manual,2024
+respiratory secretion,,,,,respiratory system disease,respiratory system disease,DOID:1579,0,manual,manual,2024
+respiratory system infection,,,,,respiratory system disease,respiratory system disease,DOID:1579,0,manual,manual,2024
+pantoea calida,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+clostridioides difficile infection,,,,,gastrointestinal system disease,gastrointestinal system disease,DOID:77,0,manual,manual,2024
+cystic fibosis associated infection,,,,,cystic fibrosis,cystic fibrosis,DOID:1485,0,manual,manual,2024
+hypervirulence,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+kosakonia bacteremia,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+intramammary infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+acinetobacter infection,,,,,acinetobacter infectious disease,acinetobacter infectious disease,DOID:3091,0,manual,manual,2024
+pharyngitis/tonsilitis,,,,,pharyngitis,pharyngitis,DOID:2275,0,manual,manual,2024
+acute upper respiratory infection,,,,,respiratory system disease,respiratory system disease,DOID:1579,0,manual,manual,2024
+urine with mucoviscosity phenotype,,,,,,,,0,manual,manual,2024
+leg ulcer,,,,,skin disease,skin disease,DOID:37,0,manual,manual,2024
+uninary infection,,,,,urinary tract infection,urinary tract infection,DOID:0080784,0,manual,manual,2024
+bloody diarrhea/hus,,,,,hemolyticuremic syndrome,hemolyticuremic syndrome,DOID:12554,0,manual,manual,2024
+prosthetic joint infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+ssti,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+trachitis/colonization,,,,,tracheal disease,tracheal disease,DOID:3225,0,manual,manual,2024
+microbiota,,,,,,,,0,manual,manual,2024
+bacillus cereus splenitis,,,,,splenic disease,splenic disease,DOID:2529,0,manual,manual,2024
+hospital-acquired infection after orthopedic intervention,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+d014552,,,,,,,,0,manual,manual,2024
+abdominal infection,,,,,disease by infectious agent,disease by infectious agent,DOID:0050117,0,manual,manual,2024
+enterococcus bacteremia,,,,,bacterial infectious disease,bacterial infectious disease,DOID:104,0,manual,manual,2024
+ints,,,,,salmonellosis,salmonellosis,DOID:0060859,0,manual,manual,2024

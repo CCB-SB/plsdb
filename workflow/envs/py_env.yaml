@@ -1,0 +1,11 @@
+name: py_env
+channels:
+    - conda-forge
+    - bioconda
+    - r
+    - defaults
+dependencies:
+    - conda-forge::biopython==1.83
+    - pip
+    - pip:
+        - git+https://meta:glpat-YwMVAVL3bf5vVbFpXeN5@ccb-gitlab.cs.uni-saarland.de/metagenomics/pipelines/utils.git

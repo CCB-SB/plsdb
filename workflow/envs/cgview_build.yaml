@@ -1,0 +1,6 @@
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - conda-forge::rb-bio==2.0.1
+  - pip

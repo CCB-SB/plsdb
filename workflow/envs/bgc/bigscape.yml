@@ -1,0 +1,7 @@
+name: bigscape
+channels:
+    - conda-forge
+    - bioconda
+dependencies:
+  - bioconda::hmmer==3.4
+  - bioconda::bigscape==1.1.6

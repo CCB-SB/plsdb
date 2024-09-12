@@ -1,0 +1,13 @@
+channels:
+    - etetoolkit
+    - conda-forge
+    - bioconda
+    - anaconda
+    - defaults
+dependencies:
+    - conda-forge::gcc==13.2.0
+    - conda-forge::owlready2==0.46
+    - pip
+    - pip:
+        - git+https://meta:glpat-YwMVAVL3bf5vVbFpXeN5@ccb-gitlab.cs.uni-saarland.de/metagenomics/pipelines/utils.git
+        - https://github.com/etetoolkit/ete/archive/ete4.zip

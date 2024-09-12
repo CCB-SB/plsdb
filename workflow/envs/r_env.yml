@@ -1,14 +1,22 @@
-name: plsdb_r_env
+name: r_env
 channels:
-    - conda-forge
-    - bioconda
-    - r
-    - defaults
+  - bioconda
+  - conda-forge
+  - defaults
 dependencies:
-    - r==4.3
-    - r-tidyverse==2.0.0
-    - r-taxize==0.9.100
-    - r-tidytext==0.4.1
-    - r-stringr==1.5.0
-    - r-logger==0.2.2
-    - r-argparse==2.2.2
+  - r-base==4.3.3
+  - r-tidyverse==2.0.0
+  - r-gtsummary==1.7.2
+  - r-cowplot==1.1.1
+  - r-ggpubr==0.6.0
+  - r-ggprism==1.0.4
+  - conda-forge::r-rmarkdown==2.26
+  - bioconda::bioconductor-phyloseq==1.44.0
+  - bioconda::bioconductor-ancombc==2.2.0
+  - bioconda::bioconductor-maaslin2==1.14.1
+  - bioconda::bioconductor-complexheatmap==2.16.0
+  - conda-forge::r-polychrome==1.5.1
+  - bioconda::bioconductor-rcy3==2.20.0
+  - conda-forge::r-janitor==2.2.0
+  - conda-forge::r-svglite
+  - conda-forge::r-upsetr
