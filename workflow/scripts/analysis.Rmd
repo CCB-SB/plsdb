@@ -1,0 +1,173 @@
+```{r}
+library(tidyverse)
+source("/local/plsdb/plsdb_2024/workflow/scripts/utils_taxa_exploration.R")
+```
+
+# Barba
+
+```{r}
+mapping <- read.csv2("/local/plsdb/plsdb_2024/src/ecosystem_20231103_v2.csv", header=T,
+          sep=',')
+```
+
+
+```{r}
+barba <- read.csv2("/local/plsdb/plsdb_2024/src/bio_barba_comp.csv", header=T,
+          sep=',')
+barba <- barba %>% select(BIOSAMPLE_UID, contains("barba"))
+barba
+```
+
+```{r}
+bio <- read.csv2("/local/plsdb/results/filtering/metadata/bio_filt.csv",
+                 header=T, sep=',', 
+                 na.strings = c("-","na","nan", "n/a", "n.a.",""," ",
+                                "missing", "missing: control sample",
+                                "none",  "not applicable",
+                                "not available", "not collected", "not determined",
+                                "not recorded",  "unavailable", "unknown", "unknow",
+                                "unkown", "no data", "restricted access",
+                                "unspecified","unidentified", "null", "contaminant",
+                                "no", "undocumented", "not defined", "ND", "np",
+                                "not provided", "dead", "alive", "non-human",
+                                "pending",
+                                "not reported", "not applied", "dead ?", "not-set")
+                 )
+envo_cols <- list(
+    'taxid' = c("BIOSAMPLE_host_taxid"),
+    'type'= c("BIOSAMPLE_source_type", 
+      "BIOSAMPLE_host_tissue_sampled",
+      "BIOSAMPLE_tissue",
+      "BIOSAMPLE_host_body_habitat",
+      "BIOSAMPLE_isolation_source"),
+    'name' = c("BIOSAMPLE_host", "BIOSAMPLE_host_common_name",
+      "BIOSAMPLE_host_animal_breed","BIOSAMPLE_animal_env",
+      "BIOSAMPLE_local_class",
+      "BIOSAMPLE_soil_type", "BIOSAMPLE_metagenome_source",
+      "BIOSAMPLE_samp_mat_type"),
+    'envo' = c("BIOSAMPLE_env_medium",
+      "BIOSAMPLE_env_broad_scale", 
+      "BIOSAMPLE_env_local_scale"),
+    'relationship'= c("BIOSAMPLE_biotic_relationship",
+      "BIOSAMPLE_rel_to_oxygen")
+    )
+  
+
+bio %>% select(envo_cols[['taxid']]) %>% drop_na()
+```
+
+# Datasets
+```{r}
+bio <- read.csv("/local/plsdb/results/filtering/metadata/bio_filt.csv")
+tax <- read.csv("/local/plsdb/results/filtering/metadata/tax_filt.csv")
+ass <- read.csv("/local/plsdb/results/filtering/metadata/ass_filt.csv")
+nucc_dedup <- read.csv("/local/plsdb/results/filtering/deduplication/nucc_dedup.csv")
+nucc_rep <- read.csv("/local/plsdb/results/filtering/deduplication/nucc_identical.csv")
+```
+
+```{r}
+# Process taxonomy
+tax_cols <- c("TAXONOMY_superkingdom", "TAXONOMY_phylum", "TAXONOMY_class",
+   "TAXONOMY_order","TAXONOMY_family", "TAXONOMY_genus",
+  "TAXONOMY_species", "TAXONOMY_strain")
+tax[, tax_cols] <- tax %>% select(tax_cols) %>%
+  mutate(across(tax_cols, str_replace, regex(" \\(.*\\)"), ''))
+tax %>% head()
+```
+
+```{r}
+# Join
+pls_dedup <- nucc_dedup %>% 
+  left_join(y=tax, by=join_by(TAXONOMY_UID), suffix=c("", ".tax")) %>%
+  left_join(y=bio, by=join_by(BIOSAMPLE_UID), suffix=c("", ".bio")) %>%
+  left_join(y=ass, by=join_by(ASSEMBLY_UID), suffix=c("", ".ass"))
+
+pls_rep <- nucc_rep%>% 
+  left_join(y=tax, by=join_by(TAXONOMY_UID), suffix=c("", ".tax")) %>%
+  left_join(y=bio, by=join_by(BIOSAMPLE_UID), suffix=c("", ".bio")) %>%
+  left_join(y=ass, by=join_by(ASSEMBLY_UID), suffix=c("", ".ass"))
+
+pls_all <- rbind(pls_dedup, pls_rep)
+
+nrow(pls_dedup)
+nrow(pls_rep)
+nrow(pls_all)
+```
+# Host
+
+```{r}
+host_tax_plot <- function(df, tax_col, cumsum_threshold=90){
+  # Select species that represents 60 of abundance
+  d <- df %>% 
+    group_by(get(tax_col)) %>% count() %>% arrange(desc(n))
+  d$Rel_abundance <- (d$n / sum(d$n)) * 100
+  d <- d %>% dplyr::arrange(desc(Rel_abundance))
+  d$Cum_sum <- cumsum(d$Rel_abundance)
+  
+  repre <- d %>%
+    filter(Cum_sum <= cumsum_threshold) %>%
+    select(Rel_abundance, Cum_sum) %>% pull("get(tax_col)")
+  
+  # Plot
+  df$label <- ifelse(df[[tax_col]] %in% repre, df[[tax_col]], "Others")
+  d <- df %>% 
+    group_by(label) %>% count() %>%
+    mutate(perc = round(n/nrow(df) * 100, 2)) %>%
+    arrange(desc(n))
+  print(d)
+  
+  plot <- d %>%
+    ggplot(aes(y=n, x=fct_reorder(label, n, .desc = F))) +
+    geom_bar(stat='identity') +
+    geom_text(aes(label=paste(perc, "%" )), hjust=-0.05, colour = 'black') +
+    theme_minimal() +
+    xlab(tax_col) +
+    coord_flip()
+  
+  return(plot)
+}
+
+```
+
+## phylum
+```{r, fig.width=8}
+l2 <- host_tax_plot(df=pls_all, tax_col="TAXONOMY_phylum", cumsum_threshold = 99)
+l2
+```
+
+## class
+```{r, fig.width=8}
+l3 <- host_tax_plot(df=pls_all, tax_col="TAXONOMY_class", cumsum_threshold = 99)
+l3
+```
+## order
+```{r, fig.width=8}
+l4 <- host_tax_plot(df=pls_all, tax_col="TAXONOMY_order", cumsum_threshold = 90)
+l4
+```
+## Family
+```{r, fig.width=8}
+l5 <- host_tax_plot(df=pls_all, tax_col="TAXONOMY_family", cumsum_threshold = 80)
+l5
+```
+
+## Species
+```{r, fig.width=8}
+l7 <- host_tax_plot(df=pls_all, tax_col="TAXONOMY_species", cumsum_threshold = 60)
+l7
+```
+
+
+## General stats
+```{r}
+length(unique(pls_all$TAXONOMY_UID)) # Different hosts
+pls_all %>% group_by(TAXONOMY_taxon_rank) %>% count() %>%
+  mutate(perc = round(n/nrow(pls_all) * 100, 2)) # Taxon rank assigned
+```
+
+
+# Ecosystem
+```{r}
+
+```
+

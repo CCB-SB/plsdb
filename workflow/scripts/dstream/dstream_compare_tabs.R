@@ -44,99 +44,63 @@ round_coords <- function(df){
     return(df)
 }
 
-####################
-# VARS
-# TODO
 
 ####################
 # Args
 args <- get_argparser()$parse_args(commandArgs(trailingOnly=TRUE))
-# args <- list(
-#     'new'='2018_12_03.tsv',
-#     'old'='2018_09_14.tsv',
-#     'new_nonfiltered'='../reports/2018_12_03__full2.txt',
-#     'otab'='test.tsv',
-#     'olog'='test.log'
-# )
 
 ####################
-## DATA
-# Read in
-newTab <- read.csv(file=args$new, sep='\t', header=TRUE, check.names=FALSE, stringsAsFactors=FALSE, na.strings=c('', 'NA'))
-oldTab <- read.csv(file=args$old, sep='\t', header=TRUE, check.names=FALSE, stringsAsFactors=FALSE, na.strings=c('', 'NA'))
+## NUCCORE DATA
+
+newTab <- read.csv(file=args$new, header=TRUE, check.names=FALSE,
+                 stringsAsFactors=FALSE, na.strings=c('', 'NA', -1, '-1'))
+oldTab <- read.csv(file=args$old, header=TRUE, check.names=FALSE,
+                 stringsAsFactors=FALSE, na.strings=c('', 'NA', -1, '-1'))
+print(colnames(oldTab))
+print(colnames(newTab))
 
 # Unify new_names vs old_names
-old_colnames = c(
-        ## NUCCORE
-        "UID_NUCCORE", "ACC_NUCCORE", "Description_NUCCORE", "CreateDate_NUCCORE", 
-        "Topology_NUCCORE", "Completeness_NUCCORE", "TaxonID_NUCCORE", 
-        "Genome_NUCCORE", "Length_NUCCORE", "GC_NUCCORE", "Source_NUCCORE",
-        ## BIOSAMPLE
-        "UID_BIOSAMPLE", "ACC_BIOSAMPLE", "Location_BIOSAMPLE", 
-        "Coordinates_BIOSAMPLE", "IsolationSource_BIOSAMPLE", "Host_BIOSAMPLE", 
-        "CollectionDate_BIOSAMPLE", "Host_DISEASE", "SamplType_BIOSAMPLE",
-        "Host_BIOSAMPLE_processed", "Host_DISEASE_processed",
-        ## ASSEMBLY
-        "UID_ASSEMBLY", "Status_ASSEMBLY", "SeqReleaseDate_ASSEMBLY", 
-        "SubmissionDate_ASSEMBLY", "Latest_ASSEMBLY",
-        ## TAXONOMY
-        "taxon_name", "taxon_rank", "lineage",
-        "taxon_superkingdom_name", "taxon_phylum_name", "taxon_class_name",
-        "taxon_order_name", "taxon_family_name", "taxon_genus_name",
-        "taxon_species_name","taxon_superkingdom_id", "taxon_phylum_id",
-        "taxon_class_id", "taxon_order_id", "taxon_family_id", 
-        "taxon_genus_id","taxon_species_id",
-        ## rMLST
-        "hits_rMLST", "hitscount_rMLST"
-        )
-new_colnames = c(
-        ## NUCCORE
-        "NUCCORE_UID", "NUCCORE_ACC", "NUCCORE_Description", "NUCCORE_CreateDate", 
-        "NUCCORE_Topology", "NUCCORE_Completeness", "NUCCORE_TaxonID", 
-        "NUCCORE_Genome", "NUCCORE_Length", "NUCCORE_GC", "NUCCORE_Source",
-        ## BIOSAMPLE
-        "BIOSAMPLE_UID", "BIOSAMPLE_ACC", "BIOSAMPLE_Location", 
-        "BIOSAMPLE_Coordinates", "BIOSAMPLE_IsolationSource", "BIOSAMPLE_Host", 
-        "BIOSAMPLE_CollectionDate", "BIOSAMPLE_HostDisease", "BIOSAMPLE_SampleType",
-        "BIOSAMPLE_Host_label", "BIOSAMPLE_HostDisease_processed",
-        ## ASSEMBLY
-        "ASSEMBLY_UID", "ASSEMBLY_Status", "ASSEMBLY_SeqReleaseDate", 
-        "ASSEMBLY_SubmissionDate", "ASSEMBLY_Lastest",
-        ## TAXONOMY
-        "TAXONOMY_taxon_name", "TAXONOMY_taxon_rank", "TAXONOMY_taxon_lineage", 
-        "TAXONOMY_superkingdom", "TAXONOMY_phylum", "TAXONOMY_class",
-        "TAXONOMY_order", "TAXONOMY_family", "TAXONOMY_genus", 
-        "TAXONOMY_species","TAXONOMY_superkingdom_id", "TAXONOMY_phylum_id", 
-        "TAXONOMY_class_id", "TAXONOMY_order_id", "TAXONOMY_family_id",
-        "TAXONOMY_genus_id", "TAXONOMY_species_id",
-        ## rMLST
-        "rMLST_hits", "rMLST_hitscount"
-        )
+old_colnames = c("NUCCORE_TaxonID","D1", "D2")
+new_colnames = c("TAXONOMY_UID", "UMAP_D1", "UMAP_D2")
+
+# Supressed columns
+unique_cols_old_tab <- c(
+    "NUCCORE_Genome",
+    ## BIOSAMPLE
+    "BIOSAMPLE_UID", "BIOSAMPLE_ACC", "BIOSAMPLE_Location", 
+    "BIOSAMPLE_Coordinates", "BIOSAMPLE_IsolationSource", "BIOSAMPLE_Host", 
+    "BIOSAMPLE_Host_processed", "BIOSAMPLE_Host_processed_source", "BIOSAMPLE_Host_label",
+    "BIOSAMPLE_CollectionDate", "BIOSAMPLE_HostDisease", "BIOSAMPLE_SampleType",
+    "BIOSAMPLE_HostDisease_processed",
+    "loc_lat", "loc_lng", "loc_parsed",
+    ## ASSEMBLY
+    "ASSEMBLY_UID", "ASSEMBLY_Status", "ASSEMBLY_SeqReleaseDate", 
+    "ASSEMBLY_SubmissionDate", "ASSEMBLY_Lastest",
+    ## TAXONOMY
+    "TAXONOMY_taxon_name", "TAXONOMY_taxon_rank", "TAXONOMY_taxon_lineage", 
+    "TAXONOMY_superkingdom", "TAXONOMY_phylum", "TAXONOMY_class",
+    "TAXONOMY_order", "TAXONOMY_family", "TAXONOMY_genus", 
+    "TAXONOMY_species","TAXONOMY_superkingdom_id", "TAXONOMY_phylum_id", 
+    "TAXONOMY_class_id", "TAXONOMY_order_id", "TAXONOMY_family_id",
+    "TAXONOMY_genus_id", "TAXONOMY_species_id", 
+    ## rMLST
+    "rMLST_hits", "rMLST_hitscount",
+    ## Others
+    "inclusions",
+    "has_biosample", "has_assembly", "has_location",
+    "Length", "plasmidfinder", "pmlst"
+    )
+
+# New columns
+unique_cols_new_tab <- c("NUCCORE_has_identical", "VIRAL_category", "VIRAL_putative", "STATUS", "STATUS_note")
+
 OldTab <- setnames(oldTab, 
     old = old_colnames,
     new = new_colnames
 )
 
-unique_cols_old_tab <- c(
-    "Identical", "OldVersion", "relaxase_type(s)",
-    "mpf_type"
-)
-
-unique_cols_new_tab <- c(
-    ## NUCCORE
-    "NUCCORE_DuplicatedEntry", "NUCCORE_BiosampleID",
-    ## BIOSAMPLE
-    "BIOSAMPLE_Host_processed", "BIOSAMPLE_Host_processed_source",
-    ## ASSEMBLY
-    "ASSEMBLY_ACC", "ASSEMBLY_coverage", "ASSEMBLY_BiosampleID",
-    ## TAXONOMY
-    "TAXONOMY_UID", "TAXONOMY_strain", "TAXONOMY_strain_id",
-    ## BOOLEANS
-    "has_biosample", "has_assembly", "has_location"
-)
-
-
-newAll <- read.csv(file=args$new_nonfiltered, sep='\t', header=TRUE, check.names=FALSE, stringsAsFactors=FALSE, na.strings=c('', 'NA'))
+newAll <- read.csv(file=args$new_nonfiltered, header=TRUE, check.names=FALSE,
+                 stringsAsFactors=FALSE, na.strings=c('', 'NA', -1, '-1'))
 
 # Log basic stuff
 write(
@@ -170,7 +134,7 @@ write(
 
 # Make sure NUCCORE_ACC contains accession w/ version number
 # and remove ACC_FASTA column (which was accession + version)
-newTab <- round_coords(rm_accfasta_col(replace_acc_col(newTab)))
+# newTab <- round_coords(rm_accfasta_col(replace_acc_col(newTab)))
 oldTab <- round_coords(rm_accfasta_col(replace_acc_col(oldTab)))
 #newAll <- round_coords(rm_accfasta_col(replace_acc_col(newAll)))
 
@@ -218,10 +182,11 @@ rc_mod <- data.frame(
 )
 rownames(rc_mod) <- rc_mod$NUCCORE_ACC
 cols <- intersect(colnames(newTab), colnames(oldTab))
-cols <- setdiff(cols, c('D1', 'D2'))
+cols <- setdiff(cols, c('UMAP_D1', 'UMAP_D2'))
+
 for(rc_acc in rownames(rc_mod)){
-    new_v <- as.vector(newTab[rc_acc, cols])
-    old_v <- as.vector(oldTab[rc_acc, cols])
+    new_v <- as.vector(unlist(newTab[rc_acc, cols]))
+    old_v <- as.vector(unlist(oldTab[rc_acc, cols]))
     rc_changes = cols[
         !(
             (is.na(new_v) & is.na(old_v)) |

@@ -20,7 +20,7 @@ rule eggnog_mapper_dbs:
         taxid = lambda wildcards: config['eggnog']['hmm_db']['taxid'][wildcards.name],
     threads: 1
     benchmark: join(OUTDIR, "eggnog", "dbs", "download_database_{name}.bench")
-    benchmark: join(OUTDIR, "eggnog", "dbs", "download_database_{name}.log")
+    log: join(OUTDIR, "eggnog", "dbs", "download_database_{name}.log")
     wrapper:
         "file:///local/plsdb/master/wrappers/eggnog/db"
 
@@ -41,7 +41,6 @@ rule eggnog_mapper:
         database = lambda wildcards: wildcards.name,
         genepred = "prodigal",
         # Output
-        scratch_dir = ".snakemake/shadow/",
         output = lambda wildcards, output: splitext(basename(output.res))[0],
         output_dir = lambda wildcards, output: abspath(dirname(output.res)),
         # Others
@@ -52,7 +51,6 @@ rule eggnog_mapper:
     log: join(OUTDIR, "eggnog/mapper/{name}", "mapper.log")
     benchmark: join(OUTDIR, "eggnog/mapper/{name}", "mapper.bench")
     threads: workflow.cores
-    shadow: "shallow"
     wrapper:
         "file:///local/plsdb/master/wrappers/eggnog/mapper"
     

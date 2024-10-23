@@ -20,3 +20,5 @@ dependencies:
   - conda-forge::r-janitor==2.2.0
   - conda-forge::r-svglite
   - conda-forge::r-upsetr
+  - conda-forge::r-testit
+  - conda-forge::r-argparse

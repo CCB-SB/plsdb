@@ -61,8 +61,9 @@ for index, row in df.iterrows():
             location = FeatureLocation(start = start, 
                             end = stop,
                             strand = row['strand']), 
-            type='AMR', id=row['gene_symbol'],
+            type='ARG', id=row['gene_symbol'],
             qualifiers = {
+                "name": row['gene_symbol'],
                 "gene": row['gene_symbol'],
                 "gene_name": row['gene_name'],
                 "tool": row['analysis_software_name'],
@@ -110,7 +111,6 @@ tab_amr.to_csv(snakemake.output.amr_tab, index=False, sep='\t')
 df = pd.read_table(snakemake.input.bgc)
 df['NUCCORE_ACC'] = df.loc[:, 'GBK'].replace('\\.region.*\\.gbk', '', regex=True)
 
-
 for index, row in df.iterrows():
     try:
         acc = row['NUCCORE_ACC']
@@ -125,6 +125,7 @@ for index, row in df.iterrows():
                             strand = None), 
             type='BGC', id=row['BGC_Type'],
             qualifiers = {
+                "name": row['BGC_Type'],
                 "gene": row['BGC_Type'],
                 "tool": "antismash"}
         )
@@ -136,6 +137,39 @@ for index, row in df.iterrows():
         raise e
 
 #
+## Typing Results
+#
+
+# Adjust names
+df = pd.read_csv(snakemake.input.typing)
+
+for index, row in df.iterrows():
+    print(row)
+    acc = row['NUCCORE_ACC']
+    start = row['sstart']
+    stop = row['send']
+    if stop < start:
+        stop = row['sstart']
+        start = row['send']
+    records[acc].seq = fasta[acc].seq
+    feature = SeqFeature(
+        location = FeatureLocation(start = start, 
+                        end = stop,
+                        strand = -1 if row['sstrand']=="minus" else 1), 
+        type='Typing', id=row['element'],
+        qualifiers = {
+            "name": row['element'],
+            "typing": row['biomarker'],
+            "tool": "MOB-suite",
+            "identity": row['pident'],
+            "coverage": row['qcovs'],
+            "evalue": row['evalue'],
+            })
+    records[acc].features.append(feature)    
+
+
+
+#
 ## Save INFO
 #
 os.makedirs(snakemake.output.DIR)
@@ -143,7 +177,7 @@ rows_gc = []
 rows_qualifiers = []
 protein_seqs = []
 
-qualifiers_name = ['gene', 'locus_tag', 'product', 
+qualifiers_name = ['gene', 'product', 'locus_tag', 
                    'protein_id', 'codon_start', 'transl_table', 
                    'GO_process']
 
@@ -164,6 +198,17 @@ with open(snakemake.output.proteins, 'w') as prot_fasta:
                     row.extend([int(item.location.start), int(item.location.end), item.location.strand])
                     rows_qualifiers.append(row)
 
+                    if item.type in ['CDS','rRNA','tRNA', 'regulatory']:
+                        if 'gene' in item.qualifiers.keys() and item.qualifiers['gene']:
+                            item.qualifiers['name'] = item.qualifiers['gene']
+                        elif 'product' in item.qualifiers.keys() and item.qualifiers['product']: 
+                            if item.qualifiers['product'] != "hypothetical protein":
+                                item.qualifiers['name'] = item.qualifiers['product']
+                            else:
+                                item.qualifiers['name'] = item.qualifiers['locus_tag'] if 'locus_tag' in item.qualifiers else ''
+                        else:
+                            item.qualifiers['name'] = item.qualifiers['locus_tag'] if 'locus_tag' in item.qualifiers else ''
+                        
                     # Save protein sequences
                     try:
                         if 'translation' in item.qualifiers:
@@ -183,7 +228,6 @@ with open(snakemake.output.proteins, 'w') as prot_fasta:
         outfile = join(snakemake.output.DIR, f"{record.id}.gbk")
         with open(outfile, 'w') as out:
             SeqIO.write(record, out, 'genbank')
-    
 
 # Save GC content
 df = pd.DataFrame(rows_gc, columns=["NUCCORE_ACC", "NUCCORE_GC", "NUCCORE_Topology"])

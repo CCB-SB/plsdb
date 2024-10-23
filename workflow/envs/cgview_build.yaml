@@ -4,3 +4,5 @@ channels:
 dependencies:
   - conda-forge::rb-bio==2.0.1
   - pip
+  - pip:
+    - git+https://meta:glpat-YwMVAVL3bf5vVbFpXeN5@ccb-gitlab.cs.uni-saarland.de/metagenomics/pipelines/utils.git

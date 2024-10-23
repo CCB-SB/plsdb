@@ -31,12 +31,16 @@ include: "rules/deduplication.smk"
 # Filtering
 include: "rules/chromosomal.smk"
 
+# Embedding
+include: "rules/mashdb.smk"
+
 # Sequence annotation
 include: "rules/viral.smk"
 include: "rules/bgc.smk"
 include: "rules/amr.smk"
 include: "rules/features.smk"
-# include: "rules/typing.smk"
+include: "rules/proteins.smk"
+include: "rules/typing.smk"
 
 # Metadata annotation
 include: "rules/ecosystem.smk"
@@ -85,6 +89,8 @@ rule all:
         ### Features
         # rules.features_gbk.output,
         # rules.features_json.output,
+        rules.ipg_join.output,
+        # rules.eggnog_join.output,
         ### Typing
         # rules.mob_typer.output,
         # rules.pmlst_join.output,

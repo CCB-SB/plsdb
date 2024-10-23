@@ -128,37 +128,87 @@ rule mob_typer:
         database_directory = rules.mob_db.output.database_directory,
         infile = filtered_fasta
     output:
-        out_file = join(OUTDIR, "final/mob.tsv")
+        out_file = join(OUTDIR, "typing/mob/typer/report.tsv"),
+        biomarker_report_file = join(OUTDIR, "typing/mob/typer/biomarker_report.tsv"),
+        mge_report_file = join(OUTDIR, "typing/mob/typer/mge_report.tsv"),
+        analysis_dir = directory(join(OUTDIR, "typing/mob/typer"))
     params:
-        extra = ['--multi']
+        extra = ['--multi', '--keep_tmp']
     threads: workflow.cores
     log: join(OUTDIR, "typing/mob/typer/results.log")
     benchmark: join(OUTDIR, "typing/mob/typer/results.bench")
     wrapper:
         "file:///local/plsdb/master/wrappers/mob_suite/typer"
 
-# CONJSCAN
+rule typing_table:
+    input:
+        mob = rules.mob_typer.output.out_file,
+        pmlst = rules.pmlst_join.output[0],
+    output:
+        join(OUTDIR, "final", "typing.csv")
+    run:
+        import pandas as pd
+        import numpy as np
+
+        mob = pd.read_table(input.mob, low_memory=False)
+        mob['NUCCORE_ACC'] = mob.sample_id.str.split(pat=' ', expand=True).loc[:, [0]]
+        mob.drop(columns=["sample_id"], inplace=True)
+        
+        pmlst = pd.read_table(input.pmlst)
+        pmlst['PMLST_sequence_type'] = np.where(np.isnan(pmlst['PMLST_sequence_type']), "", "ST"+pmlst['PMLST_sequence_type'].astype(str))
+        df = pd.merge(mob, pmlst, how='left', on="NUCCORE_ACC", validate="1:1")
+        df = df.replace({"-":""})
+        df = df.fillna(np.nan).replace([np.nan], [None])
+
+        df.to_csv(output[0], index=False)
+
+rule typing_markers_table:
+    input:
+        rules.mob_typer.output.biomarker_report_file
+    output:
+        join(OUTDIR, "final", "typing_markers.csv")
+    run:
+        import pandas as pd
+        
+        df = pd.read_table(input[0], low_memory=False)
+        df['NUCCORE_ACC'] = [i.split(' ')[0] for i in df['sseqid']]
+        df['MOB_suite_ID'] = [i.split('|')[0] for i in df['qseqid']]
+        df['element'] = [i.split('|')[1] for i in df['qseqid']]
+
+        df.to_csv(output[0], index=False)
+
+# Merge annotations
 #################################################
-# rule conjscan_model:
-#     output:
-#         model = directory(join(OUTDIR, "conjscan/model/"))
-#     conda: "../envs/macsyfinder.yaml"
-#     shell:
-#         """
-#         macsyfinder install CONJSCAN --models-dir {output.model}
-#         """
-    
-# rule conjscan_run:
-#     input:
-#         fasta = filtered_fasta,
-#         model = rules.output.model
-#     output:
-#     conda: "../envs/macsyfinder.yaml"
-#     shell:
-#         """
-#         macsyfinder --db-type ordered_replicon \
-#                 --sequence-db {input.fasta} \
-#                 --models CONJSCAN/Plasmids \
-#                 --models-dir {input.model} \
-#                 system --option
-#         """
+
+rule features_gbk:
+    input:
+        fasta = filtered_fasta,
+        nucc = filtered_pls,
+        bgc = rules.antismash_join.output.tsv,
+        genbank = rules.genbank_join.output[0],
+        amr = rules.hamronize_dedup.output[0],
+        typing = rules.typing_markers_table.output[0]
+    output:
+        amr_tab = join(OUTDIR, "final", "amr.tsv"),
+        gc_tab = join(OUTDIR, "filtering/metadata/nucc_gc.csv"),
+        proteins_tab = join(OUTDIR, "final/proteins.csv"),
+        proteins = join(OUTDIR, "final/proteins.fasta"),
+        DIR = directory(join(OUTDIR, "final/features/gbk/"))
+    conda: "../envs/py_env.yaml"
+    script:
+        "../scripts/features.py"
+
+#git clone https://github.com/stothard-group/cgview-builder.git -b master {output.DIR_repo}
+rule features_json:
+    input: 
+        DIR = rules.features_gbk.output.DIR,
+        config = "../src/cgview_config.yaml"
+    output:
+        DIR = directory(join(OUTDIR, "final/features/json")),
+    conda: "../envs/cgview_build.yaml"
+    log: join(OUTDIR, "features/features/json.log")
+    threads: 120
+    params:
+        DIR_repo = directory("scripts/cgview-builder/")
+    script:
+        "../scripts/cgview_json.py"

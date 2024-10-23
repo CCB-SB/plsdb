@@ -55,6 +55,7 @@ selected_biovars = [
     ]
 
 import pandas as pd
+import numpy as np
 from utilsmeta import utils
 
 bio = utils.load_table(snakemake.input.bio, table="BIOSAMPLE").reset_index(drop=True)
@@ -66,5 +67,9 @@ bio = pd.merge(bio, dis_eco, how="left", on="BIOSAMPLE_UID")
 bio = pd.merge(bio, loc, how="left", on="BIOSAMPLE_UID")
 
 print(bio.head())
+
+bio["BIOPSAMPLE_host_age"] = np.where(pd.isna(bio['BIOSAMPLE_host_age']), bio['BIOSAMPLE_age'], bio['BIOSAMPLE_host_age'])
+bio["BIOSAMPLE_host_sex"] = np.where(pd.isna(bio['BIOSAMPLE_host_sex']), bio['BIOSAMPLE_sex'], bio['BIOSAMPLE_host_sex'])
+bio.drop(columns=["BIOSAMPLE_age", "BIOSAMPLE_sex"], inplace=True)
 bio.to_csv(snakemake.output[0], index=False)
 

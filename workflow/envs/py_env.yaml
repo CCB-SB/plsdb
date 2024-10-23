@@ -6,6 +6,7 @@ channels:
     - defaults
 dependencies:
     - conda-forge::biopython==1.83
+    - conda-forge:umap-learn
     - pip
     - pip:
         - git+https://meta:glpat-YwMVAVL3bf5vVbFpXeN5@ccb-gitlab.cs.uni-saarland.de/metagenomics/pipelines/utils.git

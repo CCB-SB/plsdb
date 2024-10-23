@@ -1,6 +1,6 @@
 rule mashdb_sketch:
     input: 
-        fasta = "../../results/filtering/deduplication/pls_dedup.fasta", # rules.deduplication.output.fasta
+        fasta = filtered_fasta
     output:
         join(OUTDIR, "mashdb","plsdb_sketch.msh")
     params:
@@ -71,3 +71,23 @@ rule mashdb_dist:
     threads: workflow.cores
     wrapper:
         "file:///local/plsdb/master/wrappers/mash"
+
+# UMAP
+#################################################
+
+# Embedding using UMAP on Mash distances
+rule mashdb_umap:
+    input:
+        rules.mashdb_dist.output
+    output:
+        join(OUTDIR, "mashdb", "umap_mash_dist.umap")
+    params:
+        neighbors=config['umap']['neighbors'],
+        components=config['umap']['components'],
+        min_dist=config['umap']['min_dist']
+    log:
+        join(OUTDIR, "mashdb", "process_umap.log")
+    conda: "../envs/py_env.yaml"
+    script:
+        "../scripts/process/process_umap.py"
+

@@ -1,0 +1,124 @@
+---
+title: "analysis"
+output: html_document
+date: "2024-06-20"
+---
+```{r}
+####################
+# LIBS
+suppressMessages(library(testit))
+suppressMessages(library(argparse))
+suppressMessages(library(ggplot2))
+suppressMessages(library(cowplot))
+suppressMessages(library(ggExtra))
+suppressMessages(library(scales))
+suppressMessages(library(maps))
+suppressMessages(library(tidyverse))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(waffle))
+library(jsonlite)
+
+
+# VARS
+ranks <- c('strain', 'species', 'genus', 'family', 'order', 'class', 'phylum', 'superkingdom')
+
+theme_font <- theme(
+    axis.text   =element_text(size=14),
+    axis.title  =element_text(size=16, face="bold"),
+    legend.text =element_text(size=14),
+    legend.title=element_text(size=16, face="bold"),
+    panel.border = element_blank(),
+)
+
+```
+
+
+
+```{r}
+####################
+# Data
+bio <- read.csv(file="../../../results/final/biosample.csv", header=TRUE, check.names=FALSE,
+                 stringsAsFactors=FALSE, na.strings=c('', 'NA', '-1', -1))
+tax <- read.csv(file="../../../results/final/taxonomy.csv", header=TRUE, check.names=FALSE,
+                 stringsAsFactors=FALSE, na.strings=c('', 'NA', -1, '-1'),)
+tax <- tax %>%  mutate(across(where(is.numeric), ~na_if(., -1)))
+ass <- read.csv(file="../../../results/final/assembly.csv", header=TRUE, check.names=FALSE,
+                 stringsAsFactors=FALSE, na.strings=c('', 'NA', -1, '-1'))
+nucc <- read.csv(file="../../../results/final/nuccore.csv", header=TRUE, check.names=FALSE,
+                 stringsAsFactors=FALSE, na.strings=c('', 'NA', -1, '-1')) %>%
+  mutate(NUCCORE_Topology = ifelse(is.na(NUCCORE_Topology), 'not_set', NUCCORE_Topology ))
+amr <- read.csv(file="../../../results/final/amr.tsv", header=TRUE, check.names=FALSE, sep="\t",
+                 stringsAsFactors=FALSE, na.strings=c('', 'NA', -1, '-1'))
+prot <- read.csv(file="../../../results/final/proteins.csv", header=TRUE, check.names=FALSE, sep=",",
+                 stringsAsFactors=FALSE, na.strings=c('', 'NA', -1, '-1'))
+bgc <- read.csv(file="../../../results/final/antismash/summary/plsdb.tsv", header=TRUE, check.names=FALSE, sep="\t",
+                 stringsAsFactors=FALSE, na.strings=c('', 'NA', -1, '-1'))
+viral <- read.csv(file="../../../results/filtering/viral/pls_putative.csv", header=TRUE, check.names=FALSE,
+                 stringsAsFactors=FALSE, na.strings=c('', 'NA', -1, '-1'))
+# proc. data -> year
+nucc$NUCCORE_CreateDate_year <- as.numeric(sapply(nucc$NUCCORE_CreateDate, function(x){ unlist(strsplit(x, '-'))[1] }))
+
+info <- left_join(nucc, bio, by = join_by(BIOSAMPLE_UID), suffix = c(".nucc", ".bio"))
+info <- left_join(info, ass, by = join_by(ASSEMBLY_UID), suffix = c("", ".ass"))
+info <- left_join(info, tax, by = join_by(TAXONOMY_UID), relationship = "many-to-many",
+                  suffix = c("", ".tax")) %>% distinct()
+```
+
+**PLS**
+```{r}
+print(sprintf('# plasmids: %d', nrow(nucc)))
+print(sprintf('# plasmids: %d', nrow(info)))
+```
+# GC Content
+```{r}
+# Length and GC summary
+print('Length summary')
+print(summary(nucc$NUCCORE_Length))
+print('GC summary')
+print(summary(nucc$NUCCORE_GC))
+
+p <- ggplot(data=info, aes(x=NUCCORE_Length, y=NUCCORE_GC)) +
+  geom_point(shape=20, linewidth=1, colour='#CCCCCC', alpha=0.3) +
+  geom_density_2d(colour='#333333', size=0.5) +
+  scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x), labels = trans_format("log10", math_format(10^.x))) +
+  theme(legend.position="none") +
+  xlab("Sequence Length (bp)") +
+  ylab("Sequence GC content") +
+  theme_minimal()
+fig1a <- ggMarginal(p, type="boxplot")
+fig1a
+```
+
+Detect outliers. We’ll be using the quantile() function to find the 25th and the 75th percentile of the dataset, and the IQR() function which elegantly gives me the difference of the 75th and 25th percentiles. 
+```{r}
+Q <- quantile(info$NUCCORE_GC, probs = c(0.25, 0.75))
+iqr <- IQR(info$NUCCORE_GC)
+gc_up_threshold <- Q[2]+1.5*iqr
+gc_low_threshold <- Q[1]-1.5*iqr
+
+Q <- quantile(log10(info$NUCCORE_Length), probs = c(0.25, 0.75))
+iqr <- IQR(log10(info$NUCCORE_Length))
+len_up_threshold <- Q[2]+1.5*iqr
+len_low_threshold <- Q[1]-1.5*iqr
+
+p <- info %>%
+  dplyr::filter(NUCCORE_GC > gc_up_threshold | NUCCORE_GC < gc_low_threshold | log10(NUCCORE_Length) > len_up_threshold | log10(NUCCORE_Length) < len_low_threshold) %>%
+  ggplot(aes(x=NUCCORE_Length, y=NUCCORE_GC)) +
+  geom_point(shape=20, linewidth=1, colour='black', alpha=0.3) +
+  geom_density_2d(colour='#333333', size=0.5) +
+  scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x), labels = trans_format("log10", math_format(10^.x))) +
+  theme(legend.position="none") +
+  xlab("Sequence Length (bp)") +
+  ylab("Sequence GC content") +
+  theme_minimal()
+p <- ggMarginal(p, type="boxplot")
+p
+
+info %>%
+  dplyr::filter(NUCCORE_GC > gc_up_threshold | NUCCORE_GC < gc_low_threshold | log10(NUCCORE_Length) > len_up_threshold | log10(NUCCORE_Length) < len_low_threshold) %>%
+  left_join(prot, by=join_by(NUCCORE_ACC)) %>%
+  filter(is.na(locus_tag)) %>%
+  group_by(VIRAL_category) %>% count()
+
+```
+

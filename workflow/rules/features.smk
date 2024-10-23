@@ -64,55 +64,92 @@ rule genbank_join:
         cat {input.gbk} > {output[0]}
         """
 
-##################################################
-# NCBI + AMR + ANTISMASH
-##################################################
-
-rule features_gbk:
-    input:
-        fasta = filtered_fasta,
-        nucc = filtered_pls,
-        bgc = rules.antismash_join.output.tsv,
-        genbank = rules.genbank_join.output[0],
-        amr = rules.hamronize_dedup.output[0]
-    output:
-        amr_tab = join(OUTDIR, "final", "amr.tsv"),
-        gc_tab = join(OUTDIR, "filtering/metadata/nucc_gc.csv"),
-        proteins_tab = join(OUTDIR, "final/proteins.csv"),
-        proteins = join(OUTDIR, "final/proteins.fasta"),
-        DIR = directory(join(OUTDIR, "final/features/gbk/"))
-    conda: "../envs/py_env.yaml"
-    script:
-        "../scripts/features.py"
-
-rule features_json:
-    input: 
-        DIR = rules.features_gbk.output.DIR,
-        config = "../src/cgview_config.yaml"
-    output:
-        DIR = directory(join(OUTDIR, "final/features/json")),
-        DIR_repo = directory("../scripts/cgview-builder/")
-    conda: "../envs/cgview_build.yaml"
+###############################################################################
+# Prokaryotic Genome Annotation Pipeline
+###############################################################################
+rule pgap:
+    input: "/local/plsdb/plsdb_2024/workflow/AB011549.2.fasta"
+    output: directory(join(OUTDIR, "pgap", "test"))
+    container: "docker://ncbi/pgap-utils:2024-07-18.build7555"
     shell:
         """
-        mkdir -p {output.DIR}
-        git clone https://github.com/stothard-group/cgview-builder.git -b master {output.DIR_repo}
-        DIR="{input.DIR}/*"
-        for file in $DIR; do
-            prefix=$(basename -- "$file" .gbk)
-            ruby {output.DIR_repo}/cgview_builder_cli.rb --sequence $file \
-                --outfile {output.DIR}/$prefix.json \
-                --config {input.config}
-        done
+        ./pgap.py -r -o {output[0]} -g {input[0]} -s 'Escherichia coli'
         """
 
-# rule cluster_proteins:
-#     input:
-#         rules.features_gbk.proteins
-#     output:
-#         join(OUTDIR, "proteins/diamond_clust.tsv")
-#     shell:
-#         """
-#         diamond cluster -d {input[0]} -o {output[0]} \
-#             --header --approx-id 
-#         """
+###############################################################################
+# IDENTICAL PROTEIN GROUP
+###############################################################################
+rule ipg_queries:
+    input: join(OUTDIR, "final/proteins.csv")
+    params:
+        api_file = config["api_key_file"],
+        ncbi_api = config["eutils"]["api_key"],
+        database = 'ipg',
+        batch_size = 8000, # Maximum
+        eget_cmd = "| esummary -mode json",
+        xtract_cmd = ""
+    output:
+        DIR = directory(join(OUTDIR, "data_collection/ipg", 
+                f"queries_{config['timestamp']}")),
+        batches = expand(
+            join(OUTDIR, "data_collection/ipg", 
+                f"queries_{config['timestamp']}", "batch_{batches}.pickle"),
+                batches = range(0, config['ipg']['batches']))
+    threads: 1
+    log:
+       join(OUTDIR, "data_collection/ipg",
+            f"queries_{config['timestamp']}/ipg_queries.log")
+    wrapper:
+        "file:///local/plsdb/master/wrappers/ncbi/ipg/queries"
+
+rule ipg_api:
+    input: 
+        pickle = join(rules.ipg_queries.output.DIR, "batch_{batch}.pickle")
+    params:
+        ncbi_api = config["eutils"]["api_key"],
+        api_file = config["api_key_file"],
+        batch_size = 5000
+    output:
+        pickle = join(OUTDIR, "data_collection/ipg",
+            f"api_{config['timestamp']}", "batch_{batch}.pickle")
+    threads: 10 # NOTE: max 10 to prevent too many requests
+    benchmark: 
+        join(OUTDIR, "data_collection/ipg",
+            f"api_{config['timestamp']}", "batch_{batch}.bench")
+    log:
+       join(OUTDIR, "data_collection/ipg",
+            f"api_{config['timestamp']}", "batch_{batch}.log")
+    wrapper:
+        "file:///local/plsdb/master/wrappers/ncbi/ipg/api"
+
+rule ipg_extraction:
+    input: 
+        pickle = lambda wildcards: expand(rules.ipg_api.output.pickle, batch=wildcards.batch)
+    output:
+        csv = join(OUTDIR, "data_collection/ipg",
+                f"extraction_{config['timestamp']}", "batch_{batch}.csv")
+    log:
+       join(OUTDIR, "data_collection/ipg",
+            f"extraction_{config['timestamp']}", "batch_{batch}.log")
+    benchmark:
+       join(OUTDIR, "data_collection/ipg",
+            f"extraction_{config['timestamp']}", "batch_{batch}.bench")
+    threads: 1
+    wrapper:
+        "file:///local/plsdb/master/wrappers/ncbi/ipg/extraction"
+
+rule ipg_join:
+    input: 
+        files = expand(rules.ipg_extraction.output.csv, 
+            batch = range(0, config['ipg']['batches']))
+    output: 
+        csv = join(OUTDIR, "data_collection/ipg/",
+            f"extraction_{config['timestamp']}", f"ipg_records.csv")
+    threads: 1
+    run:
+        import pickle
+        import pandas as pd
+
+        ipg_df = pd.concat([pd.read_csv(str(f)) for f in input.files ], ignore_index=True)
+        ipg_df.drop_duplicates(inplace=True)
+        ipg_df.to_csv(output.csv, index=False)
